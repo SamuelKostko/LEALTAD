@@ -310,6 +310,29 @@ body {
   overflow: hidden;
 }
 
+.card__art {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: inherit;
+}
+
+/* Client design: use PNG artwork instead of the glass card UI */
+.card--client {
+  padding: 0;
+  background: transparent;
+  border: 0;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.card--client .card__sheen,
+.card--client .card__top,
+.card--client .balance,
+.card--client .card__bottom {
+  display: none;
+}
+
 .card__sheen {
   position: absolute;
   inset: 0;
