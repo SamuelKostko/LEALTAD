@@ -36,7 +36,7 @@
           <div class="header__label">Tu Wallet de puntos</div>
         </div>
 
-        <button class="avatar" type="button" aria-label="Perfil">
+        <button class="avatar" id="profileButton" type="button" aria-label="Perfil" aria-haspopup="dialog" aria-controls="profileMenu" aria-expanded="false">
           <span class="avatar__ring" aria-hidden="true"></span>
           <span class="avatar__initials">A</span>
         </button>
@@ -181,6 +181,27 @@
           <span class="scanner__hint" id="qrHint">Apunta al código QR para escanear</span>
           <span class="scanner__result" id="qrResult" aria-live="polite"></span>
         </footer>
+      </div>
+    </div>
+
+    <!-- Modal de perfil -->
+    <div class="profileMenu" id="profileMenu" aria-hidden="true">
+      <div class="profileMenu__backdrop" data-profile-close></div>
+
+      <div class="profileMenu__frame" role="dialog" aria-modal="true" aria-label="Opciones de perfil">
+        <header class="profileMenu__header">
+          <span class="profileMenu__title">Perfil</span>
+          <button class="profileMenu__close" id="profileClose" type="button" aria-label="Cerrar menú">
+            ✕
+          </button>
+        </header>
+
+        <div class="profileMenu__body">
+          <button class="profileMenu__item" id="installPwa" type="button">
+            Instalar la app
+          </button>
+          <div class="profileMenu__hint" id="installHint" aria-live="polite"></div>
+        </div>
       </div>
     </div>
 

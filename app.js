@@ -7,6 +7,13 @@ if ("serviceWorker" in navigator) {
   });
 }
 
+/* PWA install prompt capture (Chrome/Edge/Android/desktop) */
+let deferredInstallPrompt = null;
+window.addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+});
+
 /* CTA glow on tap/click (works reliably on iOS) */
 const qrButton = document.getElementById("qrButton");
 if (qrButton) {
@@ -123,6 +130,97 @@ if (qrButton) {
       toggle();
     }
   });
+})();
+
+/* Profile menu modal + install recommendation */
+(() => {
+  const profileButton = document.getElementById("profileButton");
+  const menu = document.getElementById("profileMenu");
+  const closeBtn = document.getElementById("profileClose");
+  const installBtn = document.getElementById("installPwa");
+  const hint = document.getElementById("installHint");
+
+  if (!profileButton || !menu) return;
+
+  const isStandalone = () => {
+    // iOS Safari uses navigator.standalone
+    const iosStandalone = typeof navigator.standalone === "boolean" && navigator.standalone;
+    const displayModeStandalone =
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(display-mode: standalone)").matches;
+    return Boolean(iosStandalone || displayModeStandalone);
+  };
+
+  const isIOS = () => /iPad|iPhone|iPod/.test(navigator.userAgent);
+
+  let lastFocus = null;
+
+  const setOpen = (open) => {
+    menu.classList.toggle("profileMenu--active", open);
+    menu.setAttribute("aria-hidden", open ? "false" : "true");
+    profileButton.setAttribute("aria-expanded", open ? "true" : "false");
+
+    if (open) {
+      lastFocus = document.activeElement;
+      if (hint) hint.textContent = "";
+      window.setTimeout(() => (closeBtn ?? installBtn ?? profileButton).focus(), 0);
+    } else {
+      const target = lastFocus instanceof HTMLElement ? lastFocus : profileButton;
+      window.setTimeout(() => target.focus(), 0);
+    }
+  };
+
+  const close = () => setOpen(false);
+  const open = () => setOpen(true);
+
+  profileButton.addEventListener("click", () => {
+    const openNow = profileButton.getAttribute("aria-expanded") === "true";
+    setOpen(!openNow);
+  });
+
+  if (closeBtn) closeBtn.addEventListener("click", close);
+
+  menu.addEventListener("click", (e) => {
+    const target = e.target;
+    if (target && target instanceof HTMLElement && target.hasAttribute("data-profile-close")) {
+      close();
+    }
+  });
+
+  window.addEventListener("keydown", (e) => {
+    if (menu.getAttribute("aria-hidden") === "true") return;
+    if (e.key === "Escape") close();
+  });
+
+  if (installBtn) {
+    installBtn.addEventListener("click", async () => {
+      if (isStandalone()) {
+        if (hint) hint.textContent = "Ya estás usando la app instalada.";
+        return;
+      }
+
+      if (deferredInstallPrompt) {
+        try {
+          deferredInstallPrompt.prompt();
+          await deferredInstallPrompt.userChoice;
+        } catch {
+          // Ignore.
+        } finally {
+          deferredInstallPrompt = null;
+          close();
+        }
+        return;
+      }
+
+      // No native prompt available (common on iOS).
+      if (!hint) return;
+      if (isIOS()) {
+        hint.textContent = "En iPhone/iPad: Compartir → “Añadir a pantalla de inicio”.";
+      } else {
+        hint.textContent = "En Chrome/Edge: menú del navegador → “Instalar app”.";
+      }
+    });
+  }
 })();
 
 /* QR Scanner: open camera and decode QR codes */
