@@ -74,8 +74,49 @@ if (qrButton) {
     setExpanded(!expanded);
   };
 
-  card.addEventListener("click", toggle);
-  card.addEventListener("touchend", toggle, { passive: true });
+  // Prevent long-press context menu (e.g., save image) and drag behaviors.
+  card.addEventListener("contextmenu", (e) => e.preventDefault());
+  card.addEventListener("dragstart", (e) => e.preventDefault());
+
+  if ("PointerEvent" in window) {
+    const MOVE_PX = 10;
+    let pointerDown = false;
+    let startX = 0;
+    let startY = 0;
+    let moved = false;
+    let activePointerId = null;
+
+    card.addEventListener("pointerdown", (e) => {
+      if (e.pointerType === "mouse" && e.button !== 0) return;
+      pointerDown = true;
+      moved = false;
+      activePointerId = e.pointerId;
+      startX = e.clientX;
+      startY = e.clientY;
+    });
+
+    card.addEventListener("pointermove", (e) => {
+      if (!pointerDown || e.pointerId !== activePointerId) return;
+      if (Math.abs(e.clientX - startX) > MOVE_PX || Math.abs(e.clientY - startY) > MOVE_PX) {
+        moved = true;
+      }
+    });
+
+    card.addEventListener("pointerup", (e) => {
+      if (!pointerDown || e.pointerId !== activePointerId) return;
+      pointerDown = false;
+      activePointerId = null;
+      if (!moved) toggle();
+    });
+
+    card.addEventListener("pointercancel", () => {
+      pointerDown = false;
+      activePointerId = null;
+    });
+  } else {
+    // Fallback
+    card.addEventListener("click", toggle);
+  }
   card.addEventListener("keydown", (e) => {
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();

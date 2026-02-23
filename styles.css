@@ -405,11 +405,19 @@ body {
 
 .card--client {
   cursor: pointer;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  touch-action: pan-y;
 }
 
 .card--client:focus-visible {
   outline: 2px solid var(--focus);
   outline-offset: 3px;
+}
+
+.card--client .card__art {
+  -webkit-user-drag: none;
 }
 
 .card__sheen {
