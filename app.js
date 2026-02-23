@@ -236,15 +236,18 @@ if (qrButton) {
   }
 })();
 
-/* iOS overscroll bounce guard (prevents white background reveal) */
+/* Pull-to-refresh on the internal scroll container */
 const scroll = document.getElementById("scroll");
 if (scroll) {
+  const PULL_THRESHOLD_PX = 80;
   let startY = 0;
+  let didTrigger = false;
 
   scroll.addEventListener(
     "touchstart",
     (e) => {
       startY = e.touches[0]?.clientY ?? 0;
+      didTrigger = false;
     },
     { passive: true }
   );
@@ -254,11 +257,21 @@ if (scroll) {
     (e) => {
       const currentY = e.touches[0]?.clientY ?? 0;
       const delta = currentY - startY;
+
       const atTop = scroll.scrollTop <= 0;
       const atBottom =
         scroll.scrollTop + scroll.clientHeight >= scroll.scrollHeight - 1;
 
-      if ((atTop && delta > 0) || (atBottom && delta < 0)) {
+      // If user pulls down from the top, refresh the app.
+      if (!didTrigger && atTop && delta > PULL_THRESHOLD_PX) {
+        didTrigger = true;
+        e.preventDefault();
+        window.location.reload();
+        return;
+      }
+
+      // Keep preventing the bottom overscroll bounce.
+      if (atBottom && delta < 0) {
         e.preventDefault();
       }
     },
