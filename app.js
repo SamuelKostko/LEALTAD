@@ -7,6 +7,17 @@ if ("serviceWorker" in navigator) {
   });
 }
 
+/* Stable viewport height for PWA/mobile (prevents bottom CTA from falling off-screen) */
+(() => {
+  const setAppHeightVar = () => {
+    document.documentElement.style.setProperty("--app-height", `${window.innerHeight}px`);
+  };
+
+  setAppHeightVar();
+  window.addEventListener("resize", setAppHeightVar);
+  window.addEventListener("orientationchange", setAppHeightVar);
+})();
+
 /* PWA install prompt capture (Chrome/Edge/Android/desktop) */
 let deferredInstallPrompt = null;
 window.addEventListener("beforeinstallprompt", (e) => {
