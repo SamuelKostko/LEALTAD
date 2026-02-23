@@ -22,6 +22,68 @@ if (qrButton) {
   qrButton.addEventListener("touchend", pulse, { passive: true });
 }
 
+/* Client card details reveal (tap card to show name/id/balance) */
+(() => {
+  const card = document.getElementById("clientCard");
+  if (!card) return;
+
+  const details = document.getElementById("cardDetails");
+  const pointsEl = document.getElementById("points");
+  const balanceEl = document.getElementById("clientBalance");
+  const nameEl = document.getElementById("clientName");
+  const idEl = document.getElementById("clientId");
+
+  const CLIENT = {
+    name: "SAMUEL KOSTKO",
+    id: "V-30547862"
+  };
+
+  let autoCloseTimer = null;
+
+  const setExpanded = (expanded) => {
+    if (autoCloseTimer) {
+      window.clearTimeout(autoCloseTimer);
+      autoCloseTimer = null;
+    }
+
+    card.classList.toggle("is-details", expanded);
+    card.setAttribute("aria-expanded", expanded ? "true" : "false");
+    if (details) details.setAttribute("aria-hidden", expanded ? "false" : "true");
+
+    if (expanded) {
+      autoCloseTimer = window.setTimeout(() => {
+        setExpanded(false);
+      }, 5000);
+    }
+  };
+
+  const syncBalance = () => {
+    if (!balanceEl) return;
+    const raw = pointsEl?.textContent ?? "0";
+    balanceEl.textContent = raw.replace(/\s+/g, "").trim() || "0";
+  };
+
+  if (nameEl) nameEl.textContent = CLIENT.name;
+  if (idEl) idEl.textContent = CLIENT.id;
+
+  syncBalance();
+
+  const toggle = () => {
+    syncBalance();
+    const expanded = card.getAttribute("aria-expanded") === "true";
+    setExpanded(!expanded);
+  };
+
+  card.addEventListener("click", toggle);
+  card.addEventListener("touchend", toggle, { passive: true });
+  card.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      toggle();
+    }
+  });
+})();
+
 /* QR Scanner: open camera and decode QR codes */
 (() => {
   const scanner = document.getElementById("qrScanner");

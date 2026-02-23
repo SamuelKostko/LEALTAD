@@ -6,6 +6,8 @@
   --muted: rgba(255, 255, 255, 0.62);
   --muted2: rgba(255, 255, 255, 0.45);
 
+  --card-details-bg: color-mix(in srgb, var(--bg) 86%, white 14%);
+
   --label: rgba(255, 255, 255, 0.72);
   --text-strong: rgba(255, 255, 255, 0.86);
   --text-mid: rgba(255, 255, 255, 0.78);
@@ -137,6 +139,8 @@
       rgba(172, 96, 255, 0.18) 35%,
       rgba(0, 0, 0, 0) 72%
     );
+
+    --card-details-bg: color-mix(in srgb, var(--bg) 72%, black 28%);
   }
 
   .bg::before,
@@ -315,6 +319,72 @@ body {
   width: 100%;
   height: auto;
   border-radius: inherit;
+  transition: opacity 220ms ease, transform 220ms ease;
+}
+
+.card__details {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 16px 16px 14px;
+  background: var(--bg);
+  background: var(--card-details-bg);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 18px 54px rgba(0, 0, 0, 0.55);
+
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(10px);
+  pointer-events: none;
+  transition: opacity 220ms ease, transform 220ms ease, visibility 0ms linear 220ms;
+}
+
+.card__detailsTitle {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-mid);
+}
+
+.card__detailsGrid {
+  margin: 14px 0 0;
+  display: grid;
+  gap: 10px;
+}
+
+.card__detailsRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.card__detailsRow dt {
+  font-size: 12px;
+  font-weight: 300;
+  color: var(--muted2);
+}
+
+.card__detailsRow dd {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-strong);
+  letter-spacing: 0.2px;
+}
+
+.card.is-details .card__details {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+  pointer-events: auto;
+  transition: opacity 220ms ease, transform 220ms ease, visibility 0ms linear 0ms;
+}
+
+.card.is-details .card__art {
+  opacity: 0;
+  transform: scale(1.01);
 }
 
 /* Client design: use PNG artwork instead of the glass card UI */
@@ -331,6 +401,15 @@ body {
 .card--client .balance,
 .card--client .card__bottom {
   display: none;
+}
+
+.card--client {
+  cursor: pointer;
+}
+
+.card--client:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
 }
 
 .card__sheen {

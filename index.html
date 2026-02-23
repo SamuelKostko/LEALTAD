@@ -43,8 +43,36 @@
       </header>
 
       <main class="content" id="scroll" aria-label="Contenido">
-        <section class="card card--client" aria-label="Tarjeta digital de puntos">
+        <section
+          class="card card--client"
+          aria-label="Tarjeta digital de puntos"
+          role="button"
+          tabindex="0"
+          aria-expanded="false"
+          aria-controls="cardDetails"
+          id="clientCard"
+        >
           <img class="card__art" src="images/card-cliente.png" alt="Tarjeta de puntos" />
+
+          <div class="card__details" id="cardDetails" aria-hidden="true">
+            <div class="card__detailsTitle">Datos del cliente</div>
+
+            <dl class="card__detailsGrid">
+              <div class="card__detailsRow">
+                <dt>Nombre</dt>
+                <dd id="clientName">SAMUEL KOSTKO</dd>
+              </div>
+              <div class="card__detailsRow">
+                <dt>Cédula</dt>
+                <dd id="clientId">V-30547862</dd>
+              </div>
+              <div class="card__detailsRow">
+                <dt>Saldo disponible</dt>
+                <dd id="clientBalance">0</dd>
+              </div>
+            </dl>
+          </div>
+
           <div class="card__sheen" aria-hidden="true"></div>
 
           <div class="card__top">
