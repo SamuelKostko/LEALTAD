@@ -102,7 +102,45 @@
         </section>
 
         <section class="activity" aria-label="Actividad reciente">
-          <h2 class="activity__title">Actividad</h2>
+          <div class="activity__header">
+            <h2 class="activity__title">Actividad</h2>
+            <button class="activity__refresh" id="activityRefresh" type="button" aria-label="Actualizar actividad">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden="true">
+                <path
+                  d="M20 12a8 8 0 0 1-14.3 4.9"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  opacity="0.9"
+                />
+                <path
+                  d="M4 12a8 8 0 0 1 14.3-4.9"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  opacity="0.55"
+                />
+                <path
+                  d="M17.8 3.8V7.6h-3.8"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  opacity="0.55"
+                />
+                <path
+                  d="M6.2 20.2V16.4H10"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  opacity="0.9"
+                />
+              </svg>
+            </button>
+          </div>
 
           <ul class="activity__list" role="list">
             <li class="activity__item">

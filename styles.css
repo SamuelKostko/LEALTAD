@@ -550,13 +550,47 @@ body {
   padding-bottom: 18px;
 }
 
-.activity__title {
+.activity__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: nowrap;
+  gap: 10px;
   margin: 0 0 10px;
+}
+
+.activity__title {
+  margin: 0;
+  flex: 1;
+  min-width: 0;
   font-size: 12px;
   font-weight: 300;
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--text-soft);
+}
+
+.activity__refresh {
+  flex: 0 0 auto;
+  margin-left: auto;
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  border: 1px solid var(--border-soft);
+  background: var(--surface-2);
+  color: var(--text-mid);
+  display: grid;
+  place-items: center;
+  padding: 0;
+}
+
+.activity__refresh:active {
+  transform: translateY(0.5px);
+}
+
+.activity__refresh:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
 }
 
 .activity__list {

@@ -38,8 +38,8 @@ function serveFile(res, filePath) {
     const ext = path.extname(filePath).toLowerCase();
     const contentType = MIME_TYPES[ext] ?? 'application/octet-stream';
 
-    // Minimal cache: avoid caching HTML so you always see changes.
-    const cacheControl = ext === '.html'
+    // Development-friendly cache: always revalidate HTML/CSS/JS so UI changes show immediately.
+    const cacheControl = (ext === '.html' || ext === '.css' || ext === '.js')
       ? 'no-cache'
       : 'public, max-age=3600';
 
