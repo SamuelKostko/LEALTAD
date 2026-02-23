@@ -153,6 +153,23 @@ if (qrButton) {
 
   const isIOS = () => /iPad|iPhone|iPod/.test(navigator.userAgent);
 
+  const INSTALL_NUDGE_KEY = "wallet.installNudgeSeen";
+  const hasSeenInstallNudge = () => {
+    try {
+      return localStorage.getItem(INSTALL_NUDGE_KEY) === "1";
+    } catch {
+      return false;
+    }
+  };
+
+  const markInstallNudgeSeen = () => {
+    try {
+      localStorage.setItem(INSTALL_NUDGE_KEY, "1");
+    } catch {
+      // Ignore.
+    }
+  };
+
   let lastFocus = null;
 
   const setOpen = (open) => {
@@ -221,6 +238,42 @@ if (qrButton) {
       }
     });
   }
+
+  // First-visit nudge: show only the native install confirmation when possible.
+  // Browsers require a user gesture to show the install prompt.
+  const onFirstUserGesture = async () => {
+    if (hasSeenInstallNudge() || isStandalone()) return;
+    markInstallNudgeSeen();
+
+    if (deferredInstallPrompt) {
+      try {
+        deferredInstallPrompt.prompt();
+        await deferredInstallPrompt.userChoice;
+      } catch {
+        // Ignore.
+      } finally {
+        deferredInstallPrompt = null;
+      }
+      return;
+    }
+
+    // No native prompt available (common on iOS): show instructions in our modal.
+    open();
+    if (hint) {
+      hint.textContent = isIOS()
+        ? "En iPhone/iPad: Compartir → “Añadir a pantalla de inicio”."
+        : "En Chrome/Edge: menú del navegador → “Instalar app”.";
+    }
+  };
+
+  // Use pointerup so it feels like a normal click/tap.
+  window.addEventListener(
+    "pointerup",
+    () => {
+      onFirstUserGesture();
+    },
+    { once: true }
+  );
 })();
 
 /* QR Scanner: open camera and decode QR codes */
