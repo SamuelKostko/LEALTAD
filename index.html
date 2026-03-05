@@ -10,6 +10,32 @@
     <meta name="color-scheme" content="light dark" />
     <meta name="description" content="PWA de una sola página estilo Wallet neo-futurista." />
 
+    <script>
+      // Dynamic manifest: when visiting /card/<token>, installing the PWA should open that same card.
+      (() => {
+        try {
+          const path = window.location.pathname || "";
+          let token = "";
+          if (path.startsWith("/card/")) {
+            token = decodeURIComponent(path.slice("/card/".length)).trim();
+          }
+          if (!token) {
+            const url = new URL(window.location.href);
+            token = (url.searchParams.get("token") || url.searchParams.get("t") || "").trim();
+          }
+
+          const link = document.createElement("link");
+          link.rel = "manifest";
+          link.href = token
+            ? `/api/manifest.webmanifest?token=${encodeURIComponent(token)}`
+            : "/api/manifest.webmanifest";
+          document.head.appendChild(link);
+        } catch {
+          // Ignore.
+        }
+      })();
+    </script>
+
     <!-- Android/Chrome: allow standalone (installed web app) -->
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="application-name" content="Wallet" />
@@ -20,7 +46,7 @@
     <meta name="apple-mobile-web-app-title" content="Wallet" />
     <link rel="apple-touch-icon" href="/icons/icon.svg" />
 
-    <link rel="manifest" href="/manifest.webmanifest" />
+    
     <link rel="icon" href="/icons/icon.svg" type="image/svg+xml" />
 
     <link rel="stylesheet" href="/styles.css" />
@@ -32,7 +58,7 @@
     <div class="app" id="app">
       <header class="header">
         <div class="header__text">
-          <div class="header__greeting">Hola, <span id="greetingName">SAMUEL</span></div>
+          <div class="header__greeting">Hola, <span id="greetingName">—</span></div>
           <div class="header__label">Tu Wallet de puntos</div>
         </div>
 
@@ -60,11 +86,11 @@
             <dl class="card__detailsGrid">
               <div class="card__detailsRow">
                 <dt>Nombre</dt>
-                <dd id="clientName">SAMUEL KOSTKO</dd>
+                <dd id="clientName">—</dd>
               </div>
               <div class="card__detailsRow">
                 <dt>Cédula</dt>
-                <dd id="clientId">V-30547862</dd>
+                <dd id="clientId">—</dd>
               </div>
               <div class="card__detailsRow">
                 <dt>Saldo disponible</dt>
@@ -91,8 +117,7 @@
 
           <div class="balance">
             <div class="balance__label">Saldo de puntos</div>
-            <div class="balance__value" id="points">12
-480</div>
+            <div class="balance__value" id="points">0</div>
           </div>
 
           <div class="card__bottom">

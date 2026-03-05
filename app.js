@@ -55,11 +55,6 @@ if (qrButton) {
   const avatarInitialsEl = document.getElementById("avatarInitials");
   const updatedEl = document.getElementById("cardUpdated");
 
-  const CLIENT = {
-    name: "SAMUEL KOSTKO",
-    id: "V-30547862"
-  };
-
   const getTokenFromUrl = () => {
     try {
       const url = new URL(window.location.href);
@@ -196,11 +191,20 @@ if (qrButton) {
     if (updatedEl) updatedEl.textContent = "Actualizando...";
     setPoints(0);
   } else {
-    if (nameEl) nameEl.textContent = CLIENT.name;
-    if (idEl) idEl.textContent = CLIENT.id;
-    if (greetingNameEl) greetingNameEl.textContent = getGreetingNameFromFullName(CLIENT.name) || "SAMUEL";
-    if (avatarInitialsEl) avatarInitialsEl.textContent = getInitialsFromFullName(CLIENT.name) || "A";
-    setUpdatedText(new Date().toISOString());
+    // Token is required to use the app.
+    if (nameEl) nameEl.textContent = "Token requerido";
+    if (idEl) idEl.textContent = "—";
+    if (greetingNameEl) greetingNameEl.textContent = "—";
+    if (avatarInitialsEl) avatarInitialsEl.textContent = "?";
+    if (updatedEl) updatedEl.textContent = "";
+    setPoints(0);
+
+    // Hide sections that would otherwise show placeholder content.
+    const activity = document.querySelector('.activity');
+    if (activity) activity.hidden = true;
+    const cta = document.querySelector('.cta');
+    if (cta) cta.hidden = true;
+    return;
   }
 
   syncBalance();
