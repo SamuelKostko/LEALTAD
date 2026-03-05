@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 
-    <title>Admin · Enviar correo</title>
+    <title>Admin · Crear tarjeta</title>
 
     <meta name="theme-color" content="#000000" id="themeColor" />
     <meta name="color-scheme" content="light dark" />
@@ -22,23 +22,36 @@
       <header class="header">
         <div class="header__text">
           <div class="header__greeting">Admin</div>
-          <div class="header__label">Enviar correo de activación</div>
+          <div class="header__label">Crear tarjeta</div>
         </div>
 
         <a class="admin__back" href="/" aria-label="Volver al wallet">Volver</a>
       </header>
 
       <main class="content admin__content" aria-label="Panel">
-        <section class="adminCard" aria-label="Formulario de correo">
-          <div class="adminCard__title">Datos del envío</div>
-          <p class="adminCard__hint">Usa tu <strong>ADMIN_KEY</strong> para autorizar el envío. No se guarda en el navegador.</p>
+        <section class="adminCard" aria-label="Acceso admin">
+          <div class="adminCard__title">Acceso</div>
+          <p class="adminCard__hint">Inicia sesión para crear tarjetas y enviar el correo automáticamente.</p>
 
-          <form class="adminForm" id="emailForm">
+          <form class="adminForm" id="loginForm">
             <label class="adminField">
-              <span class="adminField__label">ADMIN_KEY</span>
-              <input class="adminField__input" id="adminKey" type="password" autocomplete="off" placeholder="devkey / change-me" required />
+              <span class="adminField__label">Password</span>
+              <input class="adminField__input" id="adminPassword" type="password" autocomplete="current-password" placeholder="Tu password admin" required />
             </label>
 
+            <div class="adminActions">
+              <button class="adminButton" id="loginBtn" type="submit">Entrar</button>
+            </div>
+
+            <div class="adminResult" id="loginResult" aria-live="polite"></div>
+          </form>
+        </section>
+
+        <section class="adminCard" aria-label="Crear tarjeta" id="createCardSection" hidden>
+          <div class="adminCard__title">Crear tarjeta + enviar correo</div>
+          <p class="adminCard__hint">Completa los datos del cliente. Se crea la tarjeta y se envía el link al correo.</p>
+
+          <form class="adminForm" id="createForm">
             <label class="adminField">
               <span class="adminField__label">Email destino</span>
               <input class="adminField__input" id="toEmail" type="email" inputmode="email" autocomplete="off" placeholder="cliente@correo.com" required />
@@ -47,29 +60,24 @@
             <div class="adminGrid">
               <label class="adminField">
                 <span class="adminField__label">Nombre</span>
-                <input class="adminField__input" id="clientName" type="text" autocomplete="off" placeholder="SAMUEL KOSTKO" />
+                <input class="adminField__input" id="clientName" type="text" autocomplete="off" placeholder="SAMUEL KOSTKO" required />
               </label>
 
               <label class="adminField">
                 <span class="adminField__label">Cédula</span>
-                <input class="adminField__input" id="clientCedula" type="text" autocomplete="off" placeholder="V-30547862" />
+                <input class="adminField__input" id="clientCedula" type="text" autocomplete="off" placeholder="V-30547862" required />
               </label>
             </div>
 
             <div class="adminGrid">
               <label class="adminField">
                 <span class="adminField__label">Saldo / Puntos</span>
-                <input class="adminField__input" id="clientBalance" type="number" inputmode="numeric" min="0" step="1" placeholder="0" />
-              </label>
-
-              <label class="adminField">
-                <span class="adminField__label">Token (si ya existe)</span>
-                <input class="adminField__input" id="cardToken" type="text" autocomplete="off" placeholder="I-GAnCksV2RuxdZQRYiLCg" />
+                <input class="adminField__input" id="clientBalance" type="number" inputmode="numeric" min="0" step="1" placeholder="0" required />
               </label>
             </div>
 
             <div class="adminActions">
-              <button class="adminButton" id="sendBtn" type="submit">Enviar correo</button>
+              <button class="adminButton" id="sendBtn" type="submit">Crear y enviar</button>
               <button class="adminButton adminButton--ghost" id="copyBtn" type="button" disabled>Copiar link</button>
             </div>
 
@@ -80,8 +88,8 @@
         <section class="adminCard" aria-label="Ayuda">
           <div class="adminCard__title">Cómo funciona</div>
           <ul class="adminList">
-            <li>Si colocas <strong>Token</strong>, se envía el link de esa tarjeta.</li>
-            <li>Si <strong>Token</strong> está vacío, se crea una tarjeta con Nombre/Cédula/Saldo y luego se envía.</li>
+            <li>Inicia sesión con tu password admin.</li>
+            <li>Completa los datos y presiona <strong>Crear y enviar</strong>.</li>
           </ul>
         </section>
       </main>

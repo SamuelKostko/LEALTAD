@@ -1,0 +1,6 @@
+{
+  "rewrites": [
+    { "source": "/card/(.*)", "destination": "/index.html" },
+    { "source": "/admin", "destination": "/admin-email.html" }
+  ]
+}

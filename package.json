@@ -9,7 +9,8 @@
     "nodemailer": "^6.10.0"
   },
   "scripts": {
-    "start": "node server.js",
+    "dev": "vercel dev",
+    "start": "vercel dev",
     "migrate:firestore": "node scripts/migrate-local-to-firestore.js"
   }
 }
