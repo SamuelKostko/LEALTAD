@@ -173,7 +173,12 @@ if (form) {
       if (data?.link) {
         lastLink = data.link;
         setCopyEnabled(true);
-        const sent = data?.email?.sent ? 'Correo enviado.' : 'Correo NO enviado.';
+        const reason = String(data?.email?.reason ?? '').trim();
+        const missing = Array.isArray(data?.email?.missing) ? data.email.missing.filter(Boolean) : [];
+        const extra = reason || missing.length
+          ? ` (${[reason, missing.length ? `faltan: ${missing.join(', ')}` : ''].filter(Boolean).join(' · ')})`
+          : '';
+        const sent = data?.email?.sent ? 'Correo enviado.' : `Correo NO enviado${extra}.`;
         setResult('adminResult--ok', `${sent} Link: ${data.link}`);
       } else {
         setResult('adminResult--ok', 'Listo.');

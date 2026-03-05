@@ -24,9 +24,15 @@ export default async function handler(req, res) {
 
   if (!requireAdmin(req, res)) return;
 
+  let body;
   try {
-    const body = await readJsonBody(req);
+    body = await readJsonBody(req);
+  } catch {
+    sendJson(res, 400, { error: 'Invalid JSON body' });
+    return;
+  }
 
+  try {
     const to = normalizeEmail(body?.to);
     const tokenFromBody = String(body?.token ?? '').trim();
     const nameFromBody = String(body?.name ?? '').trim();
@@ -69,9 +75,16 @@ export default async function handler(req, res) {
     const linkPath = `/card/${token}`;
     const link = origin + linkPath;
 
-    const emailResult = await sendActivationEmail({ to, name: resolvedName, link });
+    let emailResult;
+    try {
+      emailResult = await sendActivationEmail({ to, name: resolvedName, link });
+    } catch (err) {
+      sendJson(res, 500, { ok: false, error: err?.message ?? String(err) });
+      return;
+    }
+
     sendJson(res, 200, { ok: true, created, token, linkPath, link, email: emailResult });
   } catch (err) {
-    sendJson(res, 400, { error: err?.message ?? 'Invalid JSON body' });
+    sendJson(res, 500, { ok: false, error: err?.message ?? String(err) });
   }
 }

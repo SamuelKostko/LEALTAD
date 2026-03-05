@@ -23,14 +23,26 @@ function hasSmtpConfig() {
   );
 }
 
+function getSmtpMissingKeys() {
+  const missing = [];
+  if (!String(process.env.SMTP_HOST ?? '').trim()) missing.push('SMTP_HOST');
+  if (!String(process.env.SMTP_PORT ?? '').trim()) missing.push('SMTP_PORT');
+  if (!String(process.env.SMTP_USER ?? '').trim()) missing.push('SMTP_USER');
+  if (!String(process.env.SMTP_PASS ?? '').trim()) missing.push('SMTP_PASS');
+  if (!String(process.env.SMTP_FROM ?? '').trim() && !String(process.env.SMTP_FROM_EMAIL ?? '').trim()) {
+    missing.push('SMTP_FROM (or SMTP_FROM_EMAIL)');
+  }
+  return missing;
+}
+
 export async function sendActivationEmail({ to, name, link }) {
   if (!hasSmtpConfig()) {
     console.log('[activation-email] SMTP not configured; link:', link);
-    return { sent: false, reason: 'smtp_not_configured' };
+    return { sent: false, reason: 'smtp_not_configured', missing: getSmtpMissingKeys() };
   }
 
   const from = getSmtpFrom();
-  if (!from) return { sent: false, reason: 'smtp_from_missing' };
+  if (!from) return { sent: false, reason: 'smtp_from_missing', missing: ['SMTP_FROM (or SMTP_FROM_EMAIL)'] };
 
   const smtpUser = String(process.env.SMTP_USER ?? '').trim();
   const fromString = typeof from === 'string' ? from : String(from.address ?? '');
