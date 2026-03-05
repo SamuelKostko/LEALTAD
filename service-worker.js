@@ -1,4 +1,4 @@
-const CACHE_NAME = "wallet-pwa-v12";
+const CACHE_NAME = "wallet-pwa-v13";
 
 const PRECACHE_URLS = [
   "/",
@@ -38,6 +38,22 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   const request = event.request;
   if (request.method !== "GET") return;
+
+  // Never cache admin pages/assets (avoid stale admin UI).
+  try {
+    const url = new URL(request.url);
+    if (
+      url.pathname === '/admin' ||
+      url.pathname.startsWith('/admin/') ||
+      url.pathname === '/admin-email.html' ||
+      url.pathname === '/admin-email.js'
+    ) {
+      event.respondWith(fetch(request));
+      return;
+    }
+  } catch {
+    // Ignore URL parsing issues.
+  }
 
   // Never cache API responses (per-user data).
   try {
