@@ -3,7 +3,13 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "firebase-admin": "^13.7.0",
+    "nodemailer": "^6.10.0"
+  },
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "migrate:firestore": "node scripts/migrate-local-to-firestore.js"
   }
 }

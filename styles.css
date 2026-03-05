@@ -186,6 +186,144 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* Admin (email sending) */
+.admin .content {
+  gap: 14px;
+}
+
+.admin__back {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 12px;
+  border: 1px solid var(--border-soft);
+  border-radius: 999px;
+  background: var(--surface-3);
+  color: var(--text);
+  text-decoration: none;
+  font-size: 13px;
+  letter-spacing: 0.2px;
+}
+
+.adminCard {
+  background: linear-gradient(180deg, var(--surface-3), var(--surface-4));
+  border: 1px solid var(--border-soft);
+  border-radius: 18px;
+  padding: 14px;
+  backdrop-filter: blur(10px);
+}
+
+.adminCard__title {
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  margin: 2px 0 10px;
+  color: var(--text-strong);
+}
+
+.adminCard__hint {
+  margin: 0 0 14px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.adminForm {
+  display: grid;
+  gap: 12px;
+}
+
+.adminGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+@media (max-width: 420px) {
+  .adminGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.adminField {
+  display: grid;
+  gap: 7px;
+}
+
+.adminField__label {
+  font-size: 12px;
+  color: var(--label);
+  letter-spacing: 0.2px;
+}
+
+.adminField__input {
+  width: 100%;
+  padding: 12px 12px;
+  border-radius: 14px;
+  border: 1px solid var(--border-soft);
+  background: var(--surface);
+  color: var(--text);
+  outline: none;
+}
+
+.adminField__input:focus {
+  border-color: var(--border-2);
+  box-shadow: 0 0 0 4px var(--focus);
+}
+
+.adminActions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.adminButton {
+  border: 1px solid var(--border-2);
+  background: var(--surface-3);
+  color: var(--text);
+  border-radius: 14px;
+  padding: 12px 12px;
+  font-weight: 650;
+  letter-spacing: 0.2px;
+  cursor: pointer;
+}
+
+.adminButton:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.adminButton--ghost {
+  background: transparent;
+}
+
+.adminResult {
+  min-height: 18px;
+  font-size: 13px;
+  line-height: 1.35;
+  color: var(--muted);
+  word-break: break-word;
+}
+
+.adminResult--ok {
+  color: var(--text);
+}
+
+.adminResult--err {
+  color: var(--text);
+}
+
+.adminResult--info {
+  color: var(--muted);
+}
+
+.adminList {
+  margin: 0;
+  padding-left: 16px;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
 .bg {
   position: fixed;
   inset: 0;

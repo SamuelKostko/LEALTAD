@@ -17,3 +17,11 @@ Thumbs.db
 .dist/
 .cache/
 .out/
+
+# Env
+.env
+.env.*
+!.env.example
+
+# Secrets (Firebase service accounts, etc.)
+secrets/

@@ -18,12 +18,12 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Wallet" />
-    <link rel="apple-touch-icon" href="icons/icon.svg" />
+    <link rel="apple-touch-icon" href="/icons/icon.svg" />
 
-    <link rel="manifest" href="manifest.webmanifest" />
-    <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" href="/icons/icon.svg" type="image/svg+xml" />
 
-    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="/styles.css" />
   </head>
 
   <body>
@@ -32,13 +32,13 @@
     <div class="app" id="app">
       <header class="header">
         <div class="header__text">
-          <div class="header__greeting">Hola, SAMUEL</div>
+          <div class="header__greeting">Hola, <span id="greetingName">SAMUEL</span></div>
           <div class="header__label">Tu Wallet de puntos</div>
         </div>
 
         <button class="avatar" id="profileButton" type="button" aria-label="Perfil" aria-haspopup="dialog" aria-controls="profileMenu" aria-expanded="false">
           <span class="avatar__ring" aria-hidden="true"></span>
-          <span class="avatar__initials">A</span>
+          <span class="avatar__initials" id="avatarInitials">A</span>
         </button>
       </header>
 
@@ -52,7 +52,7 @@
           aria-controls="cardDetails"
           id="clientCard"
         >
-          <img class="card__art" src="images/card-cliente.png" alt="Tarjeta de puntos" draggable="false" />
+          <img class="card__art" src="/images/card-cliente.png" alt="Tarjeta de puntos" draggable="false" />
 
           <div class="card__details" id="cardDetails" aria-hidden="true">
             <div class="card__detailsTitle">Datos del cliente</div>
@@ -97,7 +97,7 @@
 
           <div class="card__bottom">
             <div class="card__divider" aria-hidden="true"></div>
-            <div class="card__meta">Actualizado hoy</div>
+            <div class="card__meta" id="cardUpdated">Actualizado hoy</div>
           </div>
         </section>
 
@@ -245,6 +245,6 @@
 
     <!-- Librería ligera de decodificación QR -->
     <script src="https://unpkg.com/jsqr@1.4.0/dist/jsQR.js" crossorigin="anonymous"></script>
-    <script src="app.js" defer></script>
+    <script src="/app.js" defer></script>
   </body>
 </html>

@@ -1,7 +1,8 @@
 /* PWA: SW register */
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("./service-worker.js").catch(() => {
+    // Use absolute path so it works for deep links like /card/<token>
+    navigator.serviceWorker.register("/service-worker.js").catch(() => {
       // Intentionally silent: avoid noisy UI for a design-only PWA.
     });
   });
@@ -50,10 +51,113 @@ if (qrButton) {
   const balanceEl = document.getElementById("clientBalance");
   const nameEl = document.getElementById("clientName");
   const idEl = document.getElementById("clientId");
+  const greetingNameEl = document.getElementById("greetingName");
+  const avatarInitialsEl = document.getElementById("avatarInitials");
+  const updatedEl = document.getElementById("cardUpdated");
 
   const CLIENT = {
     name: "SAMUEL KOSTKO",
     id: "V-30547862"
+  };
+
+  const getTokenFromUrl = () => {
+    try {
+      const url = new URL(window.location.href);
+      const qp = (url.searchParams.get("token") || url.searchParams.get("t") || "").trim();
+      if (qp) return qp;
+
+      const path = url.pathname || "";
+      if (path.startsWith("/card/")) {
+        return decodeURIComponent(path.slice("/card/".length)).trim();
+      }
+    } catch {
+      // Ignore.
+    }
+    return "";
+  };
+
+  const getGreetingNameFromFullName = (fullName) => {
+    const parts = String(fullName ?? "").trim().split(/\s+/).filter(Boolean);
+    return parts[0] || "";
+  };
+
+  const getInitialsFromFullName = (fullName) => {
+    const parts = String(fullName ?? "").trim().split(/\s+/).filter(Boolean);
+    const letters = parts.slice(0, 2).map((p) => p[0]).join("");
+    return letters.toUpperCase() || "";
+  };
+
+  const setUpdatedText = (updatedAtIso) => {
+    if (!updatedEl) return;
+    if (!updatedAtIso) {
+      updatedEl.textContent = "Actualizado";
+      return;
+    }
+
+    const d = new Date(updatedAtIso);
+    if (Number.isNaN(d.getTime())) {
+      updatedEl.textContent = "Actualizado";
+      return;
+    }
+
+    const now = new Date();
+    const sameDay =
+      d.getFullYear() === now.getFullYear() &&
+      d.getMonth() === now.getMonth() &&
+      d.getDate() === now.getDate();
+
+    if (sameDay) {
+      updatedEl.textContent = "Actualizado hoy";
+      return;
+    }
+
+    const dateStr = d.toLocaleDateString("es-VE", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit"
+    });
+    updatedEl.textContent = `Actualizado ${dateStr}`;
+  };
+
+  const setPoints = (value) => {
+    const n = Number(value);
+    if (!pointsEl) return;
+    if (!Number.isFinite(n)) return;
+    pointsEl.textContent = String(n);
+  };
+
+  const loadCardData = async () => {
+    const token = getTokenFromUrl();
+    if (!token) return;
+
+    try {
+      const res = await fetch(`/api/card?token=${encodeURIComponent(token)}`,
+        { cache: "no-store" }
+      );
+      if (!res.ok) return;
+      const data = await res.json();
+
+      if (data && typeof data === "object") {
+        if (nameEl && typeof data.name === "string") nameEl.textContent = data.name;
+        if (idEl && typeof data.cedula === "string") idEl.textContent = data.cedula;
+        if (typeof data.balance !== "undefined") setPoints(data.balance);
+        syncBalance();
+
+        if (greetingNameEl && typeof data.name === "string") {
+          const greetingName = getGreetingNameFromFullName(data.name);
+          if (greetingName) greetingNameEl.textContent = greetingName;
+        }
+
+        if (avatarInitialsEl && typeof data.name === "string") {
+          const initials = getInitialsFromFullName(data.name);
+          if (initials) avatarInitialsEl.textContent = initials;
+        }
+
+        if (typeof data.updatedAt === "string") setUpdatedText(data.updatedAt);
+      }
+    } catch {
+      // Ignore network/parse errors.
+    }
   };
 
   let autoCloseTimer = null;
@@ -81,10 +185,26 @@ if (qrButton) {
     balanceEl.textContent = raw.replace(/\s+/g, "").trim() || "0";
   };
 
-  if (nameEl) nameEl.textContent = CLIENT.name;
-  if (idEl) idEl.textContent = CLIENT.id;
+  const initialToken = getTokenFromUrl();
+
+  if (initialToken) {
+    // Avoid flashing hardcoded user details when we're going to load from DB.
+    if (nameEl) nameEl.textContent = "Cargando...";
+    if (idEl) idEl.textContent = "—";
+    if (greetingNameEl) greetingNameEl.textContent = "...";
+    if (avatarInitialsEl) avatarInitialsEl.textContent = "...";
+    if (updatedEl) updatedEl.textContent = "Actualizando...";
+    setPoints(0);
+  } else {
+    if (nameEl) nameEl.textContent = CLIENT.name;
+    if (idEl) idEl.textContent = CLIENT.id;
+    if (greetingNameEl) greetingNameEl.textContent = getGreetingNameFromFullName(CLIENT.name) || "SAMUEL";
+    if (avatarInitialsEl) avatarInitialsEl.textContent = getInitialsFromFullName(CLIENT.name) || "A";
+    setUpdatedText(new Date().toISOString());
+  }
 
   syncBalance();
+  loadCardData();
 
   const toggle = () => {
     syncBalance();

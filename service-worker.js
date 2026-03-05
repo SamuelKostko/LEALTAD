@@ -1,12 +1,12 @@
-const CACHE_NAME = "wallet-pwa-v10";
+const CACHE_NAME = "wallet-pwa-v12";
 
 const PRECACHE_URLS = [
-  "./",
-  "./index.html",
-  "./styles.css",
-  "./app.js",
-  "./manifest.webmanifest",
-  "./icons/icon.svg"
+  "/",
+  "/index.html",
+  "/styles.css",
+  "/app.js",
+  "/manifest.webmanifest",
+  "/icons/icon.svg"
 ];
 
 self.addEventListener("install", (event) => {
@@ -38,6 +38,17 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   const request = event.request;
   if (request.method !== "GET") return;
+
+  // Never cache API responses (per-user data).
+  try {
+    const url = new URL(request.url);
+    if (url.pathname.startsWith("/api/")) {
+      event.respondWith(fetch(request));
+      return;
+    }
+  } catch {
+    // Ignore URL parsing issues.
+  }
 
   // For the client-provided card artwork we want updates to show immediately
   // even when the filename stays the same (network-first, cache fallback).
