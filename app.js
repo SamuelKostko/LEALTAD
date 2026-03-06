@@ -426,6 +426,34 @@ if (qrButton) {
   let scanning = false;
   const ctx = canvas.getContext("2d");
 
+  // Temporary popup feedback (toast)
+  const toast = (() => {
+    try {
+      const root = document.createElement("div");
+      root.className = "toast";
+      const frame = document.createElement("div");
+      frame.className = "toast__frame";
+      frame.setAttribute("role", "status");
+      frame.setAttribute("aria-live", "polite");
+      root.appendChild(frame);
+      document.body.appendChild(root);
+
+      let timer = null;
+      const show = (message) => {
+        frame.textContent = String(message ?? "");
+        root.classList.add("toast--show");
+        if (timer) window.clearTimeout(timer);
+        timer = window.setTimeout(() => {
+          root.classList.remove("toast--show");
+        }, 2400);
+      };
+
+      return { show };
+    } catch {
+      return { show: () => {} };
+    }
+  })();
+
   const getTokenFromUrl = () => {
     try {
       const url = new URL(window.location.href);
@@ -478,6 +506,7 @@ if (qrButton) {
     if (!token) {
       hint.textContent = "Token requerido";
       resultEl.textContent = "";
+      toast.show("Token requerido");
       return true;
     }
 
@@ -496,6 +525,17 @@ if (qrButton) {
         const msg = data?.error || data?.message || `Error (${res.status})`;
         hint.textContent = "Cobro no aplicado";
         resultEl.textContent = msg;
+
+        const normalized = String(msg).toLowerCase();
+        if (normalized.includes("insufficient balance") || normalized.includes("saldo")) {
+          toast.show("Saldo insuficiente");
+        } else if (normalized.includes("expired")) {
+          toast.show("QR vencido");
+        } else if (normalized.includes("not pending") || normalized.includes("used")) {
+          toast.show("QR ya usado");
+        } else {
+          toast.show("Error al cobrar");
+        }
         return true;
       }
 
@@ -505,10 +545,12 @@ if (qrButton) {
 
       hint.textContent = "Cobro aplicado";
       resultEl.textContent = `Nuevo saldo: ${data.balance}`;
+      toast.show(`Transacción exitosa. Nuevo saldo: ${data.balance}`);
       return true;
     } catch {
       hint.textContent = "Cobro no aplicado";
       resultEl.textContent = "Fallo de red";
+      toast.show("Error de red");
       return true;
     }
   };
@@ -548,8 +590,9 @@ if (qrButton) {
               stopStream();
               const handled = await redeemIfChargeUrl(qr.data);
               if (!handled) {
-                resultEl.textContent = qr.data;
-                hint.textContent = "Código detectado";
+                resultEl.textContent = "QR no válido";
+                hint.textContent = "No se pudo procesar";
+                toast.show("QR no válido");
               }
 
               // Cerrar automáticamente tras un breve momento

@@ -1037,6 +1037,35 @@ body {
   gap: 10px;
 }
 
+/* Temporary scan feedback (toast) */
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(18px + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  z-index: 60;
+  display: none;
+  max-width: min(520px, calc(100vw - 36px));
+}
+
+.toast--show {
+  display: block;
+}
+
+.toast__frame {
+  border-radius: 16px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  padding: 12px 14px;
+  color: var(--text-strong);
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: 0.1px;
+}
+
 .profileMenu__item {
   width: 100%;
   border-radius: 14px;
