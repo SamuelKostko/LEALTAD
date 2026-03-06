@@ -191,19 +191,244 @@ if (qrButton) {
     if (updatedEl) updatedEl.textContent = "Actualizando...";
     setPoints(0);
   } else {
-    // Token is required to use the app.
-    if (nameEl) nameEl.textContent = "Token requerido";
-    if (idEl) idEl.textContent = "—";
-    if (greetingNameEl) greetingNameEl.textContent = "—";
-    if (avatarInitialsEl) avatarInitialsEl.textContent = "?";
+    // Root domain without token shows admin panel (password required).
+    if (greetingNameEl) greetingNameEl.textContent = "Admin";
+    if (avatarInitialsEl) avatarInitialsEl.textContent = "AD";
     if (updatedEl) updatedEl.textContent = "";
     setPoints(0);
 
-    // Hide sections that would otherwise show placeholder content.
+    const headerLabel = document.getElementById('headerLabel');
+    if (headerLabel) headerLabel.textContent = "Panel administrador";
+
+    // Hide client wallet UI.
+    card.hidden = true;
     const activity = document.querySelector('.activity');
     if (activity) activity.hidden = true;
     const cta = document.querySelector('.cta');
     if (cta) cta.hidden = true;
+
+    const loginCard = document.getElementById('adminRootLogin');
+    const loginForm = document.getElementById('adminRootLoginForm');
+    const passwordEl = document.getElementById('adminRootPassword');
+    const loginResultEl = document.getElementById('adminRootLoginResult');
+
+    const panelCard = document.getElementById('adminRootPanel');
+    const clientsCard = document.getElementById('adminRootClients');
+    const cardTxCard = document.getElementById('adminRootCardTx');
+    const allTxCard = document.getElementById('adminRootAllTx');
+
+    const goCards = document.getElementById('adminRootGoCards');
+    const goQr = document.getElementById('adminRootGoQr');
+    const txRefresh = document.getElementById('adminTxRefresh');
+
+    const clientsList = document.getElementById('adminClientsList');
+    const clientsResult = document.getElementById('adminClientsResult');
+    const cardTxHint = document.getElementById('adminCardTxHint');
+    const cardTxList = document.getElementById('adminCardTxList');
+    const cardTxResult = document.getElementById('adminCardTxResult');
+    const txList = document.getElementById('adminTxList');
+    const txResult = document.getElementById('adminTxResult');
+
+    const setLoginResult = (type, message) => {
+      if (!loginResultEl) return;
+      loginResultEl.classList.remove('adminResult--ok', 'adminResult--err', 'adminResult--info');
+      loginResultEl.classList.add(type);
+      loginResultEl.textContent = message;
+    };
+
+    const setText = (el, text) => {
+      if (!el) return;
+      el.textContent = String(text ?? '');
+    };
+
+    const setAuthenticatedUi = (authed) => {
+      if (loginCard) loginCard.hidden = authed;
+      if (panelCard) panelCard.hidden = !authed;
+      if (clientsCard) clientsCard.hidden = !authed;
+      if (cardTxCard) cardTxCard.hidden = !authed;
+      if (allTxCard) allTxCard.hidden = !authed;
+    };
+
+    const renderButtonsList = (container, items) => {
+      if (!container) return;
+      container.innerHTML = '';
+      for (const item of items) {
+        container.appendChild(item);
+      }
+      if (!items.length) {
+        const empty = document.createElement('div');
+        empty.className = 'adminResult';
+        empty.textContent = 'Sin resultados';
+        container.appendChild(empty);
+      }
+    };
+
+    const renderTxList = (container, transactions) => {
+      if (!container) return;
+      container.innerHTML = '';
+      for (const t of transactions) {
+        const row = document.createElement('div');
+        row.className = 'adminResult';
+        const status = t.status || '—';
+        const pts = Number.isFinite(Number(t.points)) ? Number(t.points) : 0;
+        const token = t.token ? ` · ${t.token}` : '';
+        const desc = t.description ? ` · ${t.description}` : '';
+        row.textContent = `${status} · ${pts}${token}${desc}`;
+        container.appendChild(row);
+      }
+      if (!transactions.length) {
+        const empty = document.createElement('div');
+        empty.className = 'adminResult';
+        empty.textContent = 'Sin transacciones';
+        container.appendChild(empty);
+      }
+    };
+
+    const apiGet = async (path) => {
+      const res = await fetch(path, { cache: 'no-store' });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        const msg = data?.error || data?.message || `Error (${res.status})`;
+        const err = new Error(msg);
+        err.status = res.status;
+        throw err;
+      }
+      return data;
+    };
+
+    const loadClients = async () => {
+      setText(clientsResult, 'Cargando...');
+      try {
+        const data = await apiGet('/api/admin/cards?limit=80');
+        const cards = Array.isArray(data?.cards) ? data.cards : [];
+
+        const els = cards.map((c) => {
+          const b = document.createElement('button');
+          b.type = 'button';
+          b.className = 'adminButton adminButton--ghost';
+          b.style.width = '100%';
+          b.style.textAlign = 'left';
+          const name = String(c?.name ?? '').trim() || '—';
+          const cedula = String(c?.cedula ?? '').trim();
+          const bal = Number.isFinite(Number(c?.balance)) ? Number(c.balance) : 0;
+          const token = String(c?.token ?? '').trim();
+          b.textContent = `${name}${cedula ? ` · ${cedula}` : ''} · ${bal} pts`;
+          b.addEventListener('click', () => {
+            if (cardTxHint) cardTxHint.textContent = `Token: ${token}`;
+            loadCardTransactions(token);
+          });
+          return b;
+        });
+
+        renderButtonsList(clientsList, els);
+        setText(clientsResult, '');
+      } catch (err) {
+        if (err?.status === 401) {
+          setAuthenticatedUi(false);
+          setLoginResult('adminResult--err', 'Sesión expirada.');
+          return;
+        }
+        setText(clientsResult, err?.message ?? 'Error');
+      }
+    };
+
+    const loadAllTransactions = async () => {
+      setText(txResult, 'Cargando...');
+      try {
+        const data = await apiGet('/api/admin/transactions?limit=80');
+        const txs = Array.isArray(data?.transactions) ? data.transactions : [];
+        renderTxList(txList, txs);
+        setText(txResult, '');
+      } catch (err) {
+        if (err?.status === 401) {
+          setAuthenticatedUi(false);
+          setLoginResult('adminResult--err', 'Sesión expirada.');
+          return;
+        }
+        setText(txResult, err?.message ?? 'Error');
+      }
+    };
+
+    const loadCardTransactions = async (token) => {
+      setText(cardTxResult, 'Cargando...');
+      try {
+        const data = await apiGet(`/api/admin/transactions?token=${encodeURIComponent(token)}&limit=80`);
+        const txs = Array.isArray(data?.transactions) ? data.transactions : [];
+        renderTxList(cardTxList, txs);
+        setText(cardTxResult, '');
+      } catch (err) {
+        if (err?.status === 401) {
+          setAuthenticatedUi(false);
+          setLoginResult('adminResult--err', 'Sesión expirada.');
+          return;
+        }
+        setText(cardTxResult, err?.message ?? 'Error');
+      }
+    };
+
+    const initAuthed = () => {
+      setAuthenticatedUi(true);
+      if (goCards) goCards.addEventListener('click', () => { window.location.href = '/admin'; });
+      if (goQr) goQr.addEventListener('click', () => { window.location.href = '/admin/qr'; });
+      if (txRefresh) txRefresh.addEventListener('click', () => { loadClients(); loadAllTransactions(); });
+
+      loadClients();
+      loadAllTransactions();
+      if (cardTxHint) cardTxHint.textContent = 'Selecciona un cliente.';
+      if (cardTxList) cardTxList.innerHTML = '';
+      if (cardTxResult) cardTxResult.textContent = '';
+    };
+
+    const checkAuth = async () => {
+      try {
+        const data = await apiGet('/api/admin/me');
+        const authed = Boolean(data?.authenticated);
+        if (authed) {
+          initAuthed();
+        } else {
+          setAuthenticatedUi(false);
+        }
+      } catch {
+        setAuthenticatedUi(false);
+      }
+    };
+
+    // Show login by default until we know session state.
+    setAuthenticatedUi(false);
+
+    if (loginForm) {
+      loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const password = String(passwordEl?.value ?? '').trim();
+        if (!password) {
+          setLoginResult('adminResult--err', 'Password requerido.');
+          return;
+        }
+
+        setLoginResult('adminResult--info', 'Entrando...');
+        try {
+          const res = await fetch('/api/admin/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ password })
+          });
+          const data = await res.json().catch(() => null);
+          if (!res.ok) {
+            const msg = data?.error || data?.message || `Error (${res.status})`;
+            setLoginResult('adminResult--err', msg);
+            return;
+          }
+
+          setLoginResult('adminResult--ok', 'Listo.');
+          if (passwordEl) passwordEl.value = '';
+          initAuthed();
+        } catch {
+          setLoginResult('adminResult--err', 'Fallo de red.');
+        }
+      });
+    }
+
+    checkAuth();
     return;
   }
  

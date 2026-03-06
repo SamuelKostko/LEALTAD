@@ -59,7 +59,7 @@
       <header class="header">
         <div class="header__text">
           <div class="header__greeting">Hola, <span id="greetingName">—</span></div>
-          <div class="header__label">Tu Wallet de puntos</div>
+          <div class="header__label" id="headerLabel">Tu Wallet de puntos</div>
         </div>
 
         <button class="avatar" id="profileButton" type="button" aria-label="Perfil" aria-haspopup="dialog" aria-controls="profileMenu" aria-expanded="false">
@@ -69,6 +69,58 @@
       </header>
 
       <main class="content" id="scroll" aria-label="Contenido">
+        <section class="adminCard" id="adminRootLogin" hidden aria-label="Acceso admin">
+          <div class="adminCard__title">Acceso</div>
+          <p class="adminCard__hint">Ingresa tu password para acceder al panel.</p>
+
+          <form class="adminForm" id="adminRootLoginForm">
+            <label class="adminField">
+              <span class="adminField__label">Password</span>
+              <input class="adminField__input" id="adminRootPassword" type="password" autocomplete="current-password" placeholder="Tu password admin" required />
+            </label>
+
+            <div class="adminActions">
+              <button class="adminButton" id="adminRootLoginBtn" type="submit">Entrar</button>
+            </div>
+
+            <div class="adminResult" id="adminRootLoginResult" aria-live="polite"></div>
+          </form>
+        </section>
+
+        <section class="adminCard" id="adminRootPanel" hidden aria-label="Panel admin">
+          <div class="adminCard__title">Administrador</div>
+          <p class="adminCard__hint">Acciones rápidas.</p>
+
+          <div class="adminActions">
+            <button class="adminButton" id="adminRootGoCards" type="button">Crear tarjetas</button>
+            <button class="adminButton" id="adminRootGoQr" type="button">Crear QR</button>
+          </div>
+        </section>
+
+        <section class="adminCard" id="adminRootClients" hidden aria-label="Clientes">
+          <div class="adminCard__title">Clientes</div>
+          <p class="adminCard__hint">Selecciona un cliente para ver sus transacciones.</p>
+          <div class="adminForm" id="adminClientsList"></div>
+          <div class="adminResult" id="adminClientsResult" aria-live="polite"></div>
+        </section>
+
+        <section class="adminCard" id="adminRootCardTx" hidden aria-label="Transacciones de tarjeta">
+          <div class="adminCard__title">Transacciones de tarjeta</div>
+          <p class="adminCard__hint" id="adminCardTxHint">Selecciona un cliente.</p>
+          <div class="adminForm" id="adminCardTxList"></div>
+          <div class="adminResult" id="adminCardTxResult" aria-live="polite"></div>
+        </section>
+
+        <section class="adminCard" id="adminRootAllTx" hidden aria-label="Transacciones generales">
+          <div class="adminCard__title">Transacciones</div>
+          <p class="adminCard__hint">Listado general (reciente).</p>
+          <div class="adminActions">
+            <button class="adminButton" id="adminTxRefresh" type="button" style="grid-column: 1 / -1">Recargar</button>
+          </div>
+          <div class="adminForm" id="adminTxList"></div>
+          <div class="adminResult" id="adminTxResult" aria-live="polite"></div>
+        </section>
+
         <section
           class="card card--client"
           aria-label="Tarjeta digital de puntos"
