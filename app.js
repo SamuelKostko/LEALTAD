@@ -502,6 +502,14 @@ if (qrButton) {
 
     if (url.pathname !== "/api/pos/redeem") return false;
 
+    // Always redeem against the current origin to avoid cross-domain/CORS issues
+    // (e.g., QR generated from a different deployment).
+    const redeemUrl = new URL("/api/pos/redeem", window.location.origin);
+    for (const key of ["points", "ts", "nonce", "desc", "sig"]) {
+      const v = url.searchParams.get(key);
+      if (v) redeemUrl.searchParams.set(key, v);
+    }
+
     const token = getTokenFromUrl();
     if (!token) {
       hint.textContent = "Token requerido";
@@ -510,15 +518,13 @@ if (qrButton) {
       return true;
     }
 
-    if (!url.searchParams.get("token")) {
-      url.searchParams.set("token", token);
-    }
+    redeemUrl.searchParams.set("token", token);
 
     hint.textContent = "Procesando cobro...";
     resultEl.textContent = "";
 
     try {
-      const res = await fetch(url.toString(), { cache: "no-store" });
+      const res = await fetch(redeemUrl.toString(), { cache: "no-store" });
       const data = await res.json().catch(() => null);
 
       if (!res.ok || !data?.ok) {
