@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 import { FieldValue } from 'firebase-admin/firestore';
-import { readJsonBody, sendJson } from '../_lib/http.js';
+import QRCode from 'qrcode';
+import { getPublicOrigin, readJsonBody, sendJson } from '../_lib/http.js';
 import { requireAdmin } from '../_lib/adminAuth.js';
 import { getFirestoreDb } from '../_lib/firestore.js';
 
@@ -80,5 +81,20 @@ export default async function handler(req, res) {
   // QR contains a URL-like string; the app will append the customer token at scan time.
   const url = `/api/pos/redeem?points=${encodeURIComponent(points)}&ts=${encodeURIComponent(ts)}&nonce=${encodeURIComponent(nonce)}&desc=${encodeURIComponent(desc)}&sig=${encodeURIComponent(sig)}`;
 
-  sendJson(res, 200, { ok: true, url, transactionId: nonce });
+  const origin = getPublicOrigin(req);
+  const fullUrl = `${origin}${url}`;
+
+  let qrPngDataUrl = '';
+  try {
+    qrPngDataUrl = await QRCode.toDataURL(fullUrl, {
+      width: 220,
+      margin: 1,
+      errorCorrectionLevel: 'M',
+      type: 'image/png'
+    });
+  } catch {
+    qrPngDataUrl = '';
+  }
+
+  sendJson(res, 200, { ok: true, url, transactionId: nonce, qrPngDataUrl });
 }

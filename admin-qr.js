@@ -170,22 +170,9 @@ if (qrForm) {
       const fullUrl = `${window.location.origin}${urlPath}`;
       lastUrl = fullUrl;
 
-      if (qrCanvas && window.QRCode && typeof window.QRCode.toCanvas === 'function') {
-        qrCanvas.style.display = 'block';
-        await window.QRCode.toCanvas(qrCanvas, fullUrl, {
-          width: 220,
-          margin: 1,
-          errorCorrectionLevel: 'M'
-        });
-      }
-
-      if (qrImg && window.QRCode && typeof window.QRCode.toDataURL === 'function') {
-        const dataUrl = await window.QRCode.toDataURL(fullUrl, {
-          width: 220,
-          margin: 1,
-          errorCorrectionLevel: 'M'
-        });
-        qrImg.src = dataUrl;
+      const qrPngDataUrl = String(data?.qrPngDataUrl ?? '').trim();
+      if (qrImg && qrPngDataUrl.startsWith('data:image/')) {
+        qrImg.src = qrPngDataUrl;
         qrImg.style.display = 'block';
       }
 

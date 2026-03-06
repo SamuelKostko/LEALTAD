@@ -84,6 +84,28 @@ export default async function handler(req, res) {
   const payload = `${points}|${ts}|${nonce}|${desc}`;
   const expected = sign(payload, secret);
   if (!timingSafeEqualString(sig, expected)) {
+    // Helpful diagnostic: if the transaction exists and the stored signature matches
+    // the QR, but the server's expected signature does not, it strongly suggests
+    // QR_SECRET differs between the environment that minted the QR and this one.
+    try {
+      const firestore = getFirestoreDb();
+      const txRef = firestore.collection('transactions').doc(nonce);
+      const snap = await txRef.get();
+      if (snap.exists) {
+        const data = snap.data() || {};
+        const status = String(data.status ?? '');
+        const storedSig = String(data.sig ?? '').trim();
+        if (status === 'pending' && storedSig && storedSig === sig) {
+          sendJson(res, 500, {
+            error: 'QR_SECRET mismatch between environments (generate and redeem must use the same deployment/env vars)'
+          });
+          return;
+        }
+      }
+    } catch {
+      // Ignore diagnostics failures.
+    }
+
     sendJson(res, 403, { error: 'Invalid signature' });
     return;
   }
