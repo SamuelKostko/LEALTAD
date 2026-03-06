@@ -10,6 +10,7 @@ const resultEl = document.getElementById('result');
 
 const copyBtn = document.getElementById('copyBtn');
 const qrCanvas = document.getElementById('qrCanvas');
+const qrImg = document.getElementById('qrImg');
 
 let lastUrl = '';
 
@@ -120,6 +121,15 @@ if (qrForm) {
 
     setCopyEnabled(false);
     lastUrl = '';
+    if (qrCanvas) {
+      const ctx = qrCanvas.getContext && qrCanvas.getContext('2d');
+      if (ctx) ctx.clearRect(0, 0, qrCanvas.width, qrCanvas.height);
+      qrCanvas.style.display = 'none';
+    }
+    if (qrImg) {
+      qrImg.src = '';
+      qrImg.style.display = 'none';
+    }
 
     const points = Number(String(pointsEl?.value ?? '').trim());
     const description = String(descriptionEl?.value ?? '').trim();
@@ -155,6 +165,8 @@ if (qrForm) {
         return;
       }
 
+      const transactionId = String(data?.transactionId ?? '').trim();
+
       const fullUrl = `${window.location.origin}${urlPath}`;
       lastUrl = fullUrl;
 
@@ -167,8 +179,23 @@ if (qrForm) {
         });
       }
 
+      if (qrImg && window.QRCode && typeof window.QRCode.toDataURL === 'function') {
+        const dataUrl = await window.QRCode.toDataURL(fullUrl, {
+          width: 220,
+          margin: 1,
+          errorCorrectionLevel: 'M'
+        });
+        qrImg.src = dataUrl;
+        qrImg.style.display = 'block';
+      }
+
       setCopyEnabled(true);
-      setResult('adminResult--ok', `QR listo. Link: ${fullUrl}`);
+      setResult(
+        'adminResult--ok',
+        transactionId
+          ? `QR listo. Tx: ${transactionId}. Link: ${fullUrl}`
+          : `QR listo. Link: ${fullUrl}`
+      );
     } catch {
       setResult('adminResult--err', 'Fallo de red.');
     }

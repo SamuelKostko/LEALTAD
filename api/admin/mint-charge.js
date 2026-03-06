@@ -1,6 +1,8 @@
 import crypto from 'node:crypto';
+import { FieldValue } from 'firebase-admin/firestore';
 import { readJsonBody, sendJson } from '../_lib/http.js';
 import { requireAdmin } from '../_lib/adminAuth.js';
+import { getFirestoreDb } from '../_lib/firestore.js';
 
 function getQrSecret() {
   return String(process.env.QR_SECRET ?? '').trim();
@@ -41,14 +43,42 @@ export default async function handler(req, res) {
   }
 
   const ts = Date.now();
-  const nonce = crypto.randomBytes(12).toString('base64url');
   const desc = description.slice(0, 120);
 
-  const payload = `${points}|${ts}|${nonce}|${desc}`;
-  const sig = sign(payload, secret);
+  const firestore = getFirestoreDb();
+
+  // Create a pending transaction tied to a unique nonce.
+  // Retry a couple of times on collision (extremely unlikely).
+  let nonce = '';
+  let sig = '';
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    nonce = crypto.randomBytes(12).toString('base64url');
+    const payload = `${points}|${ts}|${nonce}|${desc}`;
+    sig = sign(payload, secret);
+
+    const txRef = firestore.collection('transactions').doc(nonce);
+    try {
+      await txRef.create({
+        type: 'pos_charge',
+        status: 'pending',
+        points,
+        description: desc,
+        ts,
+        nonce,
+        sig,
+        createdAt: FieldValue.serverTimestamp()
+      });
+      break;
+    } catch (err) {
+      if (attempt === 2) {
+        sendJson(res, 500, { error: 'Failed to create transaction' });
+        return;
+      }
+    }
+  }
 
   // QR contains a URL-like string; the app will append the customer token at scan time.
   const url = `/api/pos/redeem?points=${encodeURIComponent(points)}&ts=${encodeURIComponent(ts)}&nonce=${encodeURIComponent(nonce)}&desc=${encodeURIComponent(desc)}&sig=${encodeURIComponent(sig)}`;
 
-  sendJson(res, 200, { ok: true, url });
+  sendJson(res, 200, { ok: true, url, transactionId: nonce });
 }

@@ -58,6 +58,25 @@ export default async function handler(req, res) {
   const MAX_AGE_MS = 5 * 60 * 1000;
   const age = Math.abs(Date.now() - ts);
   if (age > MAX_AGE_MS) {
+    // Best-effort: mark transaction as expired if it exists and is still pending.
+    try {
+      const firestore = getFirestoreDb();
+      const txRef = firestore.collection('transactions').doc(nonce);
+      await firestore.runTransaction(async (t) => {
+        const snap = await t.get(txRef);
+        if (!snap.exists) return;
+        const status = String(snap.data()?.status ?? '');
+        if (status !== 'pending') return;
+        t.set(
+          txRef,
+          { status: 'expired', processedAt: FieldValue.serverTimestamp() },
+          { merge: true }
+        );
+      });
+    } catch {
+      // Ignore.
+    }
+
     sendJson(res, 400, { error: 'QR expired' });
     return;
   }
@@ -71,32 +90,42 @@ export default async function handler(req, res) {
 
   const firestore = getFirestoreDb();
 
-  // Enforce one-time use per nonce.
-  const redeemRef = firestore.collection('pos_redeems').doc(nonce);
-  try {
-    await redeemRef.create({
-      token,
-      points,
-      desc,
-      createdAt: FieldValue.serverTimestamp(),
-      ts
-    });
-  } catch {
-    sendJson(res, 409, { error: 'QR already used' });
-    return;
-  }
-
-  // Apply redemption: subtract points from card balance (must not go negative).
+  // Apply redemption atomically:
+  // - transaction must exist and be pending
+  // - card must exist and have enough balance
+  // - on success: subtract points and mark transaction success
   try {
     const result = await firestore.runTransaction(async (tx) => {
+      const txRef = firestore.collection('transactions').doc(nonce);
       const cardRef = firestore.collection('cards').doc(token);
-      const snap = await tx.get(cardRef);
-      if (!snap.exists) {
-        throw new Error('Card not found');
+
+      const [txSnap, cardSnap] = await Promise.all([tx.get(txRef), tx.get(cardRef)]);
+
+      if (!txSnap.exists) throw new Error('Transaction not found');
+      const txData = txSnap.data() || {};
+      const status = String(txData.status ?? '');
+      if (status !== 'pending') {
+        throw new Error('Transaction not pending');
       }
 
-      const data = snap.data() || {};
-      const current = Number(data.balance ?? 0);
+      // Ensure the QR params match the minted transaction.
+      const mintedPoints = Number(txData.points ?? 0);
+      const mintedTs = Number(txData.ts ?? 0);
+      const mintedSig = String(txData.sig ?? '').trim();
+      const mintedDesc = String(txData.description ?? '').trim().slice(0, 120);
+      if (
+        !Number.isFinite(mintedPoints) ||
+        mintedPoints !== points ||
+        mintedTs !== ts ||
+        mintedSig !== sig ||
+        mintedDesc !== desc
+      ) {
+        throw new Error('Invalid transaction payload');
+      }
+
+      if (!cardSnap.exists) throw new Error('Card not found');
+      const cardData = cardSnap.data() || {};
+      const current = Number(cardData.balance ?? 0);
       if (!Number.isFinite(current)) throw new Error('Invalid balance');
 
       const next = current - points;
@@ -105,6 +134,19 @@ export default async function handler(req, res) {
       }
 
       tx.set(cardRef, { balance: next, updatedAt: new Date().toISOString() }, { merge: true });
+
+      tx.set(
+        txRef,
+        {
+          status: 'success',
+          token,
+          balanceBefore: current,
+          balanceAfter: next,
+          processedAt: FieldValue.serverTimestamp()
+        },
+        { merge: true }
+      );
+
       return { previous: current, next };
     });
 
@@ -116,8 +158,6 @@ export default async function handler(req, res) {
       balance: result.next
     });
   } catch (err) {
-    // If transaction failed, the nonce doc has been created already.
-    // This is acceptable for preventing repeated attempts.
     sendJson(res, 400, { error: err?.message ?? String(err) });
   }
 }
