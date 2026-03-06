@@ -206,7 +206,7 @@ if (qrButton) {
     if (cta) cta.hidden = true;
     return;
   }
-
+ 
   syncBalance();
   loadCardData();
 
