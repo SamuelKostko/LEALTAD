@@ -486,8 +486,16 @@ if (qrButton) {
       if (text.startsWith("http://") || text.startsWith("https://")) {
         return new URL(text);
       }
+      // Common: domain/path without scheme (e.g. lealtad-three.vercel.app/api/pos/redeem?...)
+      if (/^[a-z0-9-]+\.[a-z]{2,}(\/|\?|$)/i.test(text)) {
+        return new URL(`https://${text}`);
+      }
       if (text.startsWith("/")) {
         return new URL(text, window.location.origin);
+      }
+      // Common: querystring only
+      if (text.startsWith("?") && text.includes("points=") && text.includes("sig=")) {
+        return new URL(`/api/pos/redeem${text}`, window.location.origin);
       }
       // Last resort: treat as a relative path
       return new URL(`/${text}`, window.location.origin);
@@ -496,19 +504,53 @@ if (qrButton) {
     }
   };
 
-  const redeemIfChargeUrl = async (raw) => {
+  const extractRedeemParams = (raw) => {
     const url = tryParseScannedUrl(raw);
-    if (!url) return false;
+    const text = String(raw ?? "").trim();
 
-    if (url.pathname !== "/api/pos/redeem") return false;
+    const fromUrl = (u) => {
+      if (!u) return null;
+      const pathname = u.pathname || "";
+      if (!pathname.endsWith("/api/pos/redeem")) return null;
+      const points = u.searchParams.get("points") || "";
+      const ts = u.searchParams.get("ts") || "";
+      const nonce = u.searchParams.get("nonce") || "";
+      const desc = u.searchParams.get("desc") || "";
+      const sig = u.searchParams.get("sig") || "";
+      if (!points || !ts || !nonce || !sig) return null;
+      return { points, ts, nonce, desc, sig, parsedFrom: "url" };
+    };
 
-    // Always redeem against the current origin to avoid cross-domain/CORS issues
-    // (e.g., QR generated from a different deployment).
-    const redeemUrl = new URL("/api/pos/redeem", window.location.origin);
-    for (const key of ["points", "ts", "nonce", "desc", "sig"]) {
-      const v = url.searchParams.get(key);
-      if (v) redeemUrl.searchParams.set(key, v);
+    const direct = fromUrl(url);
+    if (direct) return direct;
+
+    // Fallback: sometimes scanners give only the path portion
+    if (text.includes("/api/pos/redeem")) {
+      try {
+        const idx = text.indexOf("/api/pos/redeem");
+        const tail = text.slice(idx);
+        const u = new URL(tail.startsWith("/") ? tail : `/${tail}`, window.location.origin);
+        const p = fromUrl(u);
+        if (p) return { ...p, parsedFrom: "tail" };
+      } catch {
+        // Ignore.
+      }
     }
+
+    return null;
+  };
+
+  const redeemIfChargeUrl = async (raw) => {
+    const params = extractRedeemParams(raw);
+    if (!params) return false;
+
+    // Always redeem against the current origin to avoid cross-domain/CORS issues.
+    const redeemUrl = new URL("/api/pos/redeem", window.location.origin);
+    redeemUrl.searchParams.set("points", params.points);
+    redeemUrl.searchParams.set("ts", params.ts);
+    redeemUrl.searchParams.set("nonce", params.nonce);
+    if (params.desc) redeemUrl.searchParams.set("desc", params.desc);
+    redeemUrl.searchParams.set("sig", params.sig);
 
     const token = getTokenFromUrl();
     if (!token) {
@@ -596,7 +638,9 @@ if (qrButton) {
               stopStream();
               const handled = await redeemIfChargeUrl(qr.data);
               if (!handled) {
-                resultEl.textContent = "QR no válido";
+                const raw = String(qr.data ?? "").trim();
+                const preview = raw.length > 160 ? `${raw.slice(0, 160)}…` : raw;
+                resultEl.textContent = preview || "QR no válido";
                 hint.textContent = "No se pudo procesar";
                 toast.show("QR no válido");
               }
