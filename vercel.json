@@ -1,6 +1,7 @@
 {
   "rewrites": [
     { "source": "/card/(.*)", "destination": "/index.html" },
-    { "source": "/admin", "destination": "/admin-email.html" }
+    { "source": "/admin", "destination": "/admin-email.html" },
+    { "source": "/admin/qr", "destination": "/admin-qr.html" }
   ]
 }

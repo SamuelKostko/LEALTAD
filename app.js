@@ -426,6 +426,93 @@ if (qrButton) {
   let scanning = false;
   const ctx = canvas.getContext("2d");
 
+  const getTokenFromUrl = () => {
+    try {
+      const url = new URL(window.location.href);
+      const qp = (url.searchParams.get("token") || url.searchParams.get("t") || "").trim();
+      if (qp) return qp;
+
+      const path = url.pathname || "";
+      if (path.startsWith("/card/")) {
+        return decodeURIComponent(path.slice("/card/".length)).trim();
+      }
+    } catch {
+      // Ignore.
+    }
+    return "";
+  };
+
+  const syncDisplayedBalance = (balance) => {
+    const pointsEl = document.getElementById("points");
+    const balanceEl = document.getElementById("clientBalance");
+    const n = Number(balance);
+    if (!Number.isFinite(n)) return;
+    if (pointsEl) pointsEl.textContent = String(n);
+    if (balanceEl) balanceEl.textContent = String(n);
+  };
+
+  const tryParseScannedUrl = (raw) => {
+    const text = String(raw ?? "").trim();
+    if (!text) return null;
+    try {
+      if (text.startsWith("http://") || text.startsWith("https://")) {
+        return new URL(text);
+      }
+      if (text.startsWith("/")) {
+        return new URL(text, window.location.origin);
+      }
+      // Last resort: treat as a relative path
+      return new URL(`/${text}`, window.location.origin);
+    } catch {
+      return null;
+    }
+  };
+
+  const redeemIfChargeUrl = async (raw) => {
+    const url = tryParseScannedUrl(raw);
+    if (!url) return false;
+
+    if (url.pathname !== "/api/pos/redeem") return false;
+
+    const token = getTokenFromUrl();
+    if (!token) {
+      hint.textContent = "Token requerido";
+      resultEl.textContent = "";
+      return true;
+    }
+
+    if (!url.searchParams.get("token")) {
+      url.searchParams.set("token", token);
+    }
+
+    hint.textContent = "Procesando cobro...";
+    resultEl.textContent = "";
+
+    try {
+      const res = await fetch(url.toString(), { cache: "no-store" });
+      const data = await res.json().catch(() => null);
+
+      if (!res.ok || !data?.ok) {
+        const msg = data?.error || data?.message || `Error (${res.status})`;
+        hint.textContent = "Cobro no aplicado";
+        resultEl.textContent = msg;
+        return true;
+      }
+
+      if (typeof data.balance !== "undefined") {
+        syncDisplayedBalance(data.balance);
+      }
+
+      hint.textContent = "Cobro aplicado";
+      resultEl.textContent = `Nuevo saldo: ${data.balance}`;
+      return true;
+    } catch {
+      hint.textContent = "Cobro no aplicado";
+      resultEl.textContent = "Fallo de red";
+      return true;
+    }
+  };
+
   const stopStream = () => {
     scanning = false;
     if (stream) {
@@ -440,7 +527,7 @@ if (qrButton) {
     scanner.setAttribute("aria-hidden", "true");
   };
 
-  const startScanLoop = () => {
+  const startScanLoop = async () => {
     if (!scanning) return;
 
     if (video.readyState === video.HAVE_ENOUGH_DATA) {
@@ -459,10 +546,14 @@ if (qrButton) {
             if (qr && qr.data) {
               scanning = false;
               stopStream();
-              resultEl.textContent = qr.data;
-              hint.textContent = "Código detectado";
+              const handled = await redeemIfChargeUrl(qr.data);
+              if (!handled) {
+                resultEl.textContent = qr.data;
+                hint.textContent = "Código detectado";
+              }
+
               // Cerrar automáticamente tras un breve momento
-              window.setTimeout(closeScanner, 1200);
+              window.setTimeout(closeScanner, 1400);
               return;
             }
           }
@@ -473,7 +564,9 @@ if (qrButton) {
     }
 
     if (scanning) {
-      window.requestAnimationFrame(startScanLoop);
+      window.requestAnimationFrame(() => {
+        startScanLoop();
+      });
     }
   };
 

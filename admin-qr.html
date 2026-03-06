@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+
+    <title>Admin · QR de cobro</title>
+
+    <meta name="theme-color" content="#000000" id="themeColor" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="description" content="Panel admin para generar QR de cobro" />
+
+    <link rel="icon" href="/icons/icon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+
+  <body>
+    <div class="bg" aria-hidden="true"></div>
+
+    <div class="app admin" id="app">
+      <header class="header">
+        <div class="header__text">
+          <div class="header__greeting">Admin</div>
+          <div class="header__label">QR de cobro</div>
+        </div>
+
+        <a class="admin__back" href="/admin" aria-label="Volver al admin">Volver</a>
+      </header>
+
+      <main class="content admin__content" aria-label="Panel">
+        <section class="adminCard" aria-label="Acceso admin">
+          <div class="adminCard__title">Acceso</div>
+          <p class="adminCard__hint">Inicia sesión para generar códigos QR.</p>
+
+          <form class="adminForm" id="loginForm">
+            <label class="adminField">
+              <span class="adminField__label">Password</span>
+              <input class="adminField__input" id="adminPassword" type="password" autocomplete="current-password" placeholder="Tu password admin" required />
+            </label>
+
+            <div class="adminActions">
+              <button class="adminButton" id="loginBtn" type="submit">Entrar</button>
+            </div>
+
+            <div class="adminResult" id="loginResult" aria-live="polite"></div>
+          </form>
+        </section>
+
+        <section class="adminCard" aria-label="Generar QR" id="qrSection" hidden>
+          <div class="adminCard__title">Generar QR de cobro</div>
+          <p class="adminCard__hint">El cliente escanea este QR desde su PWA para descontar puntos.</p>
+
+          <form class="adminForm" id="qrForm">
+            <label class="adminField">
+              <span class="adminField__label">Puntos a cobrar</span>
+              <input class="adminField__input" id="points" type="number" inputmode="numeric" min="1" step="1" placeholder="50" required />
+            </label>
+
+            <label class="adminField">
+              <span class="adminField__label">Descripción</span>
+              <input class="adminField__input" id="description" type="text" autocomplete="off" placeholder="Canje" />
+            </label>
+
+            <div class="adminActions">
+              <button class="adminButton" id="genBtn" type="submit">Generar</button>
+              <button class="adminButton adminButton--ghost" id="copyBtn" type="button" disabled>Copiar link</button>
+            </div>
+
+            <div class="adminResult" id="result" aria-live="polite"></div>
+
+            <div id="qrWrap" style="display:flex;justify-content:center;padding-top:14px;">
+              <canvas id="qrCanvas" width="220" height="220" style="display:none;"></canvas>
+            </div>
+          </form>
+        </section>
+      </main>
+    </div>
+
+    <script src="https://unpkg.com/qrcode@1.5.3/build/qrcode.min.js" crossorigin="anonymous"></script>
+    <script src="/admin-qr.js" defer></script>
+  </body>
+</html>
