@@ -191,6 +191,25 @@ body {
   gap: 14px;
 }
 
+@media (min-width: 980px) {
+  .admin.app {
+    max-width: 1100px;
+  }
+
+  .admin__content {
+    display: grid;
+    grid-template-columns: 420px 1fr;
+    align-items: start;
+    gap: 14px;
+  }
+
+  /* Put main forms on the right column */
+  #createCardSection,
+  #qrSection {
+    grid-column: 2;
+  }
+}
+
 .admin__back {
   display: inline-flex;
   align-items: center;
@@ -207,9 +226,9 @@ body {
 
 .adminCard {
   background: linear-gradient(180deg, var(--surface-3), var(--surface-4));
-  border: 1px solid var(--border-soft);
-  border-radius: 18px;
-  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  padding: 16px;
   backdrop-filter: blur(10px);
 }
 
@@ -258,7 +277,7 @@ body {
 .adminField__input {
   width: 100%;
   padding: 12px 12px;
-  border-radius: 14px;
+  border-radius: 18px;
   border: 1px solid var(--border-soft);
   background: var(--surface);
   color: var(--text);
@@ -280,7 +299,7 @@ body {
   border: 1px solid var(--border-2);
   background: var(--surface-3);
   color: var(--text);
-  border-radius: 14px;
+  border-radius: 18px;
   padding: 12px 12px;
   font-weight: 650;
   letter-spacing: 0.2px;
@@ -579,7 +598,7 @@ body {
 
 .card {
   position: relative;
-  border-radius: 22px;
+  border-radius: 26px;
   padding: 18px 18px 14px;
   background: var(--glass);
   border: 1px solid var(--glass-border);
@@ -1162,7 +1181,7 @@ body {
 
 .profileMenu__body {
   margin-top: 14px;
-  border-radius: 18px;
+  border-radius: 22px;
   border: 1px solid var(--glass-border);
   background: var(--glass);
   backdrop-filter: blur(20px);
@@ -1190,7 +1209,7 @@ body {
 }
 
 .toast__frame {
-  border-radius: 16px;
+  border-radius: 18px;
   border: 1px solid var(--glass-border);
   background: var(--glass);
   backdrop-filter: blur(18px);
@@ -1228,7 +1247,7 @@ body {
 .scanPopup__frame {
   position: relative;
   width: min(520px, calc(100vw - 36px));
-  border-radius: 22px;
+  border-radius: 26px;
   border: 1px solid var(--glass-border);
   background: var(--glass);
   backdrop-filter: blur(22px);
