@@ -192,6 +192,7 @@ if (qrButton) {
     setPoints(0);
   } else {
     // Root domain without token shows admin panel (password required).
+    document.body.classList.add('mode-admin');
     if (greetingNameEl) greetingNameEl.textContent = "Admin";
     if (avatarInitialsEl) avatarInitialsEl.textContent = "AD";
     if (updatedEl) updatedEl.textContent = "";
@@ -220,6 +221,7 @@ if (qrButton) {
     const goCards = document.getElementById('adminRootGoCards');
     const goQr = document.getElementById('adminRootGoQr');
     const txRefresh = document.getElementById('adminTxRefresh');
+    const adminLogout = document.getElementById('adminLogout');
 
     const clientsList = document.getElementById('adminClientsList');
     const clientsResult = document.getElementById('adminClientsResult');
@@ -252,6 +254,7 @@ if (qrButton) {
     const renderButtonsList = (container, items) => {
       if (!container) return;
       container.innerHTML = '';
+      container.className = 'adminClientList';
       for (const item of items) {
         container.appendChild(item);
       }
@@ -263,24 +266,105 @@ if (qrButton) {
       }
     };
 
-    const renderTxList = (container, transactions) => {
+    const formatTxDate = (tx) => {
+      const iso = tx.processedAt || tx.createdAt || '';
+      if (!iso) return '—';
+      const d = new Date(iso);
+      if (Number.isNaN(d.getTime())) return '—';
+      return d.toLocaleString('es-VE', {
+        year: '2-digit',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    };
+
+    const renderTxList = (container, transactions, mode) => {
       if (!container) return;
       container.innerHTML = '';
-      for (const t of transactions) {
-        const row = document.createElement('div');
-        row.className = 'adminResult';
-        const status = t.status || '—';
-        const pts = Number.isFinite(Number(t.points)) ? Number(t.points) : 0;
-        const token = t.token ? ` · ${t.token}` : '';
-        const desc = t.description ? ` · ${t.description}` : '';
-        row.textContent = `${status} · ${pts}${token}${desc}`;
-        container.appendChild(row);
-      }
+      container.className = `adminTable ${mode === 'card' ? 'adminTable--card' : 'adminTable--all'}`;
+
       if (!transactions.length) {
         const empty = document.createElement('div');
         empty.className = 'adminResult';
         empty.textContent = 'Sin transacciones';
         container.appendChild(empty);
+        return;
+      }
+
+      const head = document.createElement('div');
+      head.className = 'adminTableRow adminTableRow--head';
+      const headCells = mode === 'card'
+        ? ['Fecha', 'Tipo', 'Estado', 'Pts', 'Antes', 'Después', 'Descripción']
+        : ['Fecha', 'Tipo', 'Estado', 'Pts', 'Token', 'Descripción'];
+      for (const label of headCells) {
+        const c = document.createElement('div');
+        c.className = 'adminTableCell adminTableCell--muted';
+        c.textContent = label;
+        head.appendChild(c);
+      }
+      container.appendChild(head);
+
+      for (const t of transactions) {
+        const row = document.createElement('div');
+        row.className = 'adminTableRow';
+
+        const status = String(t.status || '—');
+        const pts = Number.isFinite(Number(t.points)) ? Number(t.points) : 0;
+        const type = String(t.type || '');
+        const tokenText = String(t.token || '');
+        const descText = String(t.description || '');
+
+        const before = Number.isFinite(Number(t.balanceBefore)) ? Number(t.balanceBefore) : null;
+        const after = Number.isFinite(Number(t.balanceAfter)) ? Number(t.balanceAfter) : null;
+
+        const cells = [];
+
+        const dateCell = document.createElement('div');
+        dateCell.className = 'adminTableCell adminTableCell--muted';
+        dateCell.textContent = formatTxDate(t);
+        cells.push(dateCell);
+
+        const typeCell = document.createElement('div');
+        typeCell.className = 'adminTableCell adminTableCell--muted';
+        typeCell.textContent = type || '—';
+        cells.push(typeCell);
+
+        const statusCell = document.createElement('div');
+        statusCell.className = 'adminTableCell adminTableCell--strong';
+        statusCell.textContent = status;
+        cells.push(statusCell);
+
+        const ptsCell = document.createElement('div');
+        ptsCell.className = 'adminTableCell adminTableCell--strong';
+        ptsCell.textContent = String(pts);
+        cells.push(ptsCell);
+
+        if (mode === 'card') {
+          const beforeCell = document.createElement('div');
+          beforeCell.className = 'adminTableCell adminTableCell--muted';
+          beforeCell.textContent = before === null ? '—' : String(before);
+          cells.push(beforeCell);
+
+          const afterCell = document.createElement('div');
+          afterCell.className = 'adminTableCell adminTableCell--muted';
+          afterCell.textContent = after === null ? '—' : String(after);
+          cells.push(afterCell);
+        } else {
+          const tokenCell = document.createElement('div');
+          tokenCell.className = 'adminTableCell adminTableCell--muted';
+          tokenCell.textContent = tokenText || '—';
+          cells.push(tokenCell);
+        }
+
+        const descCell = document.createElement('div');
+        descCell.className = 'adminTableCell';
+        descCell.textContent = descText || '—';
+        cells.push(descCell);
+
+        for (const c of cells) row.appendChild(c);
+        container.appendChild(row);
       }
     };
 
@@ -302,18 +386,40 @@ if (qrButton) {
         const data = await apiGet('/api/admin/cards?limit=80');
         const cards = Array.isArray(data?.cards) ? data.cards : [];
 
+        let selectedToken = '';
+
+        const updateActiveClient = () => {
+          if (!clientsList) return;
+          const buttons = clientsList.querySelectorAll('button[data-token]');
+          for (const b of buttons) {
+            if (!(b instanceof HTMLElement)) continue;
+            b.classList.toggle('is-active', b.getAttribute('data-token') === selectedToken);
+          }
+        };
+
         const els = cards.map((c) => {
           const b = document.createElement('button');
           b.type = 'button';
-          b.className = 'adminButton adminButton--ghost';
-          b.style.width = '100%';
-          b.style.textAlign = 'left';
+          b.className = 'adminButton adminButton--ghost adminClientButton';
           const name = String(c?.name ?? '').trim() || '—';
           const cedula = String(c?.cedula ?? '').trim();
           const bal = Number.isFinite(Number(c?.balance)) ? Number(c.balance) : 0;
           const token = String(c?.token ?? '').trim();
-          b.textContent = `${name}${cedula ? ` · ${cedula}` : ''} · ${bal} pts`;
+          b.setAttribute('data-token', token);
+
+          const title = document.createElement('div');
+          title.className = 'adminClientButton__name';
+          title.textContent = name;
+          b.appendChild(title);
+
+          const meta = document.createElement('div');
+          meta.className = 'adminClientButton__meta';
+          meta.textContent = `${cedula ? `${cedula} · ` : ''}${bal} pts`;
+          b.appendChild(meta);
+
           b.addEventListener('click', () => {
+            selectedToken = token;
+            updateActiveClient();
             if (cardTxHint) cardTxHint.textContent = `Token: ${token}`;
             loadCardTransactions(token);
           });
@@ -337,7 +443,7 @@ if (qrButton) {
       try {
         const data = await apiGet('/api/admin/transactions?limit=80');
         const txs = Array.isArray(data?.transactions) ? data.transactions : [];
-        renderTxList(txList, txs);
+        renderTxList(txList, txs, 'all');
         setText(txResult, '');
       } catch (err) {
         if (err?.status === 401) {
@@ -354,7 +460,7 @@ if (qrButton) {
       try {
         const data = await apiGet(`/api/admin/transactions?token=${encodeURIComponent(token)}&limit=80`);
         const txs = Array.isArray(data?.transactions) ? data.transactions : [];
-        renderTxList(cardTxList, txs);
+        renderTxList(cardTxList, txs, 'card');
         setText(cardTxResult, '');
       } catch (err) {
         if (err?.status === 401) {
@@ -372,6 +478,24 @@ if (qrButton) {
       if (goQr) goQr.addEventListener('click', () => { window.location.href = '/admin/qr'; });
       if (txRefresh) txRefresh.addEventListener('click', () => { loadClients(); loadAllTransactions(); });
 
+      if (adminLogout) {
+        adminLogout.hidden = false;
+        adminLogout.addEventListener('click', async () => {
+          try {
+            await fetch('/api/admin/logout', { method: 'POST' });
+          } catch {
+            // Ignore.
+          }
+
+          if (clientsList) clientsList.innerHTML = '';
+          if (cardTxList) cardTxList.innerHTML = '';
+          if (txList) txList.innerHTML = '';
+          if (cardTxHint) cardTxHint.textContent = 'Selecciona un cliente.';
+          setAuthenticatedUi(false);
+          setLoginResult('adminResult--info', 'Sesión cerrada.');
+        });
+      }
+
       loadClients();
       loadAllTransactions();
       if (cardTxHint) cardTxHint.textContent = 'Selecciona un cliente.';
@@ -387,9 +511,11 @@ if (qrButton) {
           initAuthed();
         } else {
           setAuthenticatedUi(false);
+          if (adminLogout) adminLogout.hidden = true;
         }
       } catch {
         setAuthenticatedUi(false);
+        if (adminLogout) adminLogout.hidden = true;
       }
     };
 
@@ -651,31 +777,72 @@ if (qrButton) {
   let scanning = false;
   const ctx = canvas.getContext("2d");
 
-  // Temporary popup feedback (toast)
-  const toast = (() => {
+  // Large scan result popup (success / rejected)
+  const scanPopup = (() => {
     try {
       const root = document.createElement("div");
-      root.className = "toast";
+      root.className = "scanPopup";
+      root.setAttribute("aria-hidden", "true");
+
+      const backdrop = document.createElement("div");
+      backdrop.className = "scanPopup__backdrop";
+
       const frame = document.createElement("div");
-      frame.className = "toast__frame";
-      frame.setAttribute("role", "status");
-      frame.setAttribute("aria-live", "polite");
+      frame.className = "scanPopup__frame";
+      frame.setAttribute("role", "dialog");
+      frame.setAttribute("aria-modal", "true");
+      frame.setAttribute("aria-label", "Resultado del cobro");
+
+      const icon = document.createElement("div");
+      icon.className = "scanPopup__icon";
+      icon.setAttribute("aria-hidden", "true");
+
+      const title = document.createElement("div");
+      title.className = "scanPopup__title";
+
+      const subtitle = document.createElement("div");
+      subtitle.className = "scanPopup__subtitle";
+
+      frame.appendChild(icon);
+      frame.appendChild(title);
+      frame.appendChild(subtitle);
+      root.appendChild(backdrop);
       root.appendChild(frame);
       document.body.appendChild(root);
 
-      let timer = null;
-      const show = (message) => {
-        frame.textContent = String(message ?? "");
-        root.classList.add("toast--show");
-        if (timer) window.clearTimeout(timer);
-        timer = window.setTimeout(() => {
-          root.classList.remove("toast--show");
-        }, 2400);
+      const icons = {
+        ok: `<svg viewBox="0 0 24 24" width="44" height="44" fill="none" aria-hidden="true"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+        err: `<svg viewBox="0 0 24 24" width="44" height="44" fill="none" aria-hidden="true"><path d="M18 6L6 18" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path d="M6 6l12 12" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg>`
       };
 
-      return { show };
+      let timer = null;
+      const close = () => {
+        root.classList.remove("scanPopup--show");
+        root.setAttribute("aria-hidden", "true");
+        if (timer) window.clearTimeout(timer);
+        timer = null;
+      };
+
+      const show = ({ kind, headline, detail }) => {
+        const k = kind === "ok" ? "ok" : "err";
+        icon.innerHTML = icons[k];
+        icon.classList.toggle("scanPopup__icon--ok", k === "ok");
+        icon.classList.toggle("scanPopup__icon--err", k === "err");
+        title.textContent = String(headline ?? "");
+        subtitle.textContent = String(detail ?? "");
+        root.classList.add("scanPopup--show");
+        root.setAttribute("aria-hidden", "false");
+
+        if (timer) window.clearTimeout(timer);
+        timer = window.setTimeout(() => {
+          close();
+        }, 2600);
+      };
+
+      root.addEventListener("click", close);
+      return { show, close };
     } catch {
-      return { show: () => {} };
+      return { show: () => {}, close: () => {} };
     }
   })();
 
@@ -779,16 +946,11 @@ if (qrButton) {
 
     const token = getTokenFromUrl();
     if (!token) {
-      hint.textContent = "Token requerido";
-      resultEl.textContent = "";
-      toast.show("Token requerido");
+      scanPopup.show({ kind: "err", headline: "Rechazada", detail: "Token requerido" });
       return true;
     }
 
     redeemUrl.searchParams.set("token", token);
-
-    hint.textContent = "Procesando cobro...";
-    resultEl.textContent = "";
 
     try {
       const res = await fetch(redeemUrl.toString(), { cache: "no-store" });
@@ -796,18 +958,15 @@ if (qrButton) {
 
       if (!res.ok || !data?.ok) {
         const msg = data?.error || data?.message || `Error (${res.status})`;
-        hint.textContent = "Cobro no aplicado";
-        resultEl.textContent = msg;
-
         const normalized = String(msg).toLowerCase();
         if (normalized.includes("insufficient balance") || normalized.includes("saldo")) {
-          toast.show("Saldo insuficiente");
+          scanPopup.show({ kind: "err", headline: "Rechazada", detail: "Saldo insuficiente" });
         } else if (normalized.includes("expired")) {
-          toast.show("QR vencido");
+          scanPopup.show({ kind: "err", headline: "Rechazada", detail: "QR vencido" });
         } else if (normalized.includes("not pending") || normalized.includes("used")) {
-          toast.show("QR ya usado");
+          scanPopup.show({ kind: "err", headline: "Rechazada", detail: "QR ya usado" });
         } else {
-          toast.show("Error al cobrar");
+          scanPopup.show({ kind: "err", headline: "Rechazada", detail: "Error al cobrar" });
         }
         return true;
       }
@@ -816,14 +975,14 @@ if (qrButton) {
         syncDisplayedBalance(data.balance);
       }
 
-      hint.textContent = "Cobro aplicado";
-      resultEl.textContent = `Nuevo saldo: ${data.balance}`;
-      toast.show(`Transacción exitosa. Nuevo saldo: ${data.balance}`);
+      scanPopup.show({
+        kind: "ok",
+        headline: "Exitosa",
+        detail: `Nuevo saldo: ${typeof data.balance !== "undefined" ? data.balance : "—"}`
+      });
       return true;
     } catch {
-      hint.textContent = "Cobro no aplicado";
-      resultEl.textContent = "Fallo de red";
-      toast.show("Error de red");
+      scanPopup.show({ kind: "err", headline: "Rechazada", detail: "Error de red" });
       return true;
     }
   };
@@ -861,17 +1020,11 @@ if (qrButton) {
             if (qr && qr.data) {
               scanning = false;
               stopStream();
+              closeScanner();
               const handled = await redeemIfChargeUrl(qr.data);
               if (!handled) {
-                const raw = String(qr.data ?? "").trim();
-                const preview = raw.length > 160 ? `${raw.slice(0, 160)}…` : raw;
-                resultEl.textContent = preview || "QR no válido";
-                hint.textContent = "No se pudo procesar";
-                toast.show("QR no válido");
+                scanPopup.show({ kind: "err", headline: "Rechazada", detail: "QR no válido" });
               }
-
-              // Cerrar automáticamente tras un breve momento
-              window.setTimeout(closeScanner, 1400);
               return;
             }
           }

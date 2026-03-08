@@ -24,6 +24,20 @@ function toIso(value) {
   return '';
 }
 
+function isMissingIndexError(err) {
+  const message = String(err?.message ?? '');
+  return (
+    message.includes('FAILED_PRECONDITION') ||
+    message.toLowerCase().includes('requires an index') ||
+    message.toLowerCase().includes('create it here')
+  );
+}
+
+function toMs(iso) {
+  const t = Date.parse(String(iso ?? ''));
+  return Number.isFinite(t) ? t : 0;
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
     sendJson(res, 405, { error: 'Method Not Allowed' });
@@ -39,26 +53,62 @@ export default async function handler(req, res) {
   const firestore = getFirestoreDb();
 
   try {
-    let query = firestore.collection('transactions');
-    if (token) query = query.where('token', '==', token);
-    query = query.orderBy('createdAt', 'desc').limit(limit);
+    const mapSnap = (snap) =>
+      snap.docs.map((d) => {
+        const data = d.data() || {};
+        return {
+          id: d.id,
+          type: typeof data.type === 'string' ? data.type : '',
+          status: typeof data.status === 'string' ? data.status : '',
+          token: typeof data.token === 'string' ? data.token : '',
+          points: Number.isFinite(Number(data.points)) ? Number(data.points) : 0,
+          description: typeof data.description === 'string' ? data.description : '',
+          createdAt: toIso(data.createdAt),
+          processedAt: toIso(data.processedAt),
+          balanceBefore: Number.isFinite(Number(data.balanceBefore)) ? Number(data.balanceBefore) : null,
+          balanceAfter: Number.isFinite(Number(data.balanceAfter)) ? Number(data.balanceAfter) : null
+        };
+      });
 
-    const snap = await query.get();
-    const transactions = snap.docs.map((d) => {
-      const data = d.data() || {};
-      return {
-        id: d.id,
-        type: typeof data.type === 'string' ? data.type : '',
-        status: typeof data.status === 'string' ? data.status : '',
-        token: typeof data.token === 'string' ? data.token : '',
-        points: Number.isFinite(Number(data.points)) ? Number(data.points) : 0,
-        description: typeof data.description === 'string' ? data.description : '',
-        createdAt: toIso(data.createdAt),
-        processedAt: toIso(data.processedAt),
-        balanceBefore: Number.isFinite(Number(data.balanceBefore)) ? Number(data.balanceBefore) : null,
-        balanceAfter: Number.isFinite(Number(data.balanceAfter)) ? Number(data.balanceAfter) : null
-      };
-    });
+    let transactions = [];
+
+    if (!token) {
+      const snap = await firestore
+        .collection('transactions')
+        .orderBy('createdAt', 'desc')
+        .limit(limit)
+        .get();
+      transactions = mapSnap(snap);
+    } else {
+      try {
+        const snap = await firestore
+          .collection('transactions')
+          .where('token', '==', token)
+          .orderBy('createdAt', 'desc')
+          .limit(limit)
+          .get();
+        transactions = mapSnap(snap);
+      } catch (err) {
+        if (!isMissingIndexError(err)) throw err;
+
+        // Fallback to avoid requiring a composite index. We fetch a bit more and sort in memory.
+        const fallbackLimit = Math.max(limit, 200);
+        const snap = await firestore
+          .collection('transactions')
+          .where('token', '==', token)
+          .limit(fallbackLimit)
+          .get();
+        transactions = mapSnap(snap);
+
+        transactions.sort((a, b) => {
+          const aMs = Math.max(toMs(a.processedAt), toMs(a.createdAt));
+          const bMs = Math.max(toMs(b.processedAt), toMs(b.createdAt));
+          return bMs - aMs;
+        });
+
+        if (transactions.length > limit) transactions = transactions.slice(0, limit);
+      }
+    }
 
     sendJson(res, 200, { ok: true, transactions });
   } catch (err) {
