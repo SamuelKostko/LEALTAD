@@ -3,6 +3,8 @@ import { getPublicOrigin, readJsonBody, sendJson } from '../_lib/http.js';
 import { makeToken, normalizeEmail } from '../_lib/utils.js';
 import { sendActivationEmail } from '../_lib/email.js';
 import { requireAdmin } from '../_lib/adminAuth.js';
+import { FieldValue } from 'firebase-admin/firestore';
+import crypto from 'node:crypto';
 
 async function dbGetCard(token) {
   const snap = await getFirestoreDb().collection('cards').doc(token).get();
@@ -12,7 +14,24 @@ async function dbGetCard(token) {
 async function dbCreateCard({ name, cedula, balance }) {
   const token = makeToken();
   const now = new Date().toISOString();
-  await getFirestoreDb().collection('cards').doc(token).set({ name, cedula, balance, updatedAt: now }, { merge: true });
+
+  const firestore = getFirestoreDb();
+  await firestore.collection('cards').doc(token).set({ name, cedula, balance, updatedAt: now }, { merge: true });
+
+  // Create initial activity entry so the wallet shows starting points.
+  const txId = crypto.randomBytes(12).toString('base64url');
+  await firestore.collection('transactions').doc(txId).set({
+    type: 'initial_balance',
+    status: 'success',
+    token,
+    points: Number.isFinite(Number(balance)) ? Number(balance) : 0,
+    description: 'Saldo inicial',
+    balanceBefore: 0,
+    balanceAfter: Number.isFinite(Number(balance)) ? Number(balance) : 0,
+    createdAt: FieldValue.serverTimestamp(),
+    processedAt: FieldValue.serverTimestamp()
+  });
+
   return token;
 }
 

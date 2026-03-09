@@ -1,4 +1,5 @@
 import { FieldValue } from 'firebase-admin/firestore';
+import crypto from 'node:crypto';
 import { getFirestoreDb } from '../_lib/firestore.js';
 import { getPublicOrigin, readJsonBody, sendJson, sendRedirect } from '../_lib/http.js';
 import { makeToken, normalizeEmail } from '../_lib/utils.js';
@@ -11,6 +12,9 @@ async function dbProcessPurchase({ email, name, cedula, balance }) {
 
   let token = '';
   let firstActivation = false;
+
+  const txId = crypto.randomBytes(12).toString('base64url');
+  const purchaseTxRef = firestore.collection('transactions').doc(txId);
 
   await firestore.runTransaction(async (tx) => {
     const snap = await tx.get(customerRef);
@@ -43,6 +47,12 @@ async function dbProcessPurchase({ email, name, cedula, balance }) {
     }
 
     const cardRef = firestore.collection('cards').doc(token);
+
+    const cardSnap = await tx.get(cardRef);
+    const current = cardSnap.exists ? Number(cardSnap.data()?.balance ?? 0) : 0;
+    const currentSafe = Number.isFinite(current) ? current : 0;
+    const credited = Math.max(0, balance - currentSafe);
+
     tx.set(
       cardRef,
       {
@@ -53,6 +63,21 @@ async function dbProcessPurchase({ email, name, cedula, balance }) {
       },
       { merge: true }
     );
+
+    // Only create a credit transaction when the balance increased.
+    if (credited > 0) {
+      tx.set(purchaseTxRef, {
+        type: 'purchase_credit',
+        status: 'success',
+        token,
+        points: credited,
+        description: firstActivation ? 'Activación' : 'Crédito',
+        balanceBefore: currentSafe,
+        balanceAfter: balance,
+        createdAt: FieldValue.serverTimestamp(),
+        processedAt: FieldValue.serverTimestamp()
+      });
+    }
   });
 
   return { token, firstActivation };

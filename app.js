@@ -980,6 +980,12 @@ if (qrButton) {
         headline: "Exitosa",
         detail: `Nuevo saldo: ${typeof data.balance !== "undefined" ? data.balance : "—"}`
       });
+
+      try {
+        window.dispatchEvent(new Event('wallet:activity-refresh'));
+      } catch {
+        // Ignore.
+      }
       return true;
     } catch {
       scanPopup.show({ kind: "err", headline: "Rechazada", detail: "Error de red" });
@@ -1086,13 +1092,165 @@ if (qrButton) {
   }
 })();
 
-/* Activity refresh button */
+/* Activity: show transaction history */
 (() => {
-  const refreshBtn = document.getElementById("activityRefresh");
-  if (!refreshBtn) return;
-  refreshBtn.addEventListener("click", () => {
-    window.location.reload();
+  const refreshBtn = document.getElementById('activityRefresh');
+  const list = document.querySelector('.activity__list');
+  if (!refreshBtn || !list) return;
+
+  const getTokenFromUrl = () => {
+    try {
+      const url = new URL(window.location.href);
+      const qp = (url.searchParams.get('token') || url.searchParams.get('t') || '').trim();
+      if (qp) return qp;
+
+      const path = url.pathname || '';
+      if (path.startsWith('/card/')) {
+        return decodeURIComponent(path.slice('/card/'.length)).trim();
+      }
+    } catch {
+      // Ignore.
+    }
+    return '';
+  };
+
+  const iconSvg = {
+    credit: `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" aria-hidden="true"><path d="M12 5v14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`,
+    debit: `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" aria-hidden="true"><path d="M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`
+  };
+
+  const formatTime = (iso) => {
+    if (!iso) return '—';
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return '—';
+    return d.toLocaleString('es-VE', {
+      year: '2-digit',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const clearList = () => {
+    list.innerHTML = '';
+  };
+
+  const renderEmpty = (text) => {
+    clearList();
+    const li = document.createElement('li');
+    li.className = 'activity__item';
+    li.innerHTML = `<div class="activity__icon"></div><div class="activity__text"><div class="activity__name">${text}</div><div class="activity__time"></div></div><div class="activity__amount"></div>`;
+    list.appendChild(li);
+  };
+
+  const computeDelta = (t) => {
+    const before = Number.isFinite(Number(t.balanceBefore)) ? Number(t.balanceBefore) : null;
+    const after = Number.isFinite(Number(t.balanceAfter)) ? Number(t.balanceAfter) : null;
+    if (before !== null && after !== null) return after - before;
+
+    const pts = Number.isFinite(Number(t.points)) ? Number(t.points) : 0;
+    if (String(t.type || '') === 'pos_charge') return -Math.abs(pts);
+    if (String(t.type || '').includes('credit')) return Math.abs(pts);
+    return pts;
+  };
+
+  const getTitle = (t, delta) => {
+    const desc = String(t.description || '').trim();
+    if (desc) return desc;
+
+    const type = String(t.type || '').trim();
+    if (type === 'pos_charge') return 'Pago';
+    if (type.includes('credit')) return 'Crédito';
+    if (delta < 0) return 'Pago';
+    if (delta > 0) return 'Crédito';
+    return 'Movimiento';
+  };
+
+  const render = (transactions) => {
+    clearList();
+
+    const txs = Array.isArray(transactions) ? transactions : [];
+    if (!txs.length) {
+      renderEmpty('Sin actividad');
+      return;
+    }
+
+    for (const t of txs) {
+      const delta = computeDelta(t);
+      const isNeg = delta < 0;
+
+      const li = document.createElement('li');
+      li.className = 'activity__item';
+
+      const icon = document.createElement('div');
+      icon.className = 'activity__icon';
+      icon.innerHTML = isNeg ? iconSvg.debit : iconSvg.credit;
+
+      const text = document.createElement('div');
+      text.className = 'activity__text';
+      const name = document.createElement('div');
+      name.className = 'activity__name';
+      name.textContent = getTitle(t, delta);
+      const time = document.createElement('div');
+      time.className = 'activity__time';
+      time.textContent = formatTime(t.processedAt || t.createdAt);
+      text.appendChild(name);
+      text.appendChild(time);
+
+      const amount = document.createElement('div');
+      amount.className = `activity__amount${isNeg ? ' activity__amount--neg' : ''}`;
+      const abs = Math.abs(Number(delta) || 0);
+      amount.textContent = `${isNeg ? '-' : '+'}${abs}`;
+
+      li.appendChild(icon);
+      li.appendChild(text);
+      li.appendChild(amount);
+      list.appendChild(li);
+    }
+  };
+
+  let loading = false;
+  const loadActivity = async () => {
+    if (loading) return;
+    const token = getTokenFromUrl();
+    if (!token) return;
+
+    loading = true;
+    refreshBtn.disabled = true;
+    renderEmpty('Cargando...');
+
+    try {
+      const res = await fetch(`/api/activity?token=${encodeURIComponent(token)}&limit=25`, { cache: 'no-store' });
+      const data = await res.json().catch(() => null);
+      if (!res.ok || !data?.ok) {
+        const msg = data?.error || data?.message || `Error (${res.status})`;
+        renderEmpty(msg);
+        return;
+      }
+
+      const txs = Array.isArray(data?.transactions) ? data.transactions : [];
+      // Only show completed history items.
+      const filtered = txs.filter((t) => !t?.status || String(t.status) === 'success');
+      render(filtered);
+    } catch {
+      renderEmpty('Error de red');
+    } finally {
+      loading = false;
+      refreshBtn.disabled = false;
+    }
+  };
+
+  refreshBtn.addEventListener('click', () => {
+    loadActivity();
   });
+
+  window.addEventListener('wallet:activity-refresh', () => {
+    loadActivity();
+  });
+
+  // Initial load
+  loadActivity();
 })();
 
 /* Match system light/dark and keep theme-color in sync */
