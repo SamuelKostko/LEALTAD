@@ -259,6 +259,7 @@ if (qrButton) {
     const updateClientTxVisibility = () => {
       if (!cardTxCard) return;
       cardTxCard.hidden = !selectedToken;
+      if (allTxCard) allTxCard.hidden = !!selectedToken;
     };
 
     const formatTxDate = (tx) => {

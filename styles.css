@@ -383,12 +383,12 @@ body {
   }
 
   .mode-admin #adminRootPanel,
-  .mode-admin #adminRootClients {
+  .mode-admin #adminRootClients,
+  .mode-admin #adminRootAllTx {
     grid-column: 1;
   }
 
-  .mode-admin #adminRootCardTx,
-  .mode-admin #adminRootAllTx {
+  .mode-admin #adminRootCardTx {
     grid-column: 2;
   }
 
