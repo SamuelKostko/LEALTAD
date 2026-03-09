@@ -38,6 +38,44 @@ function toMs(iso) {
   return Number.isFinite(t) ? t : 0;
 }
 
+async function attachCardNames(firestore, transactions) {
+  const uniqueTokens = Array.from(
+    new Set(
+      transactions
+        .map((t) => String(t?.token ?? '').trim())
+        .filter(Boolean)
+    )
+  ).slice(0, 80);
+
+  if (!uniqueTokens.length) return transactions;
+
+  const refs = uniqueTokens.map((token) => firestore.collection('cards').doc(token));
+
+  let snaps = [];
+  try {
+    if (typeof firestore.getAll === 'function') {
+      snaps = await firestore.getAll(...refs);
+    } else {
+      snaps = await Promise.all(refs.map((r) => r.get()));
+    }
+  } catch {
+    snaps = [];
+  }
+
+  const tokenToName = new Map();
+  for (const snap of snaps) {
+    if (!snap?.exists) continue;
+    const data = snap.data() || {};
+    const name = typeof data.name === 'string' ? data.name.trim() : '';
+    tokenToName.set(String(snap.id), name);
+  }
+
+  return transactions.map((t) => ({
+    ...t,
+    name: tokenToName.get(String(t.token || '').trim()) || ''
+  }));
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
     sendJson(res, 405, { error: 'Method Not Allowed' });
@@ -109,6 +147,8 @@ export default async function handler(req, res) {
         if (transactions.length > limit) transactions = transactions.slice(0, limit);
       }
     }
+
+    transactions = await attachCardNames(firestore, transactions);
 
     sendJson(res, 200, { ok: true, transactions });
   } catch (err) {

@@ -224,12 +224,17 @@ if (qrButton) {
     const adminLogout = document.getElementById('adminLogout');
 
     const clientsList = document.getElementById('adminClientsList');
+    const clientSelect = document.getElementById('adminClientSelect');
     const clientsResult = document.getElementById('adminClientsResult');
     const cardTxHint = document.getElementById('adminCardTxHint');
     const cardTxList = document.getElementById('adminCardTxList');
     const cardTxResult = document.getElementById('adminCardTxResult');
     const txList = document.getElementById('adminTxList');
     const txResult = document.getElementById('adminTxResult');
+
+    let selectedToken = '';
+    let tokenToDisplayName = new Map();
+    let clientSelectBound = false;
 
     const setLoginResult = (type, message) => {
       if (!loginResultEl) return;
@@ -251,19 +256,9 @@ if (qrButton) {
       if (allTxCard) allTxCard.hidden = !authed;
     };
 
-    const renderButtonsList = (container, items) => {
-      if (!container) return;
-      container.innerHTML = '';
-      container.className = 'adminClientList';
-      for (const item of items) {
-        container.appendChild(item);
-      }
-      if (!items.length) {
-        const empty = document.createElement('div');
-        empty.className = 'adminResult';
-        empty.textContent = 'Sin resultados';
-        container.appendChild(empty);
-      }
+    const updateClientTxVisibility = () => {
+      if (!cardTxCard) return;
+      cardTxCard.hidden = !selectedToken;
     };
 
     const formatTxDate = (tx) => {
@@ -297,7 +292,7 @@ if (qrButton) {
       head.className = 'adminTableRow adminTableRow--head';
       const headCells = mode === 'card'
         ? ['Fecha', 'Tipo', 'Estado', 'Pts', 'Antes', 'Después', 'Descripción']
-        : ['Fecha', 'Tipo', 'Estado', 'Pts', 'Token', 'Descripción'];
+        : ['Fecha', 'Tipo', 'Estado', 'Pts', 'Cliente', 'Descripción'];
       for (const label of headCells) {
         const c = document.createElement('div');
         c.className = 'adminTableCell adminTableCell--muted';
@@ -354,7 +349,8 @@ if (qrButton) {
         } else {
           const tokenCell = document.createElement('div');
           tokenCell.className = 'adminTableCell adminTableCell--muted';
-          tokenCell.textContent = tokenText || '—';
+          const nameText = String(t?.name || '').trim();
+          tokenCell.textContent = nameText || tokenText || '—';
           cells.push(tokenCell);
         }
 
@@ -386,47 +382,34 @@ if (qrButton) {
         const data = await apiGet('/api/admin/cards?limit=80');
         const cards = Array.isArray(data?.cards) ? data.cards : [];
 
-        let selectedToken = '';
+        tokenToDisplayName = new Map();
 
-        const updateActiveClient = () => {
-          if (!clientsList) return;
-          const buttons = clientsList.querySelectorAll('button[data-token]');
-          for (const b of buttons) {
-            if (!(b instanceof HTMLElement)) continue;
-            b.classList.toggle('is-active', b.getAttribute('data-token') === selectedToken);
+        if (clientSelect) {
+          clientSelect.innerHTML = '';
+
+          const placeholder = document.createElement('option');
+          placeholder.value = '';
+          placeholder.textContent = 'Selecciona un cliente…';
+          clientSelect.appendChild(placeholder);
+
+          for (const c of cards) {
+            const name = String(c?.name ?? '').trim() || '—';
+            const cedula = String(c?.cedula ?? '').trim();
+            const bal = Number.isFinite(Number(c?.balance)) ? Number(c.balance) : 0;
+            const token = String(c?.token ?? '').trim();
+            if (!token) continue;
+
+            tokenToDisplayName.set(token, name);
+
+            const opt = document.createElement('option');
+            opt.value = token;
+            opt.textContent = `${name}${cedula ? ` · ${cedula}` : ''} · ${bal} pts`;
+            clientSelect.appendChild(opt);
           }
-        };
 
-        const els = cards.map((c) => {
-          const b = document.createElement('button');
-          b.type = 'button';
-          b.className = 'adminButton adminButton--ghost adminClientButton';
-          const name = String(c?.name ?? '').trim() || '—';
-          const cedula = String(c?.cedula ?? '').trim();
-          const bal = Number.isFinite(Number(c?.balance)) ? Number(c.balance) : 0;
-          const token = String(c?.token ?? '').trim();
-          b.setAttribute('data-token', token);
+          clientSelect.value = selectedToken;
+        }
 
-          const title = document.createElement('div');
-          title.className = 'adminClientButton__name';
-          title.textContent = name;
-          b.appendChild(title);
-
-          const meta = document.createElement('div');
-          meta.className = 'adminClientButton__meta';
-          meta.textContent = `${cedula ? `${cedula} · ` : ''}${bal} pts`;
-          b.appendChild(meta);
-
-          b.addEventListener('click', () => {
-            selectedToken = token;
-            updateActiveClient();
-            if (cardTxHint) cardTxHint.textContent = `Token: ${token}`;
-            loadCardTransactions(token);
-          });
-          return b;
-        });
-
-        renderButtonsList(clientsList, els);
         setText(clientsResult, '');
       } catch (err) {
         if (err?.status === 401) {
@@ -474,9 +457,42 @@ if (qrButton) {
 
     const initAuthed = () => {
       setAuthenticatedUi(true);
+
+      // Show only the recent transactions by default.
+      selectedToken = '';
+      updateClientTxVisibility();
+      if (cardTxHint) cardTxHint.textContent = 'Selecciona un cliente.';
+      if (cardTxList) cardTxList.innerHTML = '';
+      if (cardTxResult) cardTxResult.textContent = '';
+
+      if (clientSelect) {
+        if (!clientSelectBound) {
+          clientSelectBound = true;
+          clientSelect.addEventListener('change', () => {
+            selectedToken = String(clientSelect.value || '').trim();
+            updateClientTxVisibility();
+
+            if (!selectedToken) {
+              if (cardTxHint) cardTxHint.textContent = 'Selecciona un cliente.';
+              if (cardTxList) cardTxList.innerHTML = '';
+              if (cardTxResult) cardTxResult.textContent = '';
+              return;
+            }
+
+            const displayName = tokenToDisplayName.get(selectedToken) || '—';
+            if (cardTxHint) cardTxHint.textContent = `Cliente: ${displayName}`;
+            loadCardTransactions(selectedToken);
+          });
+        }
+      }
+
       if (goCards) goCards.addEventListener('click', () => { window.location.href = '/admin'; });
       if (goQr) goQr.addEventListener('click', () => { window.location.href = '/admin/qr'; });
-      if (txRefresh) txRefresh.addEventListener('click', () => { loadClients(); loadAllTransactions(); });
+      if (txRefresh) txRefresh.addEventListener('click', () => {
+        loadClients();
+        loadAllTransactions();
+        if (selectedToken) loadCardTransactions(selectedToken);
+      });
 
       if (adminLogout) {
         adminLogout.hidden = false;
@@ -487,10 +503,19 @@ if (qrButton) {
             // Ignore.
           }
 
-          if (clientsList) clientsList.innerHTML = '';
+          if (clientSelect) {
+            clientSelect.innerHTML = '';
+            const placeholder = document.createElement('option');
+            placeholder.value = '';
+            placeholder.textContent = 'Selecciona un cliente…';
+            clientSelect.appendChild(placeholder);
+            clientSelect.value = '';
+          }
           if (cardTxList) cardTxList.innerHTML = '';
           if (txList) txList.innerHTML = '';
           if (cardTxHint) cardTxHint.textContent = 'Selecciona un cliente.';
+          selectedToken = '';
+          updateClientTxVisibility();
           setAuthenticatedUi(false);
           setLoginResult('adminResult--info', 'Sesión cerrada.');
         });
@@ -498,9 +523,6 @@ if (qrButton) {
 
       loadClients();
       loadAllTransactions();
-      if (cardTxHint) cardTxHint.textContent = 'Selecciona un cliente.';
-      if (cardTxList) cardTxList.innerHTML = '';
-      if (cardTxResult) cardTxResult.textContent = '';
     };
 
     const checkAuth = async () => {

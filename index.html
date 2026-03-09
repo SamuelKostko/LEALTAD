@@ -100,7 +100,14 @@
         <section class="adminCard" id="adminRootClients" hidden aria-label="Clientes">
           <div class="adminCard__title">Clientes</div>
           <p class="adminCard__hint">Selecciona un cliente para ver sus transacciones.</p>
-          <div class="adminForm" id="adminClientsList"></div>
+          <div class="adminForm" id="adminClientsList">
+            <label class="adminField">
+              <span class="adminField__label">Cliente</span>
+              <select class="adminField__input" id="adminClientSelect" aria-label="Seleccionar cliente">
+                <option value="">Cargando...</option>
+              </select>
+            </label>
+          </div>
           <div class="adminResult" id="adminClientsResult" aria-live="polite"></div>
         </section>
 
