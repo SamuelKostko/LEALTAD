@@ -308,6 +308,9 @@ body {
   font-weight: 650;
   letter-spacing: 0.2px;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .adminButton:disabled {
@@ -317,6 +320,14 @@ body {
 
 .adminButton--ghost {
   background: transparent;
+}
+
+.adminButton--icon {
+  justify-content: center;
+}
+
+.adminButton__icon {
+  flex-shrink: 0;
 }
 
 .adminResult {
@@ -389,7 +400,15 @@ body {
 }
 
 .mode-admin #adminRootPanel .adminActions {
-  grid-template-columns: 1fr;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+@media (min-width: 980px) {
+  .mode-admin #adminRootPanel .adminActions {
+    flex-direction: row;
+  }
 }
 
 .adminClientList {
