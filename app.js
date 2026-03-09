@@ -1221,7 +1221,7 @@ if (qrButton) {
     renderEmpty('Cargando...');
 
     try {
-      const res = await fetch(`/api/activity?token=${encodeURIComponent(token)}&limit=25`, { cache: 'no-store' });
+      const res = await fetch(`/api/card?mode=activity&token=${encodeURIComponent(token)}&limit=25`, { cache: 'no-store' });
       const data = await res.json().catch(() => null);
       if (!res.ok || !data?.ok) {
         const msg = data?.error || data?.message || `Error (${res.status})`;
