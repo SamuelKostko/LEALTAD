@@ -89,7 +89,17 @@
 
         <section class="adminCard" id="adminRootPanel" hidden aria-label="Panel admin">
           <div class="adminCard__title">Administrador</div>
-          <p class="adminCard__hint">Acciones rápidas.</p>
+          
+          <div class="adminForm" style="margin-bottom: 16px;">
+            <label class="adminField">
+              <span class="adminField__label">Cliente</span>
+              <select class="adminField__input" id="adminClientSelect" aria-label="Seleccionar cliente">
+                <option value="">Cargando...</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="adminCard__title" style="margin-top: 0; font-size: 14px; color: var(--muted);">Acciones rápidas</div>
 
           <div class="adminActions">
             <button class="adminButton adminButton--icon" id="adminRootGoCards" type="button">
@@ -105,20 +115,6 @@
               Crear QR
             </button>
           </div>
-        </section>
-
-        <section class="adminCard" id="adminRootClients" hidden aria-label="Clientes">
-          <div class="adminCard__title">Clientes</div>
-          <p class="adminCard__hint">Selecciona un cliente para ver sus transacciones.</p>
-          <div class="adminForm" id="adminClientsList">
-            <label class="adminField">
-              <span class="adminField__label">Cliente</span>
-              <select class="adminField__input" id="adminClientSelect" aria-label="Seleccionar cliente">
-                <option value="">Cargando...</option>
-              </select>
-            </label>
-          </div>
-          <div class="adminResult" id="adminClientsResult" aria-live="polite"></div>
         </section>
 
         <section class="adminCard" id="adminRootCardTx" hidden aria-label="Transacciones de tarjeta">

@@ -373,7 +373,8 @@ body {
   }
 
   .mode-admin #adminRootClients {
-    padding-bottom: 12px;
+    /* Removed or hidden */
+    display: none;
   }
 
   .mode-admin #adminClientsList {
@@ -382,13 +383,13 @@ body {
     padding-right: 0;
   }
 
-  .mode-admin #adminRootPanel,
-  .mode-admin #adminRootClients,
-  .mode-admin #adminRootAllTx {
+  .mode-admin #adminRootPanel {
     grid-column: 1;
+    align-self: start;
   }
 
-  .mode-admin #adminRootCardTx {
+  .mode-admin #adminRootCardTx,
+  .mode-admin #adminRootAllTx {
     grid-column: 2;
   }
 
