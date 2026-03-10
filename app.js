@@ -223,9 +223,9 @@ if (qrButton) {
     const txRefresh = document.getElementById('adminTxRefresh');
     const adminLogout = document.getElementById('adminLogout');
 
-    const clientsList = document.getElementById('adminClientsList'); // may be null
+    const clientsList = document.getElementById('adminClientsList');
     const clientSelect = document.getElementById('adminClientSelect');
-    const clientsResult = document.getElementById('adminClientsResult') || document.createElement('div');
+    const clientsResult = document.getElementById('adminClientsResult');
     const cardTxHint = document.getElementById('adminCardTxHint');
     const cardTxList = document.getElementById('adminCardTxList');
     const cardTxResult = document.getElementById('adminCardTxResult');
@@ -251,15 +251,14 @@ if (qrButton) {
     const setAuthenticatedUi = (authed) => {
       if (loginCard) loginCard.hidden = authed;
       if (panelCard) panelCard.hidden = !authed;
-      // if (clientsCard) clientsCard.hidden = !authed; // Removed from DOM
-      if (allTxCard) allTxCard.hidden = !authed || !!selectedToken; 
-      if (cardTxCard) cardTxCard.hidden = !authed || !selectedToken;
+      if (clientsCard) clientsCard.hidden = !authed;
+      if (cardTxCard) cardTxCard.hidden = !authed;
+      if (allTxCard) allTxCard.hidden = !authed;
     };
 
-
     const updateClientTxVisibility = () => {
-      if (allTxCard) allTxCard.hidden = !!selectedToken;
-      if (cardTxCard) cardTxCard.hidden = !selectedToken;
+      if (!cardTxCard) return;
+      cardTxCard.hidden = !selectedToken;
     };
 
     const formatTxDate = (tx) => {
