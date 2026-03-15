@@ -4,11 +4,11 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 
-    <title>Wallet de Puntos</title>
+    <title>Wallet NEXUS</title>
 
     <meta name="theme-color" content="#000000" id="themeColor" />
     <meta name="color-scheme" content="light dark" />
-    <meta name="description" content="PWA de una sola página estilo Wallet neo-futurista." />
+    <meta name="description" content="WALLET DE NEXUS." />
 
     <script>
       // Dynamic manifest: when visiting /card/<token>, installing the PWA should open that same card.
@@ -38,12 +38,12 @@
 
     <!-- Android/Chrome: allow standalone (installed web app) -->
     <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="application-name" content="Wallet" />
+    <meta name="application-name" content="Wallet NEXUS" />
 
     <!-- iOS: standalone + status bar + icons -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="Wallet" />
+    <meta name="apple-mobile-web-app-title" content="Wallet NEXUS" />
     <link rel="apple-touch-icon" href="/icons/icon.svg" />
 
     
@@ -61,6 +61,8 @@
           <div class="header__greeting">Hola, <span id="greetingName">—</span></div>
           <div class="header__label" id="headerLabel">Tu Wallet de puntos</div>
         </div>
+
+        <button class="adminHeaderAction" id="adminHeaderGoQr" type="button" hidden>CREAR TRANSACCION</button>
 
         <button class="avatar" id="profileButton" type="button" aria-label="Perfil" aria-haspopup="dialog" aria-controls="profileMenu" aria-expanded="false">
           <span class="avatar__ring" aria-hidden="true"></span>
@@ -85,15 +87,6 @@
 
             <div class="adminResult" id="adminRootLoginResult" aria-live="polite"></div>
           </form>
-        </section>
-
-        <section class="adminCard" id="adminRootPanel" hidden aria-label="Panel admin">
-          <div class="adminCard__title">Administrador</div>
-          <p class="adminCard__hint">Genera transacciones y revisa clientes/actividad.</p>
-
-          <div class="adminActions">
-            <button class="adminButton" id="adminRootGoQr" type="button">Crear QR</button>
-          </div>
         </section>
 
         <section class="adminCard" id="adminRootClients" hidden aria-label="Clientes">

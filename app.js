@@ -200,6 +200,13 @@ if (qrButton) {
 
     const headerLabel = document.getElementById('headerLabel');
     if (headerLabel) headerLabel.textContent = "Panel administrador";
+    const adminHeaderGoQr = document.getElementById('adminHeaderGoQr');
+    const profileButton = document.getElementById('profileButton');
+    if (adminHeaderGoQr) {
+      adminHeaderGoQr.hidden = false;
+      adminHeaderGoQr.addEventListener('click', () => { window.location.href = '/admin/qr'; });
+    }
+    if (profileButton) profileButton.hidden = true;
 
     // Hide client wallet UI.
     card.hidden = true;
@@ -213,12 +220,10 @@ if (qrButton) {
     const passwordEl = document.getElementById('adminRootPassword');
     const loginResultEl = document.getElementById('adminRootLoginResult');
 
-    const panelCard = document.getElementById('adminRootPanel');
     const clientsCard = document.getElementById('adminRootClients');
     const cardTxCard = document.getElementById('adminRootCardTx');
     const allTxCard = document.getElementById('adminRootAllTx');
 
-    const goQr = document.getElementById('adminRootGoQr');
     const txRefresh = document.getElementById('adminTxRefresh');
     const adminLogout = document.getElementById('adminLogout');
 
@@ -249,7 +254,6 @@ if (qrButton) {
 
     const setAuthenticatedUi = (authed) => {
       if (loginCard) loginCard.hidden = authed;
-      if (panelCard) panelCard.hidden = !authed;
       if (clientsCard) clientsCard.hidden = !authed;
       if (cardTxCard) cardTxCard.hidden = !authed;
       if (allTxCard) allTxCard.hidden = !authed;
@@ -485,7 +489,6 @@ if (qrButton) {
         }
       }
 
-      if (goQr) goQr.addEventListener('click', () => { window.location.href = '/admin/qr'; });
       if (txRefresh) txRefresh.addEventListener('click', () => {
         loadClients();
         loadAllTransactions();

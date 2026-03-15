@@ -517,7 +517,6 @@ body {
     padding-right: 0;
   }
 
-  .mode-admin #adminRootPanel,
   .mode-admin #adminRootClients {
     grid-column: 1;
   }
@@ -536,10 +535,6 @@ body {
 
 .mode-admin .cta {
   display: none !important;
-}
-
-.mode-admin #adminRootPanel .adminActions {
-  grid-template-columns: 1fr;
 }
 
 .adminClientList {
@@ -725,6 +720,35 @@ body {
   font-weight: 300;
   letter-spacing: 0.2px;
   color: var(--label);
+}
+
+.adminHeaderAction {
+  display: none;
+  border: 1px solid #0284c7;
+  background: #0284c7;
+  color: #ffffff;
+  border-radius: 999px;
+  padding: 10px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.adminHeaderAction:hover {
+  background: #0369a1;
+  border-color: #0369a1;
+}
+
+.adminHeaderAction[hidden] {
+  display: none !important;
+}
+
+.mode-admin .adminHeaderAction:not([hidden]) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .avatar {
