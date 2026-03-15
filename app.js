@@ -44,6 +44,7 @@ if (qrButton) {
 /* Client card details reveal (tap card to show name/id/balance) */
 (() => {
   const card = document.getElementById("clientCard");
+  if (!card) return;
 
   const details = document.getElementById("cardDetails");
   const pointsEl = document.getElementById("points");
@@ -206,6 +207,13 @@ if (qrButton) {
       adminHeaderGoQr.addEventListener('click', () => { window.location.href = '/admin/qr'; });
     }
     if (profileButton) profileButton.hidden = true;
+
+    // Hide client wallet UI.
+    card.hidden = true;
+    const activity = document.querySelector('.activity');
+    if (activity) activity.hidden = true;
+    const cta = document.querySelector('.cta');
+    if (cta) cta.hidden = true;
 
     const loginCard = document.getElementById('adminRootLogin');
     const loginForm = document.getElementById('adminRootLoginForm');
@@ -572,8 +580,6 @@ if (qrButton) {
     checkAuth();
     return;
   }
-
-  if (!card) return;
  
   syncBalance();
   loadCardData();

@@ -62,10 +62,13 @@
           <div class="header__label" id="headerLabel">Tu Wallet de puntos</div>
         </div>
 
-        <div class="adminHeaderActions">
-          <button class="adminHeaderAction" id="adminHeaderGoQr" type="button" hidden>CREAR TRANSACCION</button>
-          <button class="adminHeaderAction adminHeaderAction--ghost" id="adminLogout" type="button" hidden>CERRAR SESION</button>
-        </div>
+        <button class="adminHeaderAction" id="adminHeaderGoQr" type="button" hidden>CREAR TRANSACCION</button>
+
+
+        <button class="avatar" id="profileButton" type="button" aria-label="Perfil" aria-haspopup="dialog" aria-controls="profileMenu" aria-expanded="false">
+          <span class="avatar__ring" aria-hidden="true"></span>
+          <span class="avatar__initials" id="avatarInitials">A</span>
+        </button>
       </header>
 
       <main class="content" id="scroll" aria-label="Contenido">
@@ -117,9 +120,170 @@
           <div class="adminForm" id="adminTxList"></div>
           <div class="adminResult" id="adminTxResult" aria-live="polite"></div>
         </section>
+
+        <section
+          class="card card--client"
+          aria-label="Tarjeta digital de puntos"
+          role="button"
+          tabindex="0"
+          aria-expanded="false"
+          aria-controls="cardDetails"
+          id="clientCard"
+        >
+          <img class="card__art" src="/images/card-cliente.png" alt="Tarjeta de puntos" draggable="false" />
+
+          <div class="card__details" id="cardDetails" aria-hidden="true">
+            <div class="card__detailsTitle">Datos del cliente</div>
+
+            <dl class="card__detailsGrid">
+              <div class="card__detailsRow">
+                <dt>Nombre</dt>
+                <dd id="clientName">—</dd>
+              </div>
+              <div class="card__detailsRow">
+                <dt>Cédula</dt>
+                <dd id="clientId">—</dd>
+              </div>
+              <div class="card__detailsRow">
+                <dt>Saldo disponible</dt>
+                <dd id="clientBalance">0</dd>
+              </div>
+            </dl>
+          </div>
+
+          <div class="card__sheen" aria-hidden="true"></div>
+
+          <div class="card__top">
+            <div class="brand" aria-label="Marca">
+              <div class="brand__word">SAMUEL</div>
+              <div class="brand__sub">Rewards</div>
+            </div>
+
+            <div class="chip" aria-hidden="true">
+              <div class="chip__inner"></div>
+              <div class="chip__line chip__line--a"></div>
+              <div class="chip__line chip__line--b"></div>
+              <div class="chip__line chip__line--c"></div>
+            </div>
+          </div>
+
+          <div class="balance">
+            <div class="balance__label">Saldo de puntos</div>
+            <div class="balance__value" id="points">0</div>
+          </div>
+
+          <div class="card__bottom">
+            <div class="card__divider" aria-hidden="true"></div>
+            <div class="card__meta" id="cardUpdated">Actualizado hoy</div>
+          </div>
+        </section>
+
+        <section class="activity" aria-label="Actividad reciente">
+          <div class="activity__header">
+            <h2 class="activity__title">Actividad</h2>
+            <button class="activity__refresh" id="activityRefresh" type="button" aria-label="Actualizar actividad">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden="true">
+                <path
+                  d="M20 12a8 8 0 0 1-14.3 4.9"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  opacity="0.9"
+                />
+                <path
+                  d="M4 12a8 8 0 0 1 14.3-4.9"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  opacity="0.55"
+                />
+                <path
+                  d="M17.8 3.8V7.6h-3.8"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  opacity="0.55"
+                />
+                <path
+                  d="M6.2 20.2V16.4H10"
+                  stroke="currentColor"
+                  stroke-width="1.8"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  opacity="0.9"
+                />
+              </svg>
+            </button>
+          </div>
+
+          <ul class="activity__list" role="list">
+          </ul>
+        </section>
       </main>
+
+      <div class="cta" aria-label="Acción principal">
+        <button class="qr" id="qrButton" type="button" aria-label="Mostrar codigo QR">
+          <span class="qr__glow" aria-hidden="true"></span>
+          <svg class="qr__icon" viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true">
+            <path d="M8.25 7.25h1.9l1.2-1.55a1.5 1.5 0 0 1 1.19-.58h2.92a1.5 1.5 0 0 1 1.19.58l1.2 1.55h1.9A2.25 2.25 0 0 1 22 9.5v7.25A2.25 2.25 0 0 1 19.75 19H4.25A2.25 2.25 0 0 1 2 16.75V9.5a2.25 2.25 0 0 1 2.25-2.25Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" opacity="0.92"/>
+            <circle cx="12" cy="13.1" r="3.1" stroke="currentColor" stroke-width="1.8" opacity="0.92"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+    <!-- Overlay de escaneo QR -->
+    <div class="scanner" id="qrScanner" aria-hidden="true">
+      <div class="scanner__backdrop"></div>
+      <div class="scanner__frame">
+        <header class="scanner__header">
+          <span class="scanner__title">Escanear código</span>
+          <button class="scanner__close" id="qrClose" type="button" aria-label="Cerrar escáner">
+            ✕
+          </button>
+        </header>
+
+        <div class="scanner__body">
+          <video id="qrVideo" class="scanner__video" playsinline></video>
+          <div class="scanner__reticle" aria-hidden="true"></div>
+          <canvas id="qrCanvas" class="scanner__canvas" aria-hidden="true"></canvas>
+        </div>
+
+        <footer class="scanner__footer">
+          <span class="scanner__hint" id="qrHint">Apunta al código QR para escanear</span>
+          <span class="scanner__result" id="qrResult" aria-live="polite"></span>
+        </footer>
+      </div>
     </div>
 
+    <!-- Modal de perfil -->
+    <div class="profileMenu" id="profileMenu" aria-hidden="true">
+      <div class="profileMenu__backdrop" data-profile-close></div>
+
+      <div class="profileMenu__frame" role="dialog" aria-modal="true" aria-label="Opciones de perfil">
+        <header class="profileMenu__header">
+          <span class="profileMenu__title">Perfil</span>
+          <button class="profileMenu__close" id="profileClose" type="button" aria-label="Cerrar menú">
+            ✕
+          </button>
+        </header>
+
+        <div class="profileMenu__body">
+          <button class="profileMenu__item" id="installPwa" type="button">
+            Instalar la app
+          </button>
+          <button class="profileMenu__item" id="adminLogout" type="button" hidden>
+            Cerrar sesión admin
+          </button>
+          <div class="profileMenu__hint" id="installHint" aria-live="polite"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Librería ligera de decodificación QR -->
+    <script src="https://unpkg.com/jsqr@1.4.0/dist/jsQR.js" crossorigin="anonymous"></script>
     <script src="/app.js" defer></script>
   </body>
 </html>

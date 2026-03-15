@@ -736,16 +736,6 @@ body {
   white-space: nowrap;
 }
 
-.adminHeaderActions {
-  display: none;
-  gap: 8px;
-  align-items: center;
-}
-
-.mode-admin .adminHeaderActions {
-  display: inline-flex;
-}
-
 .adminHeaderAction:hover {
   background: #0369a1;
   border-color: #0369a1;
@@ -759,12 +749,6 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-}
-
-.adminHeaderAction--ghost {
-  border-color: #cbd5e1;
-  background: #ffffff;
-  color: #0f172a;
 }
 
 .avatar {
