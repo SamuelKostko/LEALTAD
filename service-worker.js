@@ -63,8 +63,6 @@ self.addEventListener("fetch", (event) => {
     if (
       url.pathname === '/admin' ||
       url.pathname.startsWith('/admin/') ||
-      url.pathname === '/admin-email.html' ||
-      url.pathname === '/admin-email.js' ||
       url.pathname === '/admin-qr.html' ||
       url.pathname === '/admin-qr.js'
     ) {

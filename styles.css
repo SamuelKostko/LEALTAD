@@ -340,12 +340,157 @@ body {
 }
 
 /* Root Admin dashboard (desktop mode) */
+.mode-admin {
+  --bg: #eef3fa;
+  --text: #0f172a;
+  --muted: #475569;
+  --label: #334155;
+  --text-strong: #0b1220;
+  --text-mid: #1e293b;
+  --text-soft: #64748b;
+  --surface: #ffffff;
+  --surface-2: #f8fafc;
+  --surface-3: #ffffff;
+  --surface-4: #f8fafc;
+  --border: #dbe4f0;
+  --border-2: #c8d4e3;
+  --border-soft: #dbe4f0;
+  --focus: rgba(14, 116, 144, 0.22);
+}
+
+.mode-admin .bg {
+  background: linear-gradient(180deg, #f7fbff 0%, #eef3fa 100%);
+}
+
+.mode-admin .bg::before,
+.mode-admin .bg::after {
+  background: radial-gradient(
+      38% 28% at 16% 20%,
+      rgba(14, 165, 233, 0.12) 0%,
+      rgba(14, 165, 233, 0.04) 38%,
+      rgba(0, 0, 0, 0) 72%
+    ),
+    radial-gradient(
+      34% 26% at 84% 12%,
+      rgba(59, 130, 246, 0.10) 0%,
+      rgba(59, 130, 246, 0.03) 38%,
+      rgba(0, 0, 0, 0) 72%
+    );
+  filter: blur(6px);
+  opacity: 0.9;
+}
+
 .mode-admin .app {
   max-width: 1160px;
 }
 
 .mode-admin .header__greeting {
-  color: var(--text-mid);
+  color: #0f172a;
+  font-weight: 600;
+}
+
+.mode-admin .header__label {
+  color: #334155;
+}
+
+.mode-admin .adminCard {
+  background: #ffffff;
+  border: 1px solid #dbe4f0;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+  backdrop-filter: none;
+}
+
+.mode-admin .adminCard__title {
+  color: #0f172a;
+}
+
+.mode-admin .adminCard__hint,
+.mode-admin .adminList {
+  color: #475569;
+}
+
+.mode-admin .adminField__label {
+  color: #334155;
+  font-weight: 600;
+}
+
+.mode-admin .adminField__input {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #0f172a;
+}
+
+.mode-admin .adminField__input::placeholder {
+  color: #94a3b8;
+}
+
+.mode-admin .adminField__input:focus {
+  border-color: #0ea5e9;
+  box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.18);
+}
+
+.mode-admin .adminButton {
+  border: 1px solid #0284c7;
+  background: #0284c7;
+  color: #ffffff;
+}
+
+.mode-admin .adminButton:hover {
+  background: #0369a1;
+  border-color: #0369a1;
+}
+
+.mode-admin .adminButton--ghost {
+  border-color: #cbd5e1;
+  background: #ffffff;
+  color: #0f172a;
+}
+
+.mode-admin .admin__back {
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #0f172a;
+}
+
+.mode-admin .adminResult {
+  color: #475569;
+}
+
+.mode-admin .adminResult--ok {
+  color: #166534;
+}
+
+.mode-admin .adminResult--err {
+  color: #b91c1c;
+}
+
+.mode-admin .adminResult--info {
+  color: #0f766e;
+}
+
+.mode-admin .adminTable {
+  gap: 6px;
+}
+
+.mode-admin .adminTableRow {
+  background: #f8fafc;
+  border: 1px solid #dbe4f0;
+}
+
+.mode-admin .adminTableRow--head {
+  color: #475569;
+}
+
+.mode-admin .adminTableCell {
+  color: #0f172a;
+}
+
+.mode-admin .adminTableCell--muted {
+  color: #475569;
+}
+
+.mode-admin .adminTableCell--strong {
+  color: #0b1220;
 }
 
 .mode-admin .content {

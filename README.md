@@ -33,11 +33,10 @@ Webhook:
 
 ## Admin
 
-- Abre `/admin` (redirige a `admin-email.html`).
+- Abre `/admin` para entrar al panel de clientes y transacciones.
 - Inicia sesión con `ADMIN_PASSWORD`.
-- Completa Email/Nombre/Cédula/Saldo y envía. Se crea la tarjeta en Firestore y se envía el link.
+- Genera cobros desde `/admin/qr` cuando necesites emitir un QR de transacción.
 
 ## Notas
 
-- El archivo `server.js` queda como referencia del modo local anterior, pero en Vercel se usa `api/`.
 - Para enviar correos con dominio propio normalmente necesitas SPF/DKIM y un proveedor SMTP autorizado.

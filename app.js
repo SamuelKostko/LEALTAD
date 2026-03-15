@@ -218,7 +218,6 @@ if (qrButton) {
     const cardTxCard = document.getElementById('adminRootCardTx');
     const allTxCard = document.getElementById('adminRootAllTx');
 
-    const goCards = document.getElementById('adminRootGoCards');
     const goQr = document.getElementById('adminRootGoQr');
     const txRefresh = document.getElementById('adminTxRefresh');
     const adminLogout = document.getElementById('adminLogout');
@@ -486,7 +485,6 @@ if (qrButton) {
         }
       }
 
-      if (goCards) goCards.addEventListener('click', () => { window.location.href = '/admin'; });
       if (goQr) goQr.addEventListener('click', () => { window.location.href = '/admin/qr'; });
       if (txRefresh) txRefresh.addEventListener('click', () => {
         loadClients();
