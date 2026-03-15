@@ -1,4 +1,4 @@
-const CACHE_NAME = "wallet-pwa-v24";
+const CACHE_NAME = "wallet-pwa-v25";
 
 const PRECACHE_URLS = [
   "/",
@@ -37,6 +37,25 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   const request = event.request;
   if (request.method !== "GET") return;
+
+  // For HTML navigations (/, /card/<token>, etc.) prefer network so UI updates
+  // are visible immediately; fall back to cache when offline.
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      fetch(request)
+        .then((response) => {
+          const responseClone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, responseClone));
+          return response;
+        })
+        .catch(async () => {
+          const cachedRequest = await caches.match(request);
+          if (cachedRequest) return cachedRequest;
+          return caches.match('/index.html');
+        })
+    );
+    return;
+  }
 
   // Never cache admin pages/assets (avoid stale admin UI).
   try {
