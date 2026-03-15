@@ -368,9 +368,11 @@ body {
 }
 
 .mode-admin .app {
-  max-width: none;
-  width: 100%;
-  margin: 0;
+  max-width: none !important;
+  width: 100% !important;
+  margin: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
 }
 
 .mode-admin .header__greeting {
@@ -383,12 +385,12 @@ body {
 }
 
 .mode-admin .adminCard {
-  background: transparent;
-  border: 0;
-  border-radius: 0;
-  box-shadow: none;
-  padding: 0;
-  backdrop-filter: none;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  backdrop-filter: none !important;
 }
 
 .mode-admin .adminCard__title {
@@ -464,8 +466,11 @@ body {
 }
 
 .mode-admin .adminTableRow {
-  background: #f8fafc;
-  border: 1px solid #dbe4f0;
+  background: #ffffff !important;
+  border: 0 !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
 }
 
 .mode-admin .adminTableRow--head {
@@ -488,7 +493,12 @@ body {
   display: grid;
   gap: 14px;
   grid-auto-rows: min-content;
-  padding: 10px 24px 18px;
+  padding: 8px 24px 18px;
+}
+
+.mode-admin .header {
+  padding-left: 24px;
+  padding-right: 24px;
 }
 
 @media (min-width: 980px) {
