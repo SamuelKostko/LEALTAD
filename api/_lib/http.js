@@ -31,8 +31,22 @@ export function sendRedirect(res, statusCode, location) {
 }
 
 export function readJsonBody(req) {
+  // Express may have already parsed JSON body.
+  if (req.body && typeof req.body === 'object') {
+    return Promise.resolve(req.body);
+  }
+
+  // If stream is already consumed, there is no body left to read.
+  if (req.readableEnded) {
+    return Promise.resolve({});
+  }
+
   return new Promise((resolve, reject) => {
     let body = '';
+
+    req.on('error', reject);
+    req.on('aborted', () => reject(new Error('Request aborted')));
+
     req.on('data', (chunk) => {
       body += chunk;
       if (body.length > 1_000_000) {
