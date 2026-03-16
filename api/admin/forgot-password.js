@@ -63,8 +63,15 @@ export default async function handler(req, res) {
                    <p>Este código expira en 15 minutos. Si no lo solicitaste, puedes ignorar este mensaje.</p>`
         });
     } else {
+        const isProduction = String(process.env.NODE_ENV || '').toLowerCase() === 'production';
+        if (isProduction) {
+          return sendJson(res, 500, {
+            error: 'SMTP no configurado correctamente. Revisa SMTP_HOST, SMTP_PORT, SMTP_USER y SMTP_PASS.'
+          });
+        }
+
         console.warn('SMTP variables not fully defined, just printing code', resetCode);
-        return sendJson(res, 200, { ok: true, devMode: true, resetCode }); 
+        return sendJson(res, 200, { ok: true, devMode: true, resetCode });
     }
 
     sendJson(res, 200, { ok: true });
