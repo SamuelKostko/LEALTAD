@@ -1,7 +1,7 @@
 {
   "name": "Wallet de Puntos",
   "short_name": "Wallet",
-  "description": "PWA de una sola página estilo Wallet neo-futurista.",
+  "description": "WALLET DE PUNTOS DE NEXUS.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

@@ -201,10 +201,14 @@ if (qrButton) {
     const headerLabel = document.getElementById('headerLabel');
     if (headerLabel) headerLabel.textContent = "Panel administrador";
     const adminHeaderGoQr = document.getElementById('adminHeaderGoQr');
+    const adminHeaderLogout = document.getElementById('adminHeaderLogout');
     const profileButton = document.getElementById('profileButton');
     if (adminHeaderGoQr) {
       adminHeaderGoQr.hidden = true;
       adminHeaderGoQr.addEventListener('click', () => { window.location.href = '/admin/qr'; });
+    }
+    if (adminHeaderLogout) {
+      adminHeaderLogout.hidden = true;
     }
     if (profileButton) profileButton.hidden = true;
 
@@ -285,6 +289,31 @@ if (qrButton) {
       if (cardTxCard) cardTxCard.hidden = !authed;
       if (allTxCard) allTxCard.hidden = !authed;
       if (adminHeaderGoQr) adminHeaderGoQr.hidden = !authed;
+      if (adminHeaderLogout) adminHeaderLogout.hidden = !authed;
+    };
+
+    const doLogout = async () => {
+      try {
+        await fetch('/api/admin/logout', { method: 'POST' });
+      } catch {
+        // Ignore.
+      }
+
+      if (clientSelect) {
+        clientSelect.innerHTML = '';
+        const placeholder = document.createElement('option');
+        placeholder.value = '';
+        placeholder.textContent = 'Selecciona un cliente…';
+        clientSelect.appendChild(placeholder);
+        clientSelect.value = '';
+      }
+      if (cardTxList) cardTxList.innerHTML = '';
+      if (txList) txList.innerHTML = '';
+      if (cardTxHint) cardTxHint.textContent = 'Selecciona un cliente.';
+      selectedToken = '';
+      updateClientTxVisibility();
+      setAuthenticatedUi(false);
+      setLoginResult('adminResult--info', 'Sesión cerrada.');
     };
 
     const updateClientTxVisibility = () => {
@@ -525,29 +554,10 @@ if (qrButton) {
 
       if (adminLogout) {
         adminLogout.hidden = false;
-        adminLogout.addEventListener('click', async () => {
-          try {
-            await fetch('/api/admin/logout', { method: 'POST' });
-          } catch {
-            // Ignore.
-          }
-
-          if (clientSelect) {
-            clientSelect.innerHTML = '';
-            const placeholder = document.createElement('option');
-            placeholder.value = '';
-            placeholder.textContent = 'Selecciona un cliente…';
-            clientSelect.appendChild(placeholder);
-            clientSelect.value = '';
-          }
-          if (cardTxList) cardTxList.innerHTML = '';
-          if (txList) txList.innerHTML = '';
-          if (cardTxHint) cardTxHint.textContent = 'Selecciona un cliente.';
-          selectedToken = '';
-          updateClientTxVisibility();
-          setAuthenticatedUi(false);
-          setLoginResult('adminResult--info', 'Sesión cerrada.');
-        });
+        adminLogout.onclick = doLogout;
+      }
+      if (adminHeaderLogout) {
+        adminHeaderLogout.onclick = doLogout;
       }
 
       loadClients();

@@ -797,6 +797,16 @@ body {
   border-color: #0369a1;
 }
 
+.adminHeaderAction--danger {
+  background: #dc2626;
+  border-color: #dc2626;
+}
+
+.adminHeaderAction--danger:hover {
+  background: #b91c1c;
+  border-color: #b91c1c;
+}
+
 .adminHeaderAction[hidden] {
   display: none !important;
 }
