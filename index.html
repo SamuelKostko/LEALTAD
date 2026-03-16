@@ -73,60 +73,62 @@
 
       <main class="content" id="scroll" aria-label="Contenido">
         <section class="adminCard" id="adminRootLogin" hidden aria-label="Acceso admin">
-          <div class="adminCard__title">Acceso</div>
-          <p class="adminCard__hint">Ingresa tu password para acceder al panel.</p>
+          <div class="adminLoginPanel">
+            <div class="adminCard__title">Acceso</div>
+            <p class="adminCard__hint">Ingresa tu password para acceder al panel.</p>
 
-          <form class="adminForm" id="adminRootLoginForm">
-            <label class="adminField">
-              <span class="adminField__label">Password</span>
-              <input class="adminField__input" id="adminRootPassword" type="password" autocomplete="current-password" placeholder="Tu password admin" required />
-            </label>
+            <form class="adminForm" id="adminRootLoginForm">
+              <label class="adminField">
+                <span class="adminField__label">Password</span>
+                <input class="adminField__input" id="adminRootPassword" type="password" autocomplete="current-password" placeholder="Tu password admin" required />
+              </label>
 
-            <div class="adminActions" style="flex-direction: column; align-items: stretch; gap: 0.5rem;">
-              <button class="adminButton" id="adminRootLoginBtn" type="submit">Entrar</button>
-              <button class="adminButton adminButtonOutline" type="button" id="adminRootForgotBtn" style="border: none; background: transparent; text-decoration: underline; padding: 0.5rem;">¿Olvidaste la clave?</button>
-            </div>
+              <div class="adminActions adminActions--stack">
+                <button class="adminButton adminButton--wide" id="adminRootLoginBtn" type="submit">Entrar</button>
+              </div>
 
-            <div class="adminResult" id="adminRootLoginResult" aria-live="polite"></div>
-          </form>
+              <button class="adminLink" type="button" id="adminRootForgotBtn">¿Olvidaste la clave?</button>
+              <div class="adminResult" id="adminRootLoginResult" aria-live="polite"></div>
+            </form>
 
-          <form class="adminForm" id="adminRootForgotForm" hidden>
-            <p class="adminCard__hint" style="margin-bottom: 1rem;">Ingresa el correo configurado por seguridad.</p>
-            <label class="adminField">
-              <span class="adminField__label">Correo Admin</span>
-              <input class="adminField__input" id="adminRootForgotEmail" type="email" placeholder="tucorreo@ejemplo.com" required />
-            </label>
-            <div class="adminActions" style="flex-direction: column; align-items: stretch; gap: 0.5rem;">
-              <button class="adminButton" id="adminRootSendForgotBtn" type="submit">Enviar Código</button>
-              <button class="adminButton adminButtonOutline" type="button" id="adminRootCancelForgotBtn">Volver</button>
-            </div>
-            <div class="adminResult" id="adminRootForgotResult" aria-live="polite"></div>
-          </form>
+            <form class="adminForm" id="adminRootForgotForm" hidden>
+              <p class="adminCard__hint">Ingresa el correo configurado por seguridad.</p>
+              <label class="adminField">
+                <span class="adminField__label">Correo Admin</span>
+                <input class="adminField__input" id="adminRootForgotEmail" type="email" placeholder="tucorreo@ejemplo.com" required />
+              </label>
+              <div class="adminActions adminActions--stack">
+                <button class="adminButton adminButton--wide" id="adminRootSendForgotBtn" type="submit">Enviar Codigo</button>
+                <button class="adminButton adminButton--ghost adminButton--wide" type="button" id="adminRootCancelForgotBtn">Volver al login</button>
+              </div>
+              <div class="adminResult" id="adminRootForgotResult" aria-live="polite"></div>
+            </form>
 
-          <form class="adminForm" id="adminRootVerifyForm" hidden>
-            <p class="adminCard__hint" style="margin-bottom: 1rem; color: var(--success, #10b981);">¡Correo enviado! Ingresa el código recibido.</p>
-            <label class="adminField">
-              <span class="adminField__label">Código de 6 dígitos</span>
-              <input class="adminField__input" id="adminRootVerifyCode" type="text" placeholder="123456" required autocomplete="off" />
-            </label>
-            <div class="adminActions" style="flex-direction: column; align-items: stretch; gap: 0.5rem;">
-              <button class="adminButton" id="adminRootVerifyBtn" type="submit">Validar Código</button>
-              <button class="adminButton adminButtonOutline" type="button" id="adminRootCancelVerifyBtn">Cancelar</button>
-            </div>
-            <div class="adminResult" id="adminRootVerifyResult" aria-live="polite"></div>
-          </form>
+            <form class="adminForm" id="adminRootVerifyForm" hidden>
+              <p class="adminCard__hint">Codigo enviado al correo. Ingresalo para continuar.</p>
+              <label class="adminField">
+                <span class="adminField__label">Codigo de 6 digitos</span>
+                <input class="adminField__input" id="adminRootVerifyCode" type="text" placeholder="123456" required autocomplete="off" />
+              </label>
+              <div class="adminActions adminActions--stack">
+                <button class="adminButton adminButton--wide" id="adminRootVerifyBtn" type="submit">Validar codigo</button>
+                <button class="adminButton adminButton--ghost adminButton--wide" type="button" id="adminRootCancelVerifyBtn">Cancelar</button>
+              </div>
+              <div class="adminResult" id="adminRootVerifyResult" aria-live="polite"></div>
+            </form>
 
-          <form class="adminForm" id="adminRootResetForm" hidden>
-            <p class="adminCard__hint" style="margin-bottom: 1rem;">Código verificado correctamente. Ingresa tu nueva clave.</p>
-            <label class="adminField">
-              <span class="adminField__label">Nueva Password</span>
-              <input class="adminField__input" id="adminRootNewPassword" type="password" placeholder="Tu nueva password" required minlength="6" />
-            </label>
-            <div class="adminActions" style="flex-direction: column; align-items: stretch; gap: 0.5rem;">
-              <button class="adminButton" id="adminRootUpdatePasswordBtn" type="submit">Actualizar Clave</button>
-            </div>
-            <div class="adminResult" id="adminRootResetResult" aria-live="polite"></div>
-          </form>
+            <form class="adminForm" id="adminRootResetForm" hidden>
+              <p class="adminCard__hint">Codigo validado. Crea una nueva clave.</p>
+              <label class="adminField">
+                <span class="adminField__label">Nueva Password</span>
+                <input class="adminField__input" id="adminRootNewPassword" type="password" placeholder="Tu nueva password" required minlength="6" />
+              </label>
+              <div class="adminActions adminActions--stack">
+                <button class="adminButton adminButton--wide" id="adminRootUpdatePasswordBtn" type="submit">Actualizar clave</button>
+              </div>
+              <div class="adminResult" id="adminRootResetResult" aria-live="polite"></div>
+            </form>
+          </div>
         </section>
 
         <section class="adminCard" id="adminRootClients" hidden aria-label="Clientes">

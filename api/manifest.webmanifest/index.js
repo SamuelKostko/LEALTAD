@@ -2,7 +2,7 @@ import { send } from '../_lib/http.js';
 
 function getTokenFromReq(req) {
   try {
-    const url = new URL(req.url, 'https://lealtad-three.vercel.app/');
+    const url = new URL(req.url, 'https://lealtad-production-0763.up.railway.app/');
     const token = String(url.searchParams.get('token') ?? '').trim();
     return token;
   } catch {

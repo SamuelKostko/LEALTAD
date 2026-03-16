@@ -266,6 +266,19 @@ if (qrButton) {
       el.textContent = String(text ?? '');
     };
 
+    const showLoginStep = (step) => {
+      if (loginForm) loginForm.hidden = step !== 'login';
+      if (forgotForm) forgotForm.hidden = step !== 'forgot';
+      if (verifyForm) verifyForm.hidden = step !== 'verify';
+      if (resetForm) resetForm.hidden = step !== 'reset';
+    };
+
+    const clearRecoveryResults = () => {
+      setText(document.getElementById('adminRootForgotResult'), '');
+      setText(document.getElementById('adminRootVerifyResult'), '');
+      setText(document.getElementById('adminRootResetResult'), '');
+    };
+
     const setAuthenticatedUi = (authed) => {
       if (loginCard) loginCard.hidden = authed;
       if (clientsCard) clientsCard.hidden = !authed;
@@ -558,29 +571,30 @@ if (qrButton) {
 
     // Show login by default until we know session state.
     setAuthenticatedUi(false);
+    showLoginStep('login');
+    clearRecoveryResults();
     
     let currentValidCode = null; // Guardar temporalmente en el cliente
 
     if (forgotBtn) {
       forgotBtn.addEventListener('click', () => {
-        if (loginForm) loginForm.hidden = true;
-        if (forgotForm) forgotForm.hidden = false;
-        setText(document.getElementById('adminRootForgotResult'), '');
+        clearRecoveryResults();
+        showLoginStep('forgot');
       });
     }
 
     if (cancelForgotBtn) {
       cancelForgotBtn.addEventListener('click', () => {
-        if (forgotForm) forgotForm.hidden = true;
-        if (loginForm) loginForm.hidden = false;
+        clearRecoveryResults();
+        showLoginStep('login');
         setText(document.getElementById('adminRootLoginResult'), '');
       });
     }
 
     if (cancelVerifyBtn) {
       cancelVerifyBtn.addEventListener('click', () => {
-        if (verifyForm) verifyForm.hidden = true;
-        if (loginForm) loginForm.hidden = false;
+        clearRecoveryResults();
+        showLoginStep('login');
         setText(document.getElementById('adminRootLoginResult'), '');
       });
     }
@@ -591,7 +605,7 @@ if (qrButton) {
         const resultEl = document.getElementById('adminRootForgotResult');
         const email = String(forgotEmailEl?.value ?? '').trim();
         resultEl.className = 'adminResult adminResult--info';
-        resultEl.textContent = 'Enviando link...';
+        resultEl.textContent = 'Enviando codigo...';
         
         try {
           const res = await fetch('/api/admin/forgot-password', {
@@ -608,10 +622,9 @@ if (qrButton) {
           }
           
           resultEl.className = 'adminResult adminResult--ok';
-          resultEl.textContent = 'Corro enviado éxito. Revisa tu bandeja.';
+          resultEl.textContent = 'Correo enviado. Revisa tu bandeja.';
           setTimeout(() => {
-            forgotForm.hidden = true;
-            verifyForm.hidden = false;
+            showLoginStep('verify');
           }, 1500);
         } catch {
           resultEl.className = 'adminResult adminResult--err';
@@ -650,11 +663,10 @@ if (qrButton) {
              
              resultEl.className = 'adminResult adminResult--ok';
              resultEl.textContent = 'Código correcto.';
-             currentValidCode = code; // Guardamos para pasarlo en el reset-password
+             currentValidCode = code;
              
              setTimeout(() => {
-                verifyForm.hidden = true;
-                resetForm.hidden = false;
+               showLoginStep('reset');
              }, 1000);
 
           } catch {
@@ -696,7 +708,10 @@ if (qrButton) {
             resultEl.className = 'adminResult adminResult--ok';
             resultEl.textContent = 'Clave actualizada. Redirigiendo...';
             setTimeout(() => {
-              window.location.href = '/admin'; // Refresca para iniciar sesión normal
+              showLoginStep('login');
+              clearRecoveryResults();
+              if (passwordEl) passwordEl.focus();
+              window.location.href = '/admin';
             }, 2000);
           } catch {
             resultEl.className = 'adminResult adminResult--err';
