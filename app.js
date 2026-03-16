@@ -203,7 +203,7 @@ if (qrButton) {
     const adminHeaderGoQr = document.getElementById('adminHeaderGoQr');
     const profileButton = document.getElementById('profileButton');
     if (adminHeaderGoQr) {
-      adminHeaderGoQr.hidden = false;
+      adminHeaderGoQr.hidden = true;
       adminHeaderGoQr.addEventListener('click', () => { window.location.href = '/admin/qr'; });
     }
     if (profileButton) profileButton.hidden = true;
@@ -284,6 +284,7 @@ if (qrButton) {
       if (clientsCard) clientsCard.hidden = !authed;
       if (cardTxCard) cardTxCard.hidden = !authed;
       if (allTxCard) allTxCard.hidden = !authed;
+      if (adminHeaderGoQr) adminHeaderGoQr.hidden = !authed;
     };
 
     const updateClientTxVisibility = () => {
@@ -607,28 +608,36 @@ if (qrButton) {
         resultEl.className = 'adminResult adminResult--info';
         resultEl.textContent = 'Enviando codigo...';
         
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 15000);
+
         try {
           const res = await fetch('/api/admin/forgot-password', {
-             method: 'POST',
-             headers: { 'Content-Type': 'application/json' },
-             body: JSON.stringify({ email })
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email }),
+            signal: controller.signal
           });
+          clearTimeout(timer);
+
           const data = await res.json().catch(() => null);
-          
+
           if (!res.ok) {
             resultEl.className = 'adminResult adminResult--err';
             resultEl.textContent = data?.error || 'Correo incorrecto o error al enviar.';
             return;
           }
-          
+
           resultEl.className = 'adminResult adminResult--ok';
           resultEl.textContent = 'Correo enviado. Revisa tu bandeja.';
-          setTimeout(() => {
-            showLoginStep('verify');
-          }, 1500);
-        } catch {
+          setTimeout(() => showLoginStep('verify'), 1500);
+        } catch (err) {
+          clearTimeout(timer);
           resultEl.className = 'adminResult adminResult--err';
-          resultEl.textContent = 'Error de red.';
+          resultEl.textContent =
+            err?.name === 'AbortError'
+              ? 'Tiempo de espera agotado con SMTP. Revisa configuracion.'
+              : 'Error de red.';
         }
       });
     }

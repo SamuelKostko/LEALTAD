@@ -72,7 +72,8 @@
       </header>
 
       <main class="content" id="scroll" aria-label="Contenido">
-        <section class="adminCard" id="adminRootLogin" hidden aria-label="Acceso admin">
+        <section class="adminCard authModal" id="adminRootLogin" hidden aria-label="Acceso admin" aria-modal="true" role="dialog">
+          <div class="authModal__backdrop" aria-hidden="true"></div>
           <div class="adminLoginPanel">
             <div class="adminCard__title">Acceso</div>
             <p class="adminCard__hint">Ingresa tu password para acceder al panel.</p>

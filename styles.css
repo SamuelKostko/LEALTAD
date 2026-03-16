@@ -347,6 +347,28 @@ body {
   background: var(--surface);
 }
 
+.authModal {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+}
+
+.authModal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.34);
+  backdrop-filter: blur(3px);
+}
+
+.authModal .adminLoginPanel {
+  position: relative;
+  z-index: 1;
+  width: min(560px, 100%);
+}
+
 .adminResult {
   min-height: 18px;
   font-size: 13px;
@@ -424,6 +446,7 @@ body {
 .mode-admin .adminLoginPanel {
   background: #ffffff;
   border-color: #dbe4f0;
+  box-shadow: 0 22px 60px rgba(15, 23, 42, 0.16);
 }
 
 .mode-admin .adminCard__title {
@@ -1539,4 +1562,25 @@ body {
   font-size: 12px;
   font-weight: 300;
   color: var(--muted);
+}
+
+/* Auth Modal */
+.authModal {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(4px);
+  z-index: 1200;
+}
+.authModal__panel {
+  width: min(92vw, 420px);
+  background: #fff;
+  border: 1px solid #dbe4f0;
+  border-radius: 16px;
+  padding: 18px;
+}
+.authModal [hidden] {
+  display: none !important;
 }

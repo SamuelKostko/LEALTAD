@@ -38,16 +38,20 @@ export default async function handler(req, res) {
 
     let transporter;
     const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_FROM_EMAIL } = process.env;
+    const smtpPort = Number(SMTP_PORT);
 
-    if (SMTP_HOST && SMTP_USER) {
+    if (SMTP_HOST && SMTP_USER && SMTP_PASS && Number.isFinite(smtpPort) && smtpPort > 0) {
         transporter = nodemailer.createTransport({
             host: SMTP_HOST,
-            port: Number(SMTP_PORT),
-            secure: Number(SMTP_PORT) === 465, 
+            port: smtpPort,
+            secure: smtpPort === 465,
             auth: {
                 user: SMTP_USER,
                 pass: SMTP_PASS
-            }
+            },
+            connectionTimeout: 10000,
+            greetingTimeout: 10000,
+            socketTimeout: 15000
         });
 
         await transporter.sendMail({
