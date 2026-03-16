@@ -11,6 +11,7 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const HOST = process.env.HOST || '0.0.0.0';
 
 app.use(cors());
 app.use(express.json());
@@ -100,13 +101,13 @@ pwaRoutes.forEach(route => {
 });
 
 // Fallback all other non-API routes to index.html to support SPA behavior
-app.get('*', (req, res, next) => {
+app.use((req, res, next) => {
     if (req.path.startsWith('/api/')) {
         return next();
     }
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+app.listen(PORT, HOST, () => {
+  console.log(`Server running on http://${HOST}:${PORT}`);
 });
