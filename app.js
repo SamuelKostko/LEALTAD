@@ -217,6 +217,20 @@ if (qrButton) {
 
     const loginCard = document.getElementById('adminRootLogin');
     const loginForm = document.getElementById('adminRootLoginForm');
+    
+    // Forgot / Reset DOM Elements
+    const forgotBtn = document.getElementById('adminRootForgotBtn');
+    const forgotForm = document.getElementById('adminRootForgotForm');
+    const cancelForgotBtn = document.getElementById('adminRootCancelForgotBtn');
+    const forgotEmailEl = document.getElementById('adminRootForgotEmail');
+
+    const verifyForm = document.getElementById('adminRootVerifyForm');
+    const verifyCodeEl = document.getElementById('adminRootVerifyCode');
+    const cancelVerifyBtn = document.getElementById('adminRootCancelVerifyBtn');
+
+    const resetForm = document.getElementById('adminRootResetForm');
+    const newPasswordEl = document.getElementById('adminRootNewPassword');
+    
     const passwordEl = document.getElementById('adminRootPassword');
     const loginResultEl = document.getElementById('adminRootLoginResult');
 
@@ -544,6 +558,152 @@ if (qrButton) {
 
     // Show login by default until we know session state.
     setAuthenticatedUi(false);
+    
+    let currentValidCode = null; // Guardar temporalmente en el cliente
+
+    if (forgotBtn) {
+      forgotBtn.addEventListener('click', () => {
+        if (loginForm) loginForm.hidden = true;
+        if (forgotForm) forgotForm.hidden = false;
+        setText(document.getElementById('adminRootForgotResult'), '');
+      });
+    }
+
+    if (cancelForgotBtn) {
+      cancelForgotBtn.addEventListener('click', () => {
+        if (forgotForm) forgotForm.hidden = true;
+        if (loginForm) loginForm.hidden = false;
+        setText(document.getElementById('adminRootLoginResult'), '');
+      });
+    }
+
+    if (cancelVerifyBtn) {
+      cancelVerifyBtn.addEventListener('click', () => {
+        if (verifyForm) verifyForm.hidden = true;
+        if (loginForm) loginForm.hidden = false;
+        setText(document.getElementById('adminRootLoginResult'), '');
+      });
+    }
+
+    if (forgotForm) {
+      forgotForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const resultEl = document.getElementById('adminRootForgotResult');
+        const email = String(forgotEmailEl?.value ?? '').trim();
+        resultEl.className = 'adminResult adminResult--info';
+        resultEl.textContent = 'Enviando link...';
+        
+        try {
+          const res = await fetch('/api/admin/forgot-password', {
+             method: 'POST',
+             headers: { 'Content-Type': 'application/json' },
+             body: JSON.stringify({ email })
+          });
+          const data = await res.json().catch(() => null);
+          
+          if (!res.ok) {
+            resultEl.className = 'adminResult adminResult--err';
+            resultEl.textContent = data?.error || 'Correo incorrecto o error al enviar.';
+            return;
+          }
+          
+          resultEl.className = 'adminResult adminResult--ok';
+          resultEl.textContent = 'Corro enviado éxito. Revisa tu bandeja.';
+          setTimeout(() => {
+            forgotForm.hidden = true;
+            verifyForm.hidden = false;
+          }, 1500);
+        } catch {
+          resultEl.className = 'adminResult adminResult--err';
+          resultEl.textContent = 'Error de red.';
+        }
+      });
+    }
+
+    if (verifyForm) {
+       verifyForm.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const resultEl = document.getElementById('adminRootVerifyResult');
+          const code = String(verifyCodeEl?.value ?? '').trim();
+          
+          if (!code) {
+             resultEl.className = 'adminResult adminResult--err';
+             resultEl.textContent = 'Ingresa el código.';
+             return;
+          }
+          resultEl.className = 'adminResult adminResult--info';
+          resultEl.textContent = 'Verificando...';
+
+          try {
+             const res = await fetch('/api/admin/verify-code', {
+               method: 'POST',
+               headers: { 'Content-Type': 'application/json' },
+               body: JSON.stringify({ code })
+             });
+             const data = await res.json().catch(() => null);
+
+             if (!res.ok) {
+                resultEl.className = 'adminResult adminResult--err';
+                resultEl.textContent = data?.error || 'Código incorrecto.';
+                return;
+             }
+             
+             resultEl.className = 'adminResult adminResult--ok';
+             resultEl.textContent = 'Código correcto.';
+             currentValidCode = code; // Guardamos para pasarlo en el reset-password
+             
+             setTimeout(() => {
+                verifyForm.hidden = true;
+                resetForm.hidden = false;
+             }, 1000);
+
+          } catch {
+             resultEl.className = 'adminResult adminResult--err';
+             resultEl.textContent = 'Error de red.';
+          }
+       });
+    }
+
+    if (resetForm) {
+        resetForm.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const resultEl = document.getElementById('adminRootResetResult');
+          const newPassword = String(newPasswordEl?.value ?? '').trim();
+          
+          if (!newPassword || newPassword.length < 6) {
+            resultEl.className = 'adminResult adminResult--err';
+            resultEl.textContent = 'Clave muy corta.';
+            return;
+          }
+
+          resultEl.className = 'adminResult adminResult--info';
+          resultEl.textContent = 'Actualizando...';
+
+          try {
+            const res = await fetch('/api/admin/reset-password', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ code: currentValidCode, newPassword })
+            });
+            const data = await res.json().catch(() => null);
+
+            if (!res.ok) {
+              resultEl.className = 'adminResult adminResult--err';
+              resultEl.textContent = data?.error || 'Error al actualizar.';
+              return;
+            }
+
+            resultEl.className = 'adminResult adminResult--ok';
+            resultEl.textContent = 'Clave actualizada. Redirigiendo...';
+            setTimeout(() => {
+              window.location.href = '/admin'; // Refresca para iniciar sesión normal
+            }, 2000);
+          } catch {
+            resultEl.className = 'adminResult adminResult--err';
+            resultEl.textContent = 'Error de red.';
+          }
+        });
+    }
 
     if (loginForm) {
       loginForm.addEventListener('submit', async (e) => {

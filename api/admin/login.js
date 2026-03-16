@@ -1,6 +1,6 @@
 import { readJsonBody, sendJson } from '../_lib/http.js';
-import { createAdminSessionCookie, getAdminPassword, setAdminCookie } from '../_lib/adminAuth.js';
-import { timingSafeEqualString } from '../_lib/utils.js';
+import { createAdminSessionCookie, setAdminCookie } from '../_lib/adminAuth.js';
+import { getFirestoreDb } from '../_lib/firestore.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -8,13 +8,21 @@ export default async function handler(req, res) {
     return;
   }
 
-  const expected = getAdminPassword();
-  if (!expected) {
-    sendJson(res, 500, { error: 'ADMIN_PASSWORD (or ADMIN_KEY) not set on server' });
-    return;
-  }
-
   try {
+    const db = getFirestoreDb();
+    const adminDoc = await db.collection('config').doc('admin').get();
+    
+    if (!adminDoc.exists) {
+      sendJson(res, 500, { error: 'Admin settings not found in database. Create config/admin.' });
+      return;
+    }
+
+    const expected = String(adminDoc.data()?.password ?? '').trim();
+    if (!expected) {
+      sendJson(res, 500, { error: 'Admin password not set in database.' });
+      return;
+    }
+
     const body = await readJsonBody(req);
     const password = String(body?.password ?? '').trim();
     if (!password) {
@@ -22,7 +30,8 @@ export default async function handler(req, res) {
       return;
     }
 
-    if (!timingSafeEqualString(password, expected)) {
+    // Comparación directa (si prefieres usar hash más adelante, se cambia aquí)
+    if (password !== expected) {
       sendJson(res, 403, { error: 'Forbidden' });
       return;
     }
@@ -36,7 +45,7 @@ export default async function handler(req, res) {
     }
     setAdminCookie(res, cookieValue, req);
     sendJson(res, 200, { ok: true });
-  } catch {
-    sendJson(res, 400, { error: 'Invalid JSON body' });
+  } catch (err) {
+    sendJson(res, 500, { error: 'Internal server error' });
   }
 }
