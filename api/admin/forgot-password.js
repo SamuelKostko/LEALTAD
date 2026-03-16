@@ -76,6 +76,24 @@ export default async function handler(req, res) {
 
     sendJson(res, 200, { ok: true });
   } catch (err) {
-    sendJson(res, 500, { error: err.message || 'Internal error' });
+    const rawMessage = String(err?.message || 'Internal error');
+    const code = String(err?.code || '').toUpperCase();
+    const command = String(err?.command || '');
+    const isTimeout =
+      code.includes('TIMEOUT') ||
+      code === 'ESOCKET' ||
+      /timeout|timed out/i.test(rawMessage);
+
+    if (isTimeout) {
+      const host = String(process.env.SMTP_HOST || '');
+      const port = String(process.env.SMTP_PORT || '');
+      return sendJson(res, 500, {
+        error: `SMTP connection timeout (${host}:${port}). Revisa host/puerto, firewall de Railway y usa 587 o 2525 si 465 no responde.`,
+        code: code || undefined,
+        command: command || undefined
+      });
+    }
+
+    sendJson(res, 500, { error: rawMessage });
   }
 }
