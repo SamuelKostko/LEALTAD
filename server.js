@@ -89,14 +89,12 @@ const pwaRoutes = [
     '/',
     '/admin',
     '/admin/qr',
-    '/card/*',
-    '/go/*'
+    '/card/:id',
+    '/go/:token'
 ];
 
 pwaRoutes.forEach(route => {
-    // Convert wildcard * to express route param
-    const expressRoute = route.replace(/\*/g, '(.*)');
-    app.get(expressRoute, (req, res) => {
+    app.get(route, (req, res) => {
         res.sendFile(path.join(__dirname, 'index.html'));
     });
 });
