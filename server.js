@@ -17,6 +17,10 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+app.get('/health', (_req, res) => {
+   res.status(200).json({ ok: true });
+});
+
 // Simulador de rutas estilo Vercel (/api/*)
 async function registerApiRoutes(dirPath, basePath = '/api') {
   try {
@@ -108,6 +112,23 @@ app.use((req, res, next) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-app.listen(PORT, HOST, () => {
-  console.log(`Server running on http://${HOST}:${PORT}`);
+const server = app.listen(PORT, HOST, () => {
+   console.log(`Server running on http://${HOST}:${PORT}`);
 });
+
+function gracefulShutdown(signal) {
+   console.log(`Received ${signal}. Closing server...`);
+   server.close(() => {
+      console.log('HTTP server closed.');
+      process.exit(0);
+   });
+
+   // Force close if something hangs.
+   setTimeout(() => {
+      console.error('Forced shutdown after timeout.');
+      process.exit(1);
+   }, 10000).unref();
+}
+
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
