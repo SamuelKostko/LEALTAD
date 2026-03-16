@@ -94,7 +94,9 @@ const pwaRoutes = [
 ];
 
 pwaRoutes.forEach(route => {
-    app.get(route, (req, res) => {
+    // Convert wildcard * to express route param
+    const expressRoute = route.replace(/\*/g, '(.*)');
+    app.get(expressRoute, (req, res) => {
         res.sendFile(path.join(__dirname, 'index.html'));
     });
 });
