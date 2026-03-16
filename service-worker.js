@@ -1,4 +1,4 @@
-const CACHE_NAME = "wallet-pwa-v26";
+const CACHE_NAME = "wallet-pwa-v27";
 
 const PRECACHE_URLS = [
   "/",
@@ -78,6 +78,25 @@ self.addEventListener("fetch", (event) => {
     const url = new URL(request.url);
     if (url.pathname.startsWith("/api/")) {
       event.respondWith(fetch(request));
+      return;
+    }
+  } catch {
+    // Ignore URL parsing issues.
+  }
+
+  // Core UI files should prefer network so style/app changes are visible quickly.
+  try {
+    const url = new URL(request.url);
+    if (url.pathname === '/styles.css' || url.pathname === '/app.js' || url.pathname === '/index.html') {
+      event.respondWith(
+        fetch(request)
+          .then((response) => {
+            const responseClone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, responseClone));
+            return response;
+          })
+          .catch(() => caches.match(request))
+      );
       return;
     }
   } catch {
