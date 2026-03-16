@@ -88,12 +88,16 @@ app.use(express.static(__dirname, {
     index: false // We will handle index manually for PWA routing
 }));
 
+// Dedicated page for QR admin flow (matches vercel.json rewrite).
+app.get('/admin/qr', (_req, res) => {
+   res.sendFile(path.join(__dirname, 'admin-qr.html'));
+});
+
 // PWA Routing (Vercel.json Rewrites)
 // Serve index.html for main PWA routes
 const pwaRoutes = [
     '/',
     '/admin',
-    '/admin/qr',
     '/card/:id',
     '/go/:token'
 ];
