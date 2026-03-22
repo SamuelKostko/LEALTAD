@@ -8,29 +8,6 @@ if ("serviceWorker" in navigator) {
   });
 }
 
-/* One-time cache bust for stale PWA clients after activity fixes */
-(() => {
-  const APP_BUILD = '2026-03-22-activity-hotfix-1';
-  const KEY = 'wallet.appBuild';
-  const seen = localStorage.getItem(KEY);
-  if (seen === APP_BUILD) return;
-
-  localStorage.setItem(KEY, APP_BUILD);
-
-  if ('caches' in window) {
-    caches.keys().then((keys) => Promise.all(keys.map((k) => caches.delete(k)))).catch(() => {});
-  }
-
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.getRegistrations()
-      .then((regs) => Promise.all(regs.map((r) => r.update())))
-      .catch(() => {});
-  }
-
-  // Reload once so clients pick fresh app.js/index.html after cache cleanup.
-  window.setTimeout(() => window.location.reload(), 80);
-})();
-
 /* Stable viewport height for PWA/mobile (prevents bottom CTA from falling off-screen) */
 (() => {
   const setAppHeightVar = () => {

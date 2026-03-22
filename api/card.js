@@ -54,7 +54,6 @@ export default async function handler(req, res) {
   // mode=activity returns transaction history for the wallet.
   if (mode === 'activity') {
     const limit = clampInt(url.searchParams.get('limit'), { min: 1, max: 80, fallback: 20 });
-    const debugMode = String(url.searchParams.get('debug') || '') === '1';
     const firestore = getFirestoreDb();
 
     const mapTxSnap = (snap) =>
@@ -74,126 +73,37 @@ export default async function handler(req, res) {
         };
       });
 
-    const mapCreditSnap = (snap) =>
-      snap.docs.map((d) => {
-        const data = d.data() || {};
-        const points = Number.isFinite(Number(data.points))
-          ? Number(data.points)
-          : (Number.isFinite(Number(data.puntosGanados)) ? Number(data.puntosGanados) : 0);
-        const fallbackDesc = `Compra (Ref: ${data.refSaint || 'N/A'}, Monto: ${data.montoCompra || 0})`;
-        const created = toIso(data.createdAt) || toIso(data.fecha);
-        const status = String(data.status || 'completed').trim().toLowerCase();
-        return {
-          id: d.id,
-          type: typeof data.type === 'string' && data.type ? data.type : 'credit',
-          status,
-          token: String(data.cedula ?? data.idNumber ?? '').trim(),
-          points,
-          description: typeof data.description === 'string' && data.description.trim() ? data.description : fallbackDesc,
-          createdAt: created,
-          processedAt: created,
-          balanceBefore: null,
-          balanceAfter: null
-        };
-      });
-
     try {
-      // 1. Obtener la tarjeta primero para sacar la cedula (ya que transactions_credito se vincula por cedula)
-      const cardSnap = await firestore.collection('cards').doc(token).get();
-      if (!cardSnap.exists) {
-        return sendJson(res, 404, { error: 'Card not found' });
-      }
-      const cedula = String(cardSnap.data().cedula || '').trim();
-      const cedulaNum = Number(cedula);
-      const cedulaCandidates = [
-        cedula,
-        Number.isFinite(cedulaNum) ? cedulaNum : null
-      ].filter((v) => v !== null && String(v).trim() !== '');
+      let transactions = [];
+      try {
+        const snap = await firestore
+          .collection('transactions')
+          .where('token', '==', token)
+          .orderBy('createdAt', 'desc')
+          .limit(limit)
+          .get();
+        transactions = mapTxSnap(snap);
+      } catch (err) {
+        if (!isMissingIndexError(err)) throw err;
 
-      const getTxs = async (useOrder) => {
-        const queryLimit = useOrder ? limit : Math.max(limit, 200);
-        
-        let txQuery = firestore.collection('transactions').where('token', '==', token);
-        if (useOrder) txQuery = txQuery.orderBy('createdAt', 'desc');
+        const fallbackLimit = Math.max(limit, 200);
+        const snap = await firestore
+          .collection('transactions')
+          .where('token', '==', token)
+          .limit(fallbackLimit)
+          .get();
+        transactions = mapTxSnap(snap);
 
-        const promises = [txQuery.limit(queryLimit).get()];
-        const queryMeta = [];
-
-        const creditCollections = ['transactions_credito', 'transactions_credit'];
-        const creditFields = ['cedula', 'idNumber'];
-
-        for (const col of creditCollections) {
-          for (const field of creditFields) {
-            for (const value of cedulaCandidates) {
-              queryMeta.push({ collection: col, field, value: String(value) });
-              promises.push(
-                firestore.collection(col).where(field, '==', value).limit(queryLimit).get()
-              );
-            }
-          }
-        }
-
-        const results = await Promise.all(promises);
-        const txSnap = results[0];
-        const creditSnaps = results.slice(1);
-
-        const allItems = [...mapTxSnap(txSnap)];
-        const creditQueryCounts = [];
-        for (let i = 0; i < creditSnaps.length; i += 1) {
-          const snap = creditSnaps[i];
-          allItems.push(...mapCreditSnap(snap));
-          if (debugMode) {
-            const meta = queryMeta[i] || { collection: '?', field: '?', value: '?' };
-            creditQueryCounts.push({ ...meta, count: snap.size });
-          }
-        }
-
-        // Deduplicate records that can come from multiple equivalent queries.
-        const deduped = [];
-        const seen = new Set();
-        for (const item of allItems) {
-          const key = `${item.id}|${item.createdAt}|${item.points}|${item.type}`;
-          if (seen.has(key)) continue;
-          seen.add(key);
-          deduped.push(item);
-        }
-        
-        deduped.sort((a, b) => {
+        transactions.sort((a, b) => {
           const aMs = Math.max(toMs(a.processedAt), toMs(a.createdAt));
           const bMs = Math.max(toMs(b.processedAt), toMs(b.createdAt));
           return bMs - aMs;
         });
 
-        const txs = deduped.length > limit ? deduped.slice(0, limit) : deduped;
-        if (debugMode) {
-          return {
-            transactions: txs,
-            debug: {
-              token,
-              cedula,
-              queryLimit,
-              txCount: txSnap.size,
-              creditQueries: creditQueryCounts
-            }
-          };
-        }
-        return { transactions: txs, debug: null };
-      };
-
-      let transactions = [];
-      let debug = null;
-      try {
-        const result = await getTxs(true);
-        transactions = result.transactions;
-        debug = result.debug;
-      } catch (err) {
-        if (!isMissingIndexError(err)) throw err;
-        const result = await getTxs(false);
-        transactions = result.transactions;
-        debug = result.debug;
+        if (transactions.length > limit) transactions = transactions.slice(0, limit);
       }
 
-      sendJson(res, 200, { ok: true, transactions, ...(debug ? { debug } : {}) });
+      sendJson(res, 200, { ok: true, transactions });
     } catch (err) {
       sendJson(res, 500, { ok: false, error: err?.message ?? String(err) });
     }
