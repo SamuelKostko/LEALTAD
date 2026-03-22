@@ -78,11 +78,11 @@ export default async function handler(req, res) {
         const data = d.data() || {};
         return {
           id: d.id,
-          type: 'credit', // Forzamos para que el UI sepa que es positivo
+          type: typeof data.type === 'string' && data.type ? data.type : 'credit',
           status: 'completed',
-          token: typeof data.idNumber === 'string' ? data.idNumber : '',
-          points: Number.isFinite(Number(data.puntosGanados)) ? Number(data.puntosGanados) : 0,
-          description: `Compra (ref: ${data.refSaint || 'N/A'}, monto: ${data.montoCompra || 0})`,
+          token: typeof data.cedula === 'string' ? data.cedula : '',
+          points: Number.isFinite(Number(data.points)) ? Number(data.points) : 0,
+          description: `Compra (Ref: ${data.refSaint || 'N/A'}, Monto: ${data.montoCompra || 0})`,
           createdAt: toIso(data.fecha),
           processedAt: toIso(data.fecha),
           balanceBefore: null,
@@ -106,8 +106,8 @@ export default async function handler(req, res) {
 
         let credQuery = null;
         if (cedula) {
-          credQuery = firestore.collection('transactions_credito').where('idNumber', '==', cedula);
-          // OJO: Si vas a requerir ordenamiento en transactions_credito, necesitas de un index en Firestore de [idNumber, fecha]
+          credQuery = firestore.collection('transactions_credito').where('cedula', '==', cedula);
+          // OJO: Si vas a requerir ordenamiento, necesitas index: [cedula, fecha]
           if (useOrder) credQuery = credQuery.orderBy('fecha', 'desc');
         }
 
