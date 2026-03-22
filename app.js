@@ -1447,13 +1447,8 @@ if (qrButton) {
       }
 
       const txs = Array.isArray(data?.transactions) ? data.transactions : [];
-      // Keep historical items that are already finalized across providers.
-      const finalizedStatus = new Set(['success', 'completed', 'approved']);
-      const filtered = txs.filter((t) => {
-        const status = String(t?.status || '').trim().toLowerCase();
-        return !status || finalizedStatus.has(status);
-      });
-      render(filtered);
+      // Backend already provides wallet-scoped history; render as-is.
+      render(txs);
     } catch {
       renderEmpty('Error de red');
     } finally {
