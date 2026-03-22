@@ -107,8 +107,6 @@ export default async function handler(req, res) {
         let credQuery = null;
         if (cedula) {
           credQuery = firestore.collection('transactions_credito').where('cedula', '==', cedula);
-          // OJO: Si vas a requerir ordenamiento, necesitas index: [cedula, fecha]
-          if (useOrder) credQuery = credQuery.orderBy('fecha', 'desc');
         }
 
         const promises = [txQuery.limit(queryLimit).get()];
