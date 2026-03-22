@@ -54,6 +54,7 @@ export default async function handler(req, res) {
   // mode=activity returns transaction history for the wallet.
   if (mode === 'activity') {
     const limit = clampInt(url.searchParams.get('limit'), { min: 1, max: 80, fallback: 20 });
+    const debugMode = String(url.searchParams.get('debug') || '') === '1';
     const firestore = getFirestoreDb();
 
     const mapTxSnap = (snap) =>
@@ -76,15 +77,21 @@ export default async function handler(req, res) {
     const mapCreditSnap = (snap) =>
       snap.docs.map((d) => {
         const data = d.data() || {};
+        const points = Number.isFinite(Number(data.points))
+          ? Number(data.points)
+          : (Number.isFinite(Number(data.puntosGanados)) ? Number(data.puntosGanados) : 0);
+        const fallbackDesc = `Compra (Ref: ${data.refSaint || 'N/A'}, Monto: ${data.montoCompra || 0})`;
+        const created = toIso(data.createdAt) || toIso(data.fecha);
+        const status = String(data.status || 'completed').trim().toLowerCase();
         return {
           id: d.id,
           type: typeof data.type === 'string' && data.type ? data.type : 'credit',
-          status: 'completed',
-          token: typeof data.cedula === 'string' ? data.cedula : '',
-          points: Number.isFinite(Number(data.points)) ? Number(data.points) : 0,
-          description: `Compra (Ref: ${data.refSaint || 'N/A'}, Monto: ${data.montoCompra || 0})`,
-          createdAt: toIso(data.fecha),
-          processedAt: toIso(data.fecha),
+          status,
+          token: String(data.cedula ?? data.idNumber ?? '').trim(),
+          points,
+          description: typeof data.description === 'string' && data.description.trim() ? data.description : fallbackDesc,
+          createdAt: created,
+          processedAt: created,
           balanceBefore: null,
           balanceAfter: null
         };
@@ -97,6 +104,11 @@ export default async function handler(req, res) {
         return sendJson(res, 404, { error: 'Card not found' });
       }
       const cedula = String(cardSnap.data().cedula || '').trim();
+      const cedulaNum = Number(cedula);
+      const cedulaCandidates = [
+        cedula,
+        Number.isFinite(cedulaNum) ? cedulaNum : null
+      ].filter((v) => v !== null && String(v).trim() !== '');
 
       const getTxs = async (useOrder) => {
         const queryLimit = useOrder ? limit : Math.max(limit, 200);
@@ -104,43 +116,84 @@ export default async function handler(req, res) {
         let txQuery = firestore.collection('transactions').where('token', '==', token);
         if (useOrder) txQuery = txQuery.orderBy('createdAt', 'desc');
 
-        let credQuery = null;
-        if (cedula) {
-          credQuery = firestore.collection('transactions_credito').where('cedula', '==', cedula);
-        }
-
         const promises = [txQuery.limit(queryLimit).get()];
-        if (credQuery) {
-          promises.push(credQuery.limit(queryLimit).get());
+        const queryMeta = [];
+
+        const creditCollections = ['transactions_credito', 'transactions_credit'];
+        const creditFields = ['cedula', 'idNumber'];
+
+        for (const col of creditCollections) {
+          for (const field of creditFields) {
+            for (const value of cedulaCandidates) {
+              queryMeta.push({ collection: col, field, value: String(value) });
+              promises.push(
+                firestore.collection(col).where(field, '==', value).limit(queryLimit).get()
+              );
+            }
+          }
         }
 
         const results = await Promise.all(promises);
         const txSnap = results[0];
-        const credSnap = results[1];
+        const creditSnaps = results.slice(1);
+
+        const allItems = [...mapTxSnap(txSnap)];
+        const creditQueryCounts = [];
+        for (let i = 0; i < creditSnaps.length; i += 1) {
+          const snap = creditSnaps[i];
+          allItems.push(...mapCreditSnap(snap));
+          if (debugMode) {
+            const meta = queryMeta[i] || { collection: '?', field: '?', value: '?' };
+            creditQueryCounts.push({ ...meta, count: snap.size });
+          }
+        }
+
+        // Deduplicate records that can come from multiple equivalent queries.
+        const deduped = [];
+        const seen = new Set();
+        for (const item of allItems) {
+          const key = `${item.id}|${item.createdAt}|${item.points}|${item.type}`;
+          if (seen.has(key)) continue;
+          seen.add(key);
+          deduped.push(item);
+        }
         
-        const allItems = [
-          ...mapTxSnap(txSnap),
-          ...(credSnap ? mapCreditSnap(credSnap) : [])
-        ];
-        
-        allItems.sort((a, b) => {
+        deduped.sort((a, b) => {
           const aMs = Math.max(toMs(a.processedAt), toMs(a.createdAt));
           const bMs = Math.max(toMs(b.processedAt), toMs(b.createdAt));
           return bMs - aMs;
         });
 
-        return allItems.length > limit ? allItems.slice(0, limit) : allItems;
+        const txs = deduped.length > limit ? deduped.slice(0, limit) : deduped;
+        if (debugMode) {
+          return {
+            transactions: txs,
+            debug: {
+              token,
+              cedula,
+              queryLimit,
+              txCount: txSnap.size,
+              creditQueries: creditQueryCounts
+            }
+          };
+        }
+        return { transactions: txs, debug: null };
       };
 
       let transactions = [];
+      let debug = null;
       try {
-        transactions = await getTxs(true);
+        const result = await getTxs(true);
+        transactions = result.transactions;
+        debug = result.debug;
       } catch (err) {
         if (!isMissingIndexError(err)) throw err;
-        transactions = await getTxs(false);
+        const result = await getTxs(false);
+        transactions = result.transactions;
+        debug = result.debug;
       }
 
-      sendJson(res, 200, { ok: true, transactions });
+      sendJson(res, 200, { ok: true, transactions, ...(debug ? { debug } : {}) });
     } catch (err) {
       sendJson(res, 500, { ok: false, error: err?.message ?? String(err) });
     }
