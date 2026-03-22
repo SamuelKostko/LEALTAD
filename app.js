@@ -1447,8 +1447,12 @@ if (qrButton) {
       }
 
       const txs = Array.isArray(data?.transactions) ? data.transactions : [];
-      // Only show completed history items.
-      const filtered = txs.filter((t) => !t?.status || String(t.status) === 'success');
+      // Keep historical items that are already finalized across providers.
+      const finalizedStatus = new Set(['success', 'completed', 'approved']);
+      const filtered = txs.filter((t) => {
+        const status = String(t?.status || '').trim().toLowerCase();
+        return !status || finalizedStatus.has(status);
+      });
       render(filtered);
     } catch {
       renderEmpty('Error de red');
