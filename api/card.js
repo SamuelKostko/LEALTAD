@@ -56,12 +56,12 @@ export default async function handler(req, res) {
     const limit = clampInt(url.searchParams.get('limit'), { min: 1, max: 80, fallback: 20 });
     const firestore = getFirestoreDb();
 
-    const mapSnap = (snap, defaultType = '') =>
+    const mapTxSnap = (snap) =>
       snap.docs.map((d) => {
         const data = d.data() || {};
         return {
           id: d.id,
-          type: typeof data.type === 'string' && data.type ? data.type : defaultType,
+          type: typeof data.type === 'string' && data.type ? data.type : '',
           status: typeof data.status === 'string' ? data.status : '',
           token: typeof data.token === 'string' ? data.token : '',
           points: Number.isFinite(Number(data.points)) ? Number(data.points) : 0,
@@ -73,24 +73,56 @@ export default async function handler(req, res) {
         };
       });
 
+    const mapCreditSnap = (snap) =>
+      snap.docs.map((d) => {
+        const data = d.data() || {};
+        return {
+          id: d.id,
+          type: 'credit', // Forzamos para que el UI sepa que es positivo
+          status: 'completed',
+          token: typeof data.idNumber === 'string' ? data.idNumber : '',
+          points: Number.isFinite(Number(data.puntosGanados)) ? Number(data.puntosGanados) : 0,
+          description: `Compra (ref: ${data.refSaint || 'N/A'}, monto: ${data.montoCompra || 0})`,
+          createdAt: toIso(data.fecha),
+          processedAt: toIso(data.fecha),
+          balanceBefore: null,
+          balanceAfter: null
+        };
+      });
+
     try {
+      // 1. Obtener la tarjeta primero para sacar la cedula (ya que transactions_credito se vincula por cedula)
+      const cardSnap = await firestore.collection('cards').doc(token).get();
+      if (!cardSnap.exists) {
+        return sendJson(res, 404, { error: 'Card not found' });
+      }
+      const cedula = String(cardSnap.data().cedula || '').trim();
+
       const getTxs = async (useOrder) => {
         const queryLimit = useOrder ? limit : Math.max(limit, 200);
         
-        const getCollection = (colName) => {
-          let q = firestore.collection(colName).where('token', '==', token);
-          if (useOrder) q = q.orderBy('createdAt', 'desc');
-          return q.limit(queryLimit).get();
-        };
+        let txQuery = firestore.collection('transactions').where('token', '==', token);
+        if (useOrder) txQuery = txQuery.orderBy('createdAt', 'desc');
 
-        const [txSnap, credSnap] = await Promise.all([
-          getCollection('transactions'),
-          getCollection('transactions_creditos')
-        ]);
+        let credQuery = null;
+        if (cedula) {
+          credQuery = firestore.collection('transactions_credito').where('idNumber', '==', cedula);
+          // OJO: Si vas a requerir ordenamiento en transactions_credito, necesitas de un index en Firestore de [idNumber, fecha]
+          if (useOrder) credQuery = credQuery.orderBy('fecha', 'desc');
+        }
+
+        const promises = [txQuery.limit(queryLimit).get()];
+        if (credQuery) {
+          promises.push(credQuery.limit(queryLimit).get());
+        }
+
+        const results = await Promise.all(promises);
+        const txSnap = results[0];
+        const credSnap = results[1];
         
         const allItems = [
-          ...mapSnap(txSnap),
-          ...mapSnap(credSnap, 'credit')
+          ...mapTxSnap(txSnap),
+          ...(credSnap ? mapCreditSnap(credSnap) : [])
         ];
         
         allItems.sort((a, b) => {
