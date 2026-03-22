@@ -56,12 +56,12 @@ export default async function handler(req, res) {
     const limit = clampInt(url.searchParams.get('limit'), { min: 1, max: 80, fallback: 20 });
     const firestore = getFirestoreDb();
 
-    const mapSnap = (snap) =>
+    const mapSnap = (snap, defaultType = '') =>
       snap.docs.map((d) => {
         const data = d.data() || {};
         return {
           id: d.id,
-          type: typeof data.type === 'string' ? data.type : '',
+          type: typeof data.type === 'string' && data.type ? data.type : defaultType,
           status: typeof data.status === 'string' ? data.status : '',
           token: typeof data.token === 'string' ? data.token : '',
           points: Number.isFinite(Number(data.points)) ? Number(data.points) : 0,
@@ -74,33 +74,40 @@ export default async function handler(req, res) {
       });
 
     try {
-      let transactions = [];
-      try {
-        const snap = await firestore
-          .collection('transactions')
-          .where('token', '==', token)
-          .orderBy('createdAt', 'desc')
-          .limit(limit)
-          .get();
-        transactions = mapSnap(snap);
-      } catch (err) {
-        if (!isMissingIndexError(err)) throw err;
+      const getTxs = async (useOrder) => {
+        const queryLimit = useOrder ? limit : Math.max(limit, 200);
+        
+        const getCollection = (colName) => {
+          let q = firestore.collection(colName).where('token', '==', token);
+          if (useOrder) q = q.orderBy('createdAt', 'desc');
+          return q.limit(queryLimit).get();
+        };
 
-        const fallbackLimit = Math.max(limit, 200);
-        const snap = await firestore
-          .collection('transactions')
-          .where('token', '==', token)
-          .limit(fallbackLimit)
-          .get();
-        transactions = mapSnap(snap);
-
-        transactions.sort((a, b) => {
+        const [txSnap, credSnap] = await Promise.all([
+          getCollection('transactions'),
+          getCollection('transactions_creditos')
+        ]);
+        
+        const allItems = [
+          ...mapSnap(txSnap),
+          ...mapSnap(credSnap, 'credit')
+        ];
+        
+        allItems.sort((a, b) => {
           const aMs = Math.max(toMs(a.processedAt), toMs(a.createdAt));
           const bMs = Math.max(toMs(b.processedAt), toMs(b.createdAt));
           return bMs - aMs;
         });
 
-        if (transactions.length > limit) transactions = transactions.slice(0, limit);
+        return allItems.length > limit ? allItems.slice(0, limit) : allItems;
+      };
+
+      let transactions = [];
+      try {
+        transactions = await getTxs(true);
+      } catch (err) {
+        if (!isMissingIndexError(err)) throw err;
+        transactions = await getTxs(false);
       }
 
       sendJson(res, 200, { ok: true, transactions });
