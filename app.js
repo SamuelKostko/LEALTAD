@@ -26,6 +26,98 @@ window.addEventListener("beforeinstallprompt", (e) => {
   deferredInstallPrompt = e;
 });
 
+/* Push notifications: subscribe this device for the current card token */
+(() => {
+  if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) {
+    return;
+  }
+
+  const getTokenFromUrl = () => {
+    try {
+      const url = new URL(window.location.href);
+      const qp = (url.searchParams.get("token") || url.searchParams.get("t") || "").trim();
+      if (qp) return qp;
+
+      const path = url.pathname || "";
+      if (path.startsWith("/card/")) {
+        return decodeURIComponent(path.slice("/card/".length)).trim();
+      }
+    } catch {
+      // Ignore parse errors.
+    }
+    return "";
+  };
+
+  const token = getTokenFromUrl();
+  if (!token) return;
+
+  const PROMPT_KEY = "wallet.pushPromptSeen.v1";
+
+  const hasPrompted = () => {
+    try {
+      return localStorage.getItem(PROMPT_KEY) === "1";
+    } catch {
+      return false;
+    }
+  };
+
+  const markPrompted = () => {
+    try {
+      localStorage.setItem(PROMPT_KEY, "1");
+    } catch {
+      // Ignore storage failures.
+    }
+  };
+
+  const urlBase64ToUint8Array = (base64String) => {
+    const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+    const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+    for (let i = 0; i < rawData.length; i += 1) {
+      outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+  };
+
+  const subscribePush = async () => {
+    const keyRes = await fetch('/api/card/push-public-key', { cache: 'no-store' });
+    const keyData = await keyRes.json().catch(() => null);
+    if (!keyRes.ok || !keyData?.configured || !keyData?.publicKey) return;
+
+    if (Notification.permission === 'default' && !hasPrompted()) {
+      markPrompted();
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') return;
+    }
+
+    if (Notification.permission !== 'granted') return;
+
+    const registration = await navigator.serviceWorker.ready;
+    let subscription = await registration.pushManager.getSubscription();
+    if (!subscription) {
+      subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(String(keyData.publicKey))
+      });
+    }
+
+    await fetch('/api/card/push-subscription', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token, subscription: subscription.toJSON() })
+    });
+  };
+
+  window.addEventListener('load', () => {
+    window.setTimeout(() => {
+      subscribePush().catch(() => {
+        // Silent by design: push setup should not block the UI.
+      });
+    }, 700);
+  });
+})();
+
 /* CTA glow on tap/click (works reliably on iOS) */
 const qrButton = document.getElementById("qrButton");
 if (qrButton) {

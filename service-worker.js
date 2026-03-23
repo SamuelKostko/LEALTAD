@@ -1,4 +1,4 @@
-const CACHE_NAME = "wallet-pwa-v28";
+const CACHE_NAME = "wallet-pwa-v30";
 
 const PRECACHE_URLS = [
   "/",
@@ -134,6 +134,64 @@ self.addEventListener("fetch", (event) => {
           return response;
         })
         .catch(() => caches.match("./index.html"));
+    })
+  );
+});
+
+self.addEventListener('push', (event) => {
+  const fallback = {
+    title: 'Actividad en tu cuenta',
+    body: 'Hay una actualizacion en tu saldo.',
+    url: '/',
+    tag: 'wallet-activity',
+    data: {}
+  };
+
+  let payload = fallback;
+  try {
+    const parsed = event.data ? event.data.json() : null;
+    if (parsed && typeof parsed === 'object') {
+      payload = {
+        ...fallback,
+        ...parsed,
+        data: parsed.data && typeof parsed.data === 'object' ? parsed.data : {}
+      };
+    }
+  } catch {
+    // Ignore malformed payloads.
+  }
+
+  event.waitUntil(
+    self.registration.showNotification(payload.title, {
+      body: payload.body,
+      tag: payload.tag,
+      icon: '/icons/icon.svg',
+      badge: '/icons/icon.svg',
+      data: {
+        url: payload.url,
+        ...payload.data
+      }
+    })
+  );
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+
+  const targetUrl = String(event?.notification?.data?.url || '/');
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
+      for (const client of clients) {
+        if (client.url === targetUrl && 'focus' in client) {
+          return client.focus();
+        }
+      }
+
+      if (self.clients.openWindow) {
+        return self.clients.openWindow(targetUrl);
+      }
+
+      return undefined;
     })
   );
 });

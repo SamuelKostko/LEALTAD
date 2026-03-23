@@ -4,6 +4,7 @@ import { getFirestoreDb } from '../_lib/firestore.js';
 import { getPublicOrigin, readJsonBody, sendJson, sendRedirect } from '../_lib/http.js';
 import { makeToken, normalizeEmail } from '../_lib/utils.js';
 import { sendActivationEmail } from '../_lib/email.js';
+import { notifyTokenActivity } from '../_lib/push.js';
 
 async function dbProcessPurchase({ email, name, cedula, balance }) {
   const now = new Date().toISOString();
@@ -15,6 +16,9 @@ async function dbProcessPurchase({ email, name, cedula, balance }) {
 
   const txId = crypto.randomBytes(12).toString('base64url');
   const purchaseTxRef = firestore.collection('transactions').doc(txId);
+
+  let creditedPoints = 0;
+  let balanceBefore = 0;
 
   await firestore.runTransaction(async (tx) => {
     const snap = await tx.get(customerRef);
@@ -53,6 +57,9 @@ async function dbProcessPurchase({ email, name, cedula, balance }) {
     const currentSafe = Number.isFinite(current) ? current : 0;
     const credited = Math.max(0, balance - currentSafe);
 
+    creditedPoints = credited;
+    balanceBefore = currentSafe;
+
     tx.set(
       cardRef,
       {
@@ -80,7 +87,7 @@ async function dbProcessPurchase({ email, name, cedula, balance }) {
     }
   });
 
-  return { token, firstActivation };
+  return { token, firstActivation, creditedPoints, balanceBefore, balanceAfter: balance };
 }
 
 export default async function handler(req, res) {
@@ -111,7 +118,12 @@ export default async function handler(req, res) {
     }
 
     const origin = getPublicOrigin(req);
-    const { token, firstActivation } = await dbProcessPurchase({ email, name, cedula, balance });
+    const { token, firstActivation, creditedPoints, balanceBefore, balanceAfter } = await dbProcessPurchase({
+      email,
+      name,
+      cedula,
+      balance
+    });
 
     const linkPath = `/card/${token}`;
     const link = origin + linkPath;
@@ -123,6 +135,28 @@ export default async function handler(req, res) {
       } catch (err) {
         console.log('[activation-email] failed:', err?.message ?? err);
         emailResult = { sent: false, reason: 'send_failed' };
+      }
+    }
+
+    // Best-effort push notification to this wallet owner when balance increases.
+    if (creditedPoints > 0) {
+      try {
+        await notifyTokenActivity({
+          token,
+          title: 'Saldo acreditado',
+          body: `Recibiste ${creditedPoints} puntos. Saldo actual: ${balanceAfter}`,
+          url: linkPath,
+          tag: 'wallet-credit',
+          payload: {
+            type: 'purchase_credit',
+            points: creditedPoints,
+            balanceBefore,
+            balanceAfter,
+            description: firstActivation ? 'Activacion' : 'Credito'
+          }
+        });
+      } catch {
+        // Ignore push failures.
       }
     }
 

@@ -1,7 +1,8 @@
 import crypto from 'node:crypto';
 import { FieldValue } from 'firebase-admin/firestore';
 import { getFirestoreDb } from '../_lib/firestore.js';
-import { sendJson } from '../_lib/http.js';
+import { getPublicOrigin, sendJson } from '../_lib/http.js';
+import { notifyTokenActivity } from '../_lib/push.js';
 
 function getQrSecret() {
   return String(process.env.QR_SECRET ?? '').trim();
@@ -171,6 +172,27 @@ export default async function handler(req, res) {
 
       return { previous: current, next };
     });
+
+    // Best-effort push notification to wallet owner.
+    try {
+      const origin = getPublicOrigin(req);
+      await notifyTokenActivity({
+        token,
+        title: 'Consumo registrado',
+        body: `Se descontaron ${points} puntos. Saldo actual: ${result.next}`,
+        url: `${origin}/card/${encodeURIComponent(token)}`,
+        tag: 'wallet-redeem',
+        payload: {
+          type: 'redeem',
+          points,
+          balanceBefore: result.previous,
+          balanceAfter: result.next,
+          description: desc
+        }
+      });
+    } catch {
+      // Ignore push failures.
+    }
 
     sendJson(res, 200, {
       ok: true,

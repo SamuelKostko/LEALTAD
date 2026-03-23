@@ -31,6 +31,11 @@ SMTP:
 Webhook:
 - `WEBHOOK_SECRET` (opcional, recomendado): se valida contra header `x-webhook-secret`
 
+Push Notifications (Web Push):
+- `VAPID_PUBLIC_KEY`
+- `VAPID_PRIVATE_KEY`
+- `VAPID_SUBJECT` (ejemplo: `mailto:soporte@tu-dominio.com`)
+
 ## Admin
 
 - Abre `/admin` para entrar al panel de clientes y transacciones.
@@ -40,3 +45,4 @@ Webhook:
 ## Notas
 
 - Para enviar correos con dominio propio normalmente necesitas SPF/DKIM y un proveedor SMTP autorizado.
+- Las notificaciones push se envian por token de tarjeta cuando hay actividad de saldo (credito por compra o consumo por canje).
