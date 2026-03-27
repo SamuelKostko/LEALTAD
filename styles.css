@@ -24,49 +24,37 @@
   --border-soft: rgba(255, 255, 255, 0.10);
   --focus: rgba(255, 255, 255, 0.22);
 
-  --sheen: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.14) 0%,
-    rgba(255, 255, 255, 0.02) 24%,
-    rgba(255, 255, 255, 0.08) 55%,
-    rgba(255, 255, 255, 0) 75%
-  );
+  --sheen: linear-gradient(135deg,
+      rgba(255, 255, 255, 0.14) 0%,
+      rgba(255, 255, 255, 0.02) 24%,
+      rgba(255, 255, 255, 0.08) 55%,
+      rgba(255, 255, 255, 0) 75%);
 
-  --metal: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.95) 0%,
-    rgba(210, 210, 210, 0.92) 24%,
-    rgba(255, 255, 255, 0.85) 48%,
-    rgba(165, 165, 165, 0.9) 70%,
-    rgba(255, 255, 255, 0.9) 100%
-  );
+  --metal: linear-gradient(180deg,
+      rgba(255, 255, 255, 0.95) 0%,
+      rgba(210, 210, 210, 0.92) 24%,
+      rgba(255, 255, 255, 0.85) 48%,
+      rgba(165, 165, 165, 0.9) 70%,
+      rgba(255, 255, 255, 0.9) 100%);
   --metal-shadow: 0 0 24px rgba(255, 255, 255, 0.12);
 
-  --divider: linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0) 0%,
-    rgba(255, 255, 255, 0.22) 40%,
-    rgba(255, 255, 255, 0) 100%
-  );
+  --divider: linear-gradient(90deg,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0.22) 40%,
+      rgba(255, 255, 255, 0) 100%);
 
   --chip-line: rgba(255, 255, 255, 0.18);
-  --chip-inner: radial-gradient(
-      120% 120% at 20% 20%,
+  --chip-inner: radial-gradient(120% 120% at 20% 20%,
       rgba(255, 255, 255, 0.16) 0%,
-      rgba(255, 255, 255, 0) 55%
-    ),
-    radial-gradient(
-      90% 90% at 80% 80%,
+      rgba(255, 255, 255, 0) 55%),
+    radial-gradient(90% 90% at 80% 80%,
       rgba(172, 96, 255, 0.12) 0%,
-      rgba(0, 0, 0, 0) 60%
-    );
+      rgba(0, 0, 0, 0) 60%);
 
-  --qr-glow: radial-gradient(
-    closest-side,
-    rgba(64, 150, 255, 0.36) 0%,
-    rgba(172, 96, 255, 0.26) 35%,
-    rgba(0, 0, 0, 0) 70%
-  );
+  --qr-glow: radial-gradient(closest-side,
+      rgba(64, 150, 255, 0.36) 0%,
+      rgba(172, 96, 255, 0.26) 35%,
+      rgba(0, 0, 0, 0) 70%);
 
   --e-blue: rgba(64, 150, 255, 0.55);
   --e-violet: rgba(172, 96, 255, 0.55);
@@ -97,72 +85,54 @@
     --border-soft: rgba(0, 0, 0, 0.10);
     --focus: rgba(0, 0, 0, 0.20);
 
-    --sheen: linear-gradient(
-      135deg,
-      rgba(0, 0, 0, 0.10) 0%,
-      rgba(0, 0, 0, 0.02) 24%,
-      rgba(255, 255, 255, 0.10) 55%,
-      rgba(255, 255, 255, 0) 78%
-    );
+    --sheen: linear-gradient(135deg,
+        rgba(0, 0, 0, 0.10) 0%,
+        rgba(0, 0, 0, 0.02) 24%,
+        rgba(255, 255, 255, 0.10) 55%,
+        rgba(255, 255, 255, 0) 78%);
 
-    --metal: linear-gradient(
-      180deg,
-      rgba(0, 0, 0, 0.88) 0%,
-      rgba(70, 70, 70, 0.86) 28%,
-      rgba(0, 0, 0, 0.82) 58%,
-      rgba(110, 110, 110, 0.85) 100%
-    );
+    --metal: linear-gradient(180deg,
+        rgba(0, 0, 0, 0.88) 0%,
+        rgba(70, 70, 70, 0.86) 28%,
+        rgba(0, 0, 0, 0.82) 58%,
+        rgba(110, 110, 110, 0.85) 100%);
     --metal-shadow: 0 0 18px rgba(0, 0, 0, 0.10);
 
-    --divider: linear-gradient(
-      90deg,
-      rgba(0, 0, 0, 0) 0%,
-      rgba(0, 0, 0, 0.16) 40%,
-      rgba(0, 0, 0, 0) 100%
-    );
+    --divider: linear-gradient(90deg,
+        rgba(0, 0, 0, 0) 0%,
+        rgba(0, 0, 0, 0.16) 40%,
+        rgba(0, 0, 0, 0) 100%);
 
     --chip-line: rgba(0, 0, 0, 0.16);
-    --chip-inner: radial-gradient(
-        120% 120% at 20% 20%,
+    --chip-inner: radial-gradient(120% 120% at 20% 20%,
         rgba(0, 0, 0, 0.10) 0%,
-        rgba(0, 0, 0, 0) 55%
-      ),
-      radial-gradient(
-        90% 90% at 80% 80%,
+        rgba(0, 0, 0, 0) 55%),
+      radial-gradient(90% 90% at 80% 80%,
         rgba(172, 96, 255, 0.14) 0%,
-        rgba(0, 0, 0, 0) 60%
-      );
+        rgba(0, 0, 0, 0) 60%);
 
-    --qr-glow: radial-gradient(
-      closest-side,
-      rgba(64, 150, 255, 0.28) 0%,
-      rgba(172, 96, 255, 0.18) 35%,
-      rgba(0, 0, 0, 0) 72%
-    );
+    --qr-glow: radial-gradient(closest-side,
+        rgba(64, 150, 255, 0.28) 0%,
+        rgba(172, 96, 255, 0.18) 35%,
+        rgba(0, 0, 0, 0) 72%);
 
     --card-details-bg: color-mix(in srgb, var(--bg) 72%, black 28%);
   }
 
   .bg::before,
   .bg::after {
-    background: radial-gradient(
-        42% 34% at 18% 22%,
+    background: radial-gradient(42% 34% at 18% 22%,
         rgba(64, 150, 255, 0.16) 0%,
         rgba(64, 150, 255, 0.06) 30%,
-        rgba(0, 0, 0, 0) 62%
-      ),
-      radial-gradient(
-        40% 32% at 82% 18%,
+        rgba(0, 0, 0, 0) 62%),
+      radial-gradient(40% 32% at 82% 18%,
         rgba(172, 96, 255, 0.14) 0%,
         rgba(172, 96, 255, 0.05) 32%,
-        rgba(0, 0, 0, 0) 62%
-      ),
-      radial-gradient(
-        36% 30% at 86% 86%,
+        rgba(0, 0, 0, 0) 62%),
+      radial-gradient(36% 30% at 86% 86%,
         rgba(64, 150, 255, 0.12) 0%,
         rgba(64, 150, 255, 0.04) 34%,
-        rgba(0, 0, 0, 0) 64%
-      );
+        rgba(0, 0, 0, 0) 64%);
   }
 }
 
@@ -718,24 +688,18 @@ body {
   content: "";
   position: absolute;
   inset: -20%;
-  background: radial-gradient(
-      42% 34% at 18% 22%,
+  background: radial-gradient(42% 34% at 18% 22%,
       rgba(64, 150, 255, 0.18) 0%,
       rgba(64, 150, 255, 0.06) 28%,
-      rgba(0, 0, 0, 0) 62%
-    ),
-    radial-gradient(
-      40% 32% at 82% 18%,
+      rgba(0, 0, 0, 0) 62%),
+    radial-gradient(40% 32% at 82% 18%,
       rgba(172, 96, 255, 0.16) 0%,
       rgba(172, 96, 255, 0.05) 30%,
-      rgba(0, 0, 0, 0) 62%
-    ),
-    radial-gradient(
-      36% 30% at 86% 86%,
+      rgba(0, 0, 0, 0) 62%),
+    radial-gradient(36% 30% at 86% 86%,
       rgba(64, 150, 255, 0.14) 0%,
       rgba(64, 150, 255, 0.04) 30%,
-      rgba(0, 0, 0, 0) 62%
-    );
+      rgba(0, 0, 0, 0) 62%);
   filter: blur(10px);
 }
 
@@ -834,16 +798,12 @@ body {
   position: absolute;
   inset: -1px;
   border-radius: 999px;
-  background: radial-gradient(
-      80% 80% at 30% 20%,
+  background: radial-gradient(80% 80% at 30% 20%,
       rgba(64, 150, 255, 0.28) 0%,
-      rgba(0, 0, 0, 0) 60%
-    ),
-    radial-gradient(
-      80% 80% at 70% 80%,
+      rgba(0, 0, 0, 0) 60%),
+    radial-gradient(80% 80% at 70% 80%,
       rgba(172, 96, 255, 0.22) 0%,
-      rgba(0, 0, 0, 0) 60%
-    );
+      rgba(0, 0, 0, 0) 60%);
   filter: blur(8px);
   opacity: 0.7;
   pointer-events: none;
@@ -1190,16 +1150,12 @@ body {
   content: "";
   position: absolute;
   inset: -40%;
-  background: radial-gradient(
-      70% 70% at 20% 20%,
+  background: radial-gradient(70% 70% at 20% 20%,
       rgba(64, 150, 255, 0.30) 0%,
-      rgba(0, 0, 0, 0) 55%
-    ),
-    radial-gradient(
-      70% 70% at 80% 90%,
+      rgba(0, 0, 0, 0) 55%),
+    radial-gradient(70% 70% at 80% 90%,
       rgba(172, 96, 255, 0.22) 0%,
-      rgba(0, 0, 0, 0) 60%
-    );
+      rgba(0, 0, 0, 0) 60%);
   filter: blur(12px);
   opacity: 0.65;
 }
@@ -1416,7 +1372,7 @@ body {
   padding: calc(10px + env(safe-area-inset-top)) 18px;
 }
 
-.profileMenu__frame > * {
+.profileMenu__frame>* {
   pointer-events: auto;
 }
 
@@ -1584,6 +1540,7 @@ body {
   backdrop-filter: blur(4px);
   z-index: 1200;
 }
+
 .authModal__panel {
   width: min(92vw, 420px);
   background: #fff;
@@ -1591,6 +1548,7 @@ body {
   border-radius: 16px;
   padding: 18px;
 }
+
 .authModal [hidden] {
   display: none !important;
 }
@@ -1689,7 +1647,8 @@ body {
   font-family: inherit;
 }
 
-.adminResultItem:hover, .adminResultItem:focus-visible {
+.adminResultItem:hover,
+.adminResultItem:focus-visible {
   background: var(--surface-4);
   outline: none;
   border-color: var(--focus);
@@ -1749,7 +1708,7 @@ body {
   background-color: var(--admin-bg);
   font-family: var(--font-plus);
   color: var(--admin-text);
-  background-image: 
+  background-image:
     radial-gradient(at 0% 0%, rgba(var(--admin-primary-rgb), 0.05) 0px, transparent 50%),
     radial-gradient(at 100% 0%, rgba(76, 201, 240, 0.05) 0px, transparent 50%);
 }
@@ -1785,8 +1744,15 @@ body {
 }
 
 @keyframes adminFadeIn {
-  from { opacity: 0; transform: translateY(20px) scale(0.95); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .adminAuth__header {
@@ -1872,7 +1838,6 @@ body {
 
 .adminBtn--primary {
   background: var(--admin-primary);
-  color: #white;
   color: white;
   box-shadow: 0 10px 15px -3px rgba(var(--admin-primary-rgb), 0.3);
 }
@@ -1902,8 +1867,15 @@ body {
 }
 
 @keyframes adminSlideUp {
-  from { opacity: 0; transform: translateY(30px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .adminGrid {
@@ -1929,11 +1901,19 @@ body {
 .statCard::before {
   content: '';
   position: absolute;
-  top: 0; left: 0; width: 4px; height: 100%;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
 }
 
-.statCard--blue::before { background: var(--admin-primary); }
-.statCard--violet::before { background: var(--admin-secondary); }
+.statCard--blue::before {
+  background: var(--admin-primary);
+}
+
+.statCard--violet::before {
+  background: var(--admin-secondary);
+}
 
 .statCard__label {
   font-size: 13px;
@@ -1967,11 +1947,13 @@ body {
 }
 
 .adminPanelCard__icon {
-  width: 40px; height: 40px;
+  width: 40px;
+  height: 40px;
   border-radius: 12px;
   background: rgba(var(--admin-primary-rgb), 0.1);
   color: var(--admin-primary);
-  display: grid; place-items: center;
+  display: grid;
+  place-items: center;
 }
 
 .adminPanelCard__title {
@@ -2032,13 +2014,15 @@ body {
 
 .adminIconButton {
   margin-left: auto;
-  width: 36px; height: 36px;
+  width: 36px;
+  height: 36px;
   border-radius: 10px;
   border: 1px solid var(--admin-border);
   background: transparent;
   color: var(--admin-text-muted);
   cursor: pointer;
-  display: grid; place-items: center;
+  display: grid;
+  place-items: center;
   transition: all 0.2s;
 }
 
