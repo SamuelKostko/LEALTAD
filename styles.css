@@ -1674,3 +1674,45 @@ body {
 .historyModal__body {
   flex: 1;
 }
+
+.adminResultItem {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: var(--surface-3);
+  border: 1px solid var(--border-soft);
+  padding: 12px 14px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 150ms ease, border-color 150ms ease;
+  color: var(--text-strong);
+  font-family: inherit;
+}
+
+.adminResultItem:hover, .adminResultItem:focus-visible {
+  background: var(--surface-4);
+  outline: none;
+  border-color: var(--focus);
+}
+
+.adminResultItem__title {
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.adminResultItem__subtitle {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.adminResultItem--empty {
+  cursor: default;
+  color: var(--muted);
+  text-align: center;
+}
+
+.adminResultItem--empty:hover {
+  background: var(--surface-3);
+  border-color: var(--border-soft);
+}

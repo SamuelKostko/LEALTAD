@@ -338,7 +338,8 @@ if (qrButton) {
     const adminLogout = document.getElementById('adminLogout');
 
     const clientsList = document.getElementById('adminClientsList');
-    const clientSelect = document.getElementById('adminClientSelect');
+    const clientSearch = document.getElementById('adminClientSearch');
+    const clientSearchResults = document.getElementById('adminClientSearchResults');
     const clientsResult = document.getElementById('adminClientsResult');
     const cardTxHint = document.getElementById('adminCardTxHint');
     const cardTxList = document.getElementById('adminCardTxList');
@@ -346,9 +347,10 @@ if (qrButton) {
     const txList = document.getElementById('adminTxList');
     const txResult = document.getElementById('adminTxResult');
 
+    let allClientsData = [];
     let selectedToken = '';
     let tokenToDisplayName = new Map();
-    let clientSelectBound = false;
+    let clientSearchBound = false;
 
     const setLoginResult = (type, message) => {
       if (!loginResultEl) return;
@@ -391,14 +393,8 @@ if (qrButton) {
         // Ignore.
       }
 
-      if (clientSelect) {
-        clientSelect.innerHTML = '';
-        const placeholder = document.createElement('option');
-        placeholder.value = '';
-        placeholder.textContent = 'Selecciona un cliente…';
-        clientSelect.appendChild(placeholder);
-        clientSelect.value = '';
-      }
+      if (clientSearch) clientSearch.value = '';
+      if (clientSearchResults) clientSearchResults.innerHTML = '';
       if (cardTxList) cardTxList.innerHTML = '';
       if (txList) txList.innerHTML = '';
       if (cardTxHint) cardTxHint.textContent = 'Selecciona un cliente.';
@@ -531,35 +527,16 @@ if (qrButton) {
     const loadClients = async () => {
       setText(clientsResult, 'Cargando...');
       try {
-        const data = await apiGet('/api/admin/cards?limit=80');
+        const data = await apiGet('/api/admin/cards?limit=250');
         const cards = Array.isArray(data?.cards) ? data.cards : [];
 
+        allClientsData = cards;
         tokenToDisplayName = new Map();
 
-        if (clientSelect) {
-          clientSelect.innerHTML = '';
-
-          const placeholder = document.createElement('option');
-          placeholder.value = '';
-          placeholder.textContent = 'Selecciona un cliente…';
-          clientSelect.appendChild(placeholder);
-
-          for (const c of cards) {
-            const name = String(c?.name ?? '').trim() || '—';
-            const cedula = String(c?.cedula ?? '').trim();
-            const bal = Number.isFinite(Number(c?.balance)) ? Number(c.balance) : 0;
-            const token = String(c?.token ?? '').trim();
-            if (!token) continue;
-
-            tokenToDisplayName.set(token, name);
-
-            const opt = document.createElement('option');
-            opt.value = token;
-            opt.textContent = `${name}${cedula ? ` · ${cedula}` : ''} · ${bal} pts`;
-            clientSelect.appendChild(opt);
-          }
-
-          clientSelect.value = selectedToken;
+        for (const c of cards) {
+          const name = String(c?.name ?? '').trim() || '—';
+          const token = String(c?.token ?? '').trim();
+          if (token) tokenToDisplayName.set(token, name);
         }
 
         setText(clientsResult, '');
@@ -617,23 +594,67 @@ if (qrButton) {
       if (cardTxList) cardTxList.innerHTML = '';
       if (cardTxResult) cardTxResult.textContent = '';
 
-      if (clientSelect) {
-        if (!clientSelectBound) {
-          clientSelectBound = true;
-          clientSelect.addEventListener('change', () => {
-            selectedToken = String(clientSelect.value || '').trim();
-            updateClientTxVisibility();
+      const renderClientSearchResults = (query) => {
+        if (!clientSearchResults || !clientSearch) return;
+        clientSearchResults.innerHTML = '';
+        const q = String(query || '').toLowerCase().trim();
+        if (!q) return;
 
-            if (!selectedToken) {
+        const matches = allClientsData.filter(c => {
+          const name = String(c?.name ?? '').toLowerCase();
+          const cedula = String(c?.cedula ?? '').toLowerCase();
+          return name.includes(q) || cedula.includes(q);
+        }).slice(0, 15);
+
+        if (matches.length === 0) {
+          const empty = document.createElement('div');
+          empty.className = 'adminResultItem adminResultItem--empty';
+          empty.textContent = 'No se encontraron clientes.';
+          clientSearchResults.appendChild(empty);
+          return;
+        }
+
+        for (const c of matches) {
+          const btn = document.createElement('button');
+          btn.className = 'adminResultItem';
+          btn.type = 'button';
+          const name = String(c?.name ?? '').trim() || '—';
+          const cedula = String(c?.cedula ?? '').trim();
+          const bal = Number.isFinite(Number(c?.balance)) ? Number(c.balance) : 0;
+          
+          btn.innerHTML = `<div class="adminResultItem__title">${name} ${cedula ? ` · ${cedula}` : ''}</div><div class="adminResultItem__subtitle">${bal} pts</div>`;
+          
+          btn.onclick = () => {
+            selectedToken = String(c?.token ?? '').trim();
+            clientSearch.value = name;
+            clientSearchResults.innerHTML = '';
+            
+            updateClientTxVisibility();
+            if (selectedToken) {
+              const displayName = tokenToDisplayName.get(selectedToken) || '—';
+              if (cardTxHint) cardTxHint.textContent = `Cliente: ${displayName}`;
+              loadCardTransactions(selectedToken);
+            }
+          };
+          clientSearchResults.appendChild(btn);
+        }
+      };
+
+      if (clientSearch) {
+        if (!clientSearchBound) {
+          clientSearchBound = true;
+          clientSearch.addEventListener('input', (e) => {
+            if (!e.target.value.trim()) {
+              selectedToken = '';
+              updateClientTxVisibility();
               if (cardTxHint) cardTxHint.textContent = 'Selecciona un cliente.';
               if (cardTxList) cardTxList.innerHTML = '';
               if (cardTxResult) cardTxResult.textContent = '';
-              return;
             }
-
-            const displayName = tokenToDisplayName.get(selectedToken) || '—';
-            if (cardTxHint) cardTxHint.textContent = `Cliente: ${displayName}`;
-            loadCardTransactions(selectedToken);
+            renderClientSearchResults(e.target.value);
+          });
+          clientSearch.addEventListener('focus', (e) => {
+            if (!selectedToken) renderClientSearchResults(e.target.value);
           });
         }
       }

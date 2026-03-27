@@ -133,16 +133,15 @@
           </div>
         </section>
 
-        <section class="adminCard" id="adminRootClients" hidden aria-label="Clientes">
-          <div class="adminCard__title">Clientes</div>
-          <p class="adminCard__hint">Selecciona un cliente para ver sus transacciones.</p>
-          <div class="adminForm" id="adminClientsList">
+        <section class="adminCard" id="adminRootClients" hidden aria-label="Buscador de Clientes">
+          <div class="adminCard__title">Buscador de Clientes</div>
+          <p class="adminCard__hint">Escribe nombre o cédula para ver las transacciones del cliente.</p>
+          <div class="adminForm">
             <label class="adminField">
-              <span class="adminField__label">Cliente</span>
-              <select class="adminField__input" id="adminClientSelect" aria-label="Seleccionar cliente">
-                <option value="">Cargando...</option>
-              </select>
+              <span class="adminField__label">Buscar cliente</span>
+              <input class="adminField__input" id="adminClientSearch" type="text" autocomplete="off" placeholder="Ej. Juan Perez" aria-label="Buscar cliente">
             </label>
+            <div id="adminClientSearchResults" style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px;"></div>
           </div>
           <div class="adminResult" id="adminClientsResult" aria-live="polite"></div>
         </section>
