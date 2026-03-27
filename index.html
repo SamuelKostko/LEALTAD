@@ -264,6 +264,7 @@
 
           <ul class="activity__list" role="list">
           </ul>
+          <button class="activity__more" id="activityMoreBtn" type="button" aria-expanded="false" hidden>Mostrar todas</button>
         </section>
       </main>
 
@@ -321,6 +322,20 @@
             Cerrar sesión admin
           </button>
           <div class="profileMenu__hint" id="installHint" aria-live="polite"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal de historial de transacciones -->
+    <div class="historyModal" id="historyModal" aria-hidden="true" role="dialog" aria-modal="true" aria-label="Todas las transacciones">
+      <div class="historyModal__frame">
+        <header class="historyModal__header">
+          <span class="historyModal__title">Todas las transacciones</span>
+          <button class="historyModal__close" id="historyCloseBtn" type="button" aria-label="Cerrar">✕</button>
+        </header>
+        <div class="historyModal__body">
+          <ul class="activity__list" id="historyList" role="list">
+          </ul>
         </div>
       </div>
     </div>

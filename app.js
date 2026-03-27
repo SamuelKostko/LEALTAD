@@ -1404,8 +1404,12 @@ if (qrButton) {
 /* Activity: show transaction history */
 (() => {
   const refreshBtn = document.getElementById('activityRefresh');
-  const list = document.querySelector('.activity__list');
-  if (!refreshBtn || !list) return;
+  const mainList = document.querySelector('.activity__list:not(#historyList)');
+  const historyList = document.getElementById('historyList');
+  const moreBtn = document.getElementById('activityMoreBtn');
+  const historyModal = document.getElementById('historyModal');
+  const historyCloseBtn = document.getElementById('historyCloseBtn');
+  if (!refreshBtn || !mainList) return;
 
   const getTokenFromUrl = () => {
     try {
@@ -1441,16 +1445,17 @@ if (qrButton) {
     });
   };
 
-  const clearList = () => {
-    list.innerHTML = '';
+  const clearList = (targetList) => {
+    if (targetList) targetList.innerHTML = '';
   };
 
-  const renderEmpty = (text) => {
-    clearList();
+  const renderEmpty = (targetList, text) => {
+    if (!targetList) return;
+    clearList(targetList);
     const li = document.createElement('li');
     li.className = 'activity__item';
     li.innerHTML = `<div class="activity__icon"></div><div class="activity__text"><div class="activity__name">${text}</div><div class="activity__time"></div></div><div class="activity__amount"></div>`;
-    list.appendChild(li);
+    targetList.appendChild(li);
   };
 
   const computeDelta = (t) => {
@@ -1476,12 +1481,13 @@ if (qrButton) {
     return 'Movimiento';
   };
 
-  const render = (transactions) => {
-    clearList();
+  const render = (targetList, transactions) => {
+    if (!targetList) return;
+    clearList(targetList);
 
     const txs = Array.isArray(transactions) ? transactions : [];
     if (!txs.length) {
-      renderEmpty('Sin actividad');
+      renderEmpty(targetList, 'Sin actividad');
       return;
     }
 
@@ -1515,7 +1521,7 @@ if (qrButton) {
       li.appendChild(icon);
       li.appendChild(text);
       li.appendChild(amount);
-      list.appendChild(li);
+      targetList.appendChild(li);
     }
   };
 
@@ -1527,27 +1533,53 @@ if (qrButton) {
 
     loading = true;
     refreshBtn.disabled = true;
-    renderEmpty('Cargando...');
+    renderEmpty(mainList, 'Cargando...');
+    if (historyList) renderEmpty(historyList, 'Cargando...');
 
     try {
-      const res = await fetch(`/api/card?mode=activity&token=${encodeURIComponent(token)}&limit=25`, { cache: 'no-store' });
+      const res = await fetch(`/api/card?mode=activity&token=${encodeURIComponent(token)}&limit=80`, { cache: 'no-store' });
       const data = await res.json().catch(() => null);
       if (!res.ok || !data?.ok) {
         const msg = data?.error || data?.message || `Error (${res.status})`;
-        renderEmpty(msg);
+        renderEmpty(mainList, msg);
+        if (historyList) renderEmpty(historyList, msg);
         return;
       }
 
       const txs = Array.isArray(data?.transactions) ? data.transactions : [];
-      // Backend already provides wallet-scoped history; render as-is.
-      render(txs);
+      
+      const recentTxs = txs.slice(0, 5);
+      render(mainList, recentTxs);
+      if (historyList) render(historyList, txs);
+
+      if (moreBtn) {
+        if (txs.length > 5) {
+          moreBtn.hidden = false;
+        } else {
+          moreBtn.hidden = true;
+        }
+      }
     } catch {
-      renderEmpty('Error de red');
+      renderEmpty(mainList, 'Error de red');
+      if (historyList) renderEmpty(historyList, 'Error de red');
     } finally {
       loading = false;
       refreshBtn.disabled = false;
     }
   };
+
+  if (moreBtn && historyModal && historyCloseBtn) {
+    moreBtn.addEventListener('click', () => {
+      historyModal.classList.add('historyModal--active');
+      historyModal.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+    });
+    historyCloseBtn.addEventListener('click', () => {
+      historyModal.classList.remove('historyModal--active');
+      historyModal.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+    });
+  }
 
   refreshBtn.addEventListener('click', () => {
     loadActivity();
