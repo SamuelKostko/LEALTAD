@@ -378,10 +378,10 @@ if (qrButton) {
     };
 
     const setAuthenticatedUi = (authed) => {
+      const loginCard = document.getElementById('adminRootLogin');
+      const adminPanel = document.getElementById('adminRootPanel');
       if (loginCard) loginCard.hidden = authed;
-      if (clientsCard) clientsCard.hidden = !authed;
-      if (cardTxCard) cardTxCard.hidden = !authed;
-      if (allTxCard) allTxCard.hidden = !authed;
+      if (adminPanel) adminPanel.hidden = !authed;
       if (adminHeaderGoQr) adminHeaderGoQr.hidden = !authed;
       if (adminHeaderLogout) adminHeaderLogout.hidden = !authed;
     };
@@ -405,8 +405,8 @@ if (qrButton) {
     };
 
     const updateClientTxVisibility = () => {
-      if (!cardTxCard) return;
-      cardTxCard.hidden = !selectedToken;
+      const cardTxCard = document.getElementById('adminRootCardTx');
+      if (cardTxCard) cardTxCard.hidden = !selectedToken;
     };
 
     const formatTxDate = (tx) => {
@@ -432,84 +432,59 @@ if (qrButton) {
         const empty = document.createElement('div');
         empty.className = 'adminResult';
         empty.textContent = 'Sin transacciones';
+        empty.style.padding = '20px';
+        empty.style.textAlign = 'center';
+        empty.style.color = 'var(--admin-text-muted)';
         container.appendChild(empty);
         return;
       }
 
-      const head = document.createElement('div');
-      head.className = 'adminTableRow adminTableRow--head';
-      const headCells = mode === 'card'
-        ? ['Fecha', 'Tipo', 'Estado', 'Pts', 'Antes', 'Después', 'Descripción']
-        : ['Fecha', 'Tipo', 'Estado', 'Pts', 'Cliente', 'Descripción'];
-      for (const label of headCells) {
-        const c = document.createElement('div');
-        c.className = 'adminTableCell adminTableCell--muted';
-        c.textContent = label;
-        head.appendChild(c);
-      }
-      container.appendChild(head);
+      const table = document.createElement('table');
+      table.style.width = '100%';
+      table.style.borderCollapse = 'collapse';
+      
+      const thead = document.createElement('thead');
+      const hrow = document.createElement('tr');
+      const cols = mode === 'card' 
+        ? ['Fecha', 'Tipo', 'Estado', 'Pts', 'Antes', 'Después']
+        : ['Fecha', 'Tipo', 'Estado', 'Pts', 'Cliente'];
+      
+      cols.forEach(c => {
+        const th = document.createElement('th');
+        th.className = 'adminTableCell adminTableCell--muted';
+        th.style.textAlign = 'left';
+        th.style.background = 'var(--admin-bg)';
+        th.textContent = c;
+        hrow.appendChild(th);
+      });
+      thead.appendChild(hrow);
+      table.appendChild(thead);
 
-      for (const t of transactions) {
-        const row = document.createElement('div');
-        row.className = 'adminTableRow';
+      const tbody = document.createElement('tbody');
+      transactions.forEach(t => {
+        const row = document.createElement('tr');
+        const pts = Number(t.points) || 0;
+        
+        const cells = [
+          formatTxDate(t),
+          t.type || '—',
+          t.status || '—',
+          pts,
+          mode === 'card' ? (t.balanceBefore || 0) : (t.name || t.token || '—'),
+          mode === 'card' ? (t.balanceAfter || 0) : null
+        ].filter(v => v !== null);
 
-        const status = String(t.status || '—');
-        const pts = Number.isFinite(Number(t.points)) ? Number(t.points) : 0;
-        const type = String(t.type || '');
-        const tokenText = String(t.token || '');
-        const descText = String(t.description || '');
-
-        const before = Number.isFinite(Number(t.balanceBefore)) ? Number(t.balanceBefore) : null;
-        const after = Number.isFinite(Number(t.balanceAfter)) ? Number(t.balanceAfter) : null;
-
-        const cells = [];
-
-        const dateCell = document.createElement('div');
-        dateCell.className = 'adminTableCell adminTableCell--muted';
-        dateCell.textContent = formatTxDate(t);
-        cells.push(dateCell);
-
-        const typeCell = document.createElement('div');
-        typeCell.className = 'adminTableCell adminTableCell--muted';
-        typeCell.textContent = type || '—';
-        cells.push(typeCell);
-
-        const statusCell = document.createElement('div');
-        statusCell.className = 'adminTableCell adminTableCell--strong';
-        statusCell.textContent = status;
-        cells.push(statusCell);
-
-        const ptsCell = document.createElement('div');
-        ptsCell.className = 'adminTableCell adminTableCell--strong';
-        ptsCell.textContent = String(pts);
-        cells.push(ptsCell);
-
-        if (mode === 'card') {
-          const beforeCell = document.createElement('div');
-          beforeCell.className = 'adminTableCell adminTableCell--muted';
-          beforeCell.textContent = before === null ? '—' : String(before);
-          cells.push(beforeCell);
-
-          const afterCell = document.createElement('div');
-          afterCell.className = 'adminTableCell adminTableCell--muted';
-          afterCell.textContent = after === null ? '—' : String(after);
-          cells.push(afterCell);
-        } else {
-          const tokenCell = document.createElement('div');
-          tokenCell.className = 'adminTableCell adminTableCell--muted';
-          const nameText = String(t?.name || '').trim();
-          tokenCell.textContent = nameText || tokenText || '—';
-          cells.push(tokenCell);
-        }
-
-        const descCell = document.createElement('div');
-        descCell.className = 'adminTableCell';
-        descCell.textContent = descText || '—';
-        cells.push(descCell);
-
-        for (const c of cells) row.appendChild(c);
-        container.appendChild(row);
-      }
+        cells.forEach((val, idx) => {
+          const td = document.createElement('td');
+          td.className = 'adminTableCell';
+          if (idx === 2 || idx === 3) td.classList.add('adminTableCell--strong');
+          td.textContent = val;
+          row.appendChild(td);
+        });
+        tbody.appendChild(row);
+      });
+      table.appendChild(tbody);
+      container.appendChild(table);
     };
 
     const apiGet = async (path) => {
@@ -525,155 +500,115 @@ if (qrButton) {
     };
 
     const loadClients = async () => {
-      setText(clientsResult, 'Cargando...');
+      const clientsResult = document.getElementById('adminClientsResult');
+      setText(clientsResult, 'Cargando clientes...');
       try {
-        const data = await apiGet('/api/admin/cards?limit=250');
-        const cards = Array.isArray(data?.cards) ? data.cards : [];
-
-        allClientsData = cards;
+        const data = await apiGet('/api/admin/cards?limit=500');
+        allClientsData = Array.isArray(data?.cards) ? data.cards : [];
         tokenToDisplayName = new Map();
-
-        for (const c of cards) {
-          const name = String(c?.name ?? '').trim() || '—';
-          const token = String(c?.token ?? '').trim();
-          if (token) tokenToDisplayName.set(token, name);
-        }
-
+        allClientsData.forEach(c => {
+          if (c.token) tokenToDisplayName.set(c.token, c.name || '—');
+        });
         setText(clientsResult, '');
       } catch (err) {
-        if (err?.status === 401) {
-          setAuthenticatedUi(false);
-          setLoginResult('adminResult--err', 'Sesión expirada.');
-          return;
-        }
-        setText(clientsResult, err?.message ?? 'Error');
+        setText(clientsResult, err?.message || 'Error al cargar');
       }
     };
 
     const loadAllTransactions = async () => {
-      setText(txResult, 'Cargando...');
+      const txList = document.getElementById('adminTxList');
+      const txResult = document.getElementById('adminTxResult');
+      setText(txResult, 'Cargando movimientos...');
       try {
-        const data = await apiGet('/api/admin/transactions?limit=80');
-        const txs = Array.isArray(data?.transactions) ? data.transactions : [];
-        renderTxList(txList, txs, 'all');
+        const data = await apiGet('/api/admin/transactions?limit=50');
+        renderTxList(txList, data?.transactions || [], 'all');
         setText(txResult, '');
       } catch (err) {
-        if (err?.status === 401) {
-          setAuthenticatedUi(false);
-          setLoginResult('adminResult--err', 'Sesión expirada.');
-          return;
-        }
-        setText(txResult, err?.message ?? 'Error');
+        setText(txResult, err?.message || 'Error');
       }
     };
 
     const loadCardTransactions = async (token) => {
-      setText(cardTxResult, 'Cargando...');
+      const cardTxList = document.getElementById('adminCardTxList');
+      const cardTxResult = document.getElementById('adminCardTxResult');
+      setText(cardTxResult, 'Buscando...');
       try {
-        const data = await apiGet(`/api/admin/transactions?token=${encodeURIComponent(token)}&limit=80`);
-        const txs = Array.isArray(data?.transactions) ? data.transactions : [];
-        renderTxList(cardTxList, txs, 'card');
+        const data = await apiGet(`/api/admin/transactions?token=${encodeURIComponent(token)}&limit=50`);
+        renderTxList(cardTxList, data?.transactions || [], 'card');
         setText(cardTxResult, '');
       } catch (err) {
-        if (err?.status === 401) {
-          setAuthenticatedUi(false);
-          setLoginResult('adminResult--err', 'Sesión expirada.');
-          return;
-        }
-        setText(cardTxResult, err?.message ?? 'Error');
+        setText(cardTxResult, err?.message || 'Error');
       }
     };
 
     const initAuthed = () => {
       setAuthenticatedUi(true);
 
-      // Show only the recent transactions by default.
-      selectedToken = '';
-      updateClientTxVisibility();
-      if (cardTxHint) cardTxHint.textContent = 'Selecciona un cliente.';
-      if (cardTxList) cardTxList.innerHTML = '';
-      if (cardTxResult) cardTxResult.textContent = '';
+      const clientSearch = document.getElementById('adminClientSearch');
+      const clientSearchResults = document.getElementById('adminClientSearchResults');
+      const cardTxHint = document.getElementById('adminCardTxHint');
+      const txRefresh = document.getElementById('adminTxRefresh');
+      const statBalance = document.getElementById('statClientCount');
 
-      const renderClientSearchResults = (query) => {
-        if (!clientSearchResults || !clientSearch) return;
+      selectedToken = '';
+      if (cardTxHint) cardTxHint.textContent = 'Selecciona un cliente';
+      
+      const renderSearch = (query) => {
+        if (!clientSearchResults) return;
         clientSearchResults.innerHTML = '';
         const q = String(query || '').toLowerCase().trim();
         if (!q) return;
 
-        const matches = allClientsData.filter(c => {
-          const name = String(c?.name ?? '').toLowerCase();
-          const cedula = String(c?.cedula ?? '').toLowerCase();
-          return name.includes(q) || cedula.includes(q);
-        }).slice(0, 15);
+        const matches = allClientsData.filter(c => 
+          (c.name || '').toLowerCase().includes(q) || 
+          (c.cedula || '').toLowerCase().includes(q)
+        ).slice(0, 10);
 
-        if (matches.length === 0) {
-          const empty = document.createElement('div');
-          empty.className = 'adminResultItem adminResultItem--empty';
-          empty.textContent = 'No se encontraron clientes.';
-          clientSearchResults.appendChild(empty);
+        if (!matches.length) {
+          const div = document.createElement('div');
+          div.className = 'adminResultItem';
+          div.textContent = 'No se encontraron resultados';
+          clientSearchResults.appendChild(div);
           return;
         }
 
-        for (const c of matches) {
+        matches.forEach(c => {
           const btn = document.createElement('button');
           btn.className = 'adminResultItem';
           btn.type = 'button';
-          const name = String(c?.name ?? '').trim() || '—';
-          const cedula = String(c?.cedula ?? '').trim();
-          const bal = Number.isFinite(Number(c?.balance)) ? Number(c.balance) : 0;
-          
-          btn.innerHTML = `<div class="adminResultItem__title">${name} ${cedula ? ` · ${cedula}` : ''}</div><div class="adminResultItem__subtitle">${bal} pts</div>`;
-          
+          btn.innerHTML = `<div><div class="adminResultItem__title">${c.name || '—'}</div><div class="adminResultItem__subtitle">${c.cedula || 'Sin cédula'}</div></div><div class="adminTableCell--strong">${c.balance || 0} pts</div>`;
           btn.onclick = () => {
-            selectedToken = String(c?.token ?? '').trim();
-            clientSearch.value = name;
+            selectedToken = c.token;
+            if (clientSearch) clientSearch.value = c.name || '';
             clientSearchResults.innerHTML = '';
-            
             updateClientTxVisibility();
-            if (selectedToken) {
-              const displayName = tokenToDisplayName.get(selectedToken) || '—';
-              if (cardTxHint) cardTxHint.textContent = `Cliente: ${displayName}`;
-              loadCardTransactions(selectedToken);
-            }
+            if (cardTxHint) cardTxHint.textContent = `Movimientos: ${c.name || '—'}`;
+            loadCardTransactions(c.token);
           };
           clientSearchResults.appendChild(btn);
-        }
+        });
       };
 
       if (clientSearch) {
-        if (!clientSearchBound) {
-          clientSearchBound = true;
-          clientSearch.addEventListener('input', (e) => {
-            if (!e.target.value.trim()) {
-              selectedToken = '';
-              updateClientTxVisibility();
-              if (cardTxHint) cardTxHint.textContent = 'Selecciona un cliente.';
-              if (cardTxList) cardTxList.innerHTML = '';
-              if (cardTxResult) cardTxResult.textContent = '';
-            }
-            renderClientSearchResults(e.target.value);
-          });
-          clientSearch.addEventListener('focus', (e) => {
-            if (!selectedToken) renderClientSearchResults(e.target.value);
-          });
-        }
+        clientSearch.oninput = (e) => renderSearch(e.target.value);
+        clientSearch.onfocus = (e) => renderSearch(e.target.value);
       }
 
-      if (txRefresh) txRefresh.addEventListener('click', () => {
-        loadClients();
-        loadAllTransactions();
-        if (selectedToken) loadCardTransactions(selectedToken);
+      if (txRefresh) {
+        txRefresh.onclick = () => {
+          loadClients().then(() => {
+            const total = allClientsData.reduce((a, b) => a + (Number(b.balance) || 0), 0);
+            if (statBalance) statBalance.textContent = total.toLocaleString();
+          });
+          loadAllTransactions();
+          if (selectedToken) loadCardTransactions(selectedToken);
+        };
+      }
+
+      loadClients().then(() => {
+        const total = allClientsData.reduce((a, b) => a + (Number(b.balance) || 0), 0);
+        if (statBalance) statBalance.textContent = total.toLocaleString();
       });
-
-      if (adminLogout) {
-        adminLogout.hidden = false;
-        adminLogout.onclick = doLogout;
-      }
-      if (adminHeaderLogout) {
-        adminHeaderLogout.onclick = doLogout;
-      }
-
-      loadClients();
       loadAllTransactions();
     };
 

@@ -46,9 +46,10 @@
     <meta name="apple-mobile-web-app-title" content="Wallet NEXUS" />
     <link rel="apple-touch-icon" href="/icons/icon.svg" />
 
-    
     <link rel="icon" href="/icons/icon.svg" type="image/svg+xml" />
-
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/styles.css" />
   </head>
 
@@ -65,7 +66,6 @@
         <button class="adminHeaderAction" id="adminHeaderGoQr" type="button" hidden>CREAR TRANSACCION</button>
         <button class="adminHeaderAction adminHeaderAction--danger" id="adminHeaderLogout" type="button" hidden>CERRAR SESION</button>
 
-
         <button class="avatar" id="profileButton" type="button" aria-label="Perfil" aria-haspopup="dialog" aria-controls="profileMenu" aria-expanded="false">
           <span class="avatar__ring" aria-hidden="true"></span>
           <span class="avatar__initials" id="avatarInitials">A</span>
@@ -73,96 +73,102 @@
       </header>
 
       <main class="content" id="scroll" aria-label="Contenido">
-        <section class="adminCard authModal" id="adminRootLogin" hidden aria-label="Acceso admin" aria-modal="true" role="dialog">
-          <div class="authModal__backdrop" aria-hidden="true"></div>
-          <div class="adminLoginPanel">
-            <div class="adminCard__title">Acceso</div>
-            <p class="adminCard__hint">Ingresa tu password para acceder al panel.</p>
+        
+        <!-- SECCIÓN ADMIN LOGIN -->
+        <section class="adminAuth" id="adminRootLogin" hidden aria-modal="true" role="dialog">
+          <div class="adminAuth__backdrop" aria-hidden="true"></div>
+          <div class="adminAuth__card">
+            <div class="adminAuth__header">
+              <h1 class="adminAuth__title">Nexus Admin</h1>
+              <p class="adminAuth__hint">Introduce tu clave de acceso</p>
+            </div>
+            <div class="adminAuth__body">
+              <form class="adminForm" id="adminRootLoginForm">
+                <div class="adminForm__group">
+                  <label class="adminLabel">Contraseña</label>
+                  <input class="adminInput" id="adminRootPassword" type="password" autocomplete="current-password" placeholder="Tu password admin" required />
+                </div>
+                <button class="adminBtn adminBtn--primary" id="adminRootLoginBtn" type="submit">Acceder al Sistema</button>
+                <div class="adminResult" id="adminRootLoginResult" aria-live="polite"></div>
+              </form>
 
-            <form class="adminForm" id="adminRootLoginForm">
-              <label class="adminField">
-                <span class="adminField__label">Password</span>
-                <input class="adminField__input" id="adminRootPassword" type="password" autocomplete="current-password" placeholder="Tu password admin" required />
-              </label>
+              <!-- Recovery forms hidden by default -->
+              <form class="adminForm" id="adminRootForgotForm" hidden>
+                <p class="adminAuth__hint">Ingresa el correo configurado.</p>
+                <input class="adminInput" id="adminRootForgotEmail" type="email" placeholder="tucorreo@ejemplo.com" required style="margin-bottom:12px;" />
+                <button class="adminBtn adminBtn--primary" id="adminRootSendForgotBtn" type="submit">Enviar Codigo</button>
+                <button class="adminBtn adminBtn--ghost" type="button" id="adminRootCancelForgotBtn" style="margin-top:10px;">Volver</button>
+                <div class="adminResult" id="adminRootForgotResult" aria-live="polite"></div>
+              </form>
 
-              <div class="adminActions adminActions--stack">
-                <button class="adminButton adminButton--wide" id="adminRootLoginBtn" type="submit">Entrar</button>
-              </div>
+              <form class="adminForm" id="adminRootVerifyForm" hidden>
+                <p class="adminAuth__hint">Ingresa el código de 6 dígitos.</p>
+                <input class="adminInput adminInput--center" id="adminRootVerifyCode" type="text" placeholder="······" required autocomplete="off" style="margin-bottom:12px;" />
+                <button class="adminBtn adminBtn--primary" id="adminRootVerifyBtn" type="submit">Validar</button>
+                <button class="adminBtn adminBtn--ghost" type="button" id="adminRootCancelVerifyBtn" style="margin-top:10px;">Cancelar</button>
+                <div class="adminResult" id="adminRootVerifyResult" aria-live="polite"></div>
+              </form>
 
-              <button class="adminLink" type="button" id="adminRootForgotBtn">¿Olvidaste la clave?</button>
-              <div class="adminResult" id="adminRootLoginResult" aria-live="polite"></div>
-            </form>
-
-            <form class="adminForm" id="adminRootForgotForm" hidden>
-              <p class="adminCard__hint">Ingresa el correo configurado por seguridad.</p>
-              <label class="adminField">
-                <span class="adminField__label">Correo Admin</span>
-                <input class="adminField__input" id="adminRootForgotEmail" type="email" placeholder="tucorreo@ejemplo.com" required />
-              </label>
-              <div class="adminActions adminActions--stack">
-                <button class="adminButton adminButton--wide" id="adminRootSendForgotBtn" type="submit">Enviar Codigo</button>
-                <button class="adminButton adminButton--ghost adminButton--wide" type="button" id="adminRootCancelForgotBtn">Volver al login</button>
-              </div>
-              <div class="adminResult" id="adminRootForgotResult" aria-live="polite"></div>
-            </form>
-
-            <form class="adminForm" id="adminRootVerifyForm" hidden>
-              <p class="adminCard__hint">Codigo enviado al correo. Ingresalo para continuar.</p>
-              <label class="adminField">
-                <span class="adminField__label">Codigo de 6 digitos</span>
-                <input class="adminField__input" id="adminRootVerifyCode" type="text" placeholder="123456" required autocomplete="off" />
-              </label>
-              <div class="adminActions adminActions--stack">
-                <button class="adminButton adminButton--wide" id="adminRootVerifyBtn" type="submit">Validar codigo</button>
-                <button class="adminButton adminButton--ghost adminButton--wide" type="button" id="adminRootCancelVerifyBtn">Cancelar</button>
-              </div>
-              <div class="adminResult" id="adminRootVerifyResult" aria-live="polite"></div>
-            </form>
-
-            <form class="adminForm" id="adminRootResetForm" hidden>
-              <p class="adminCard__hint">Codigo validado. Crea una nueva clave.</p>
-              <label class="adminField">
-                <span class="adminField__label">Nueva Password</span>
-                <input class="adminField__input" id="adminRootNewPassword" type="password" placeholder="Tu nueva password" required minlength="6" />
-              </label>
-              <div class="adminActions adminActions--stack">
-                <button class="adminButton adminButton--wide" id="adminRootUpdatePasswordBtn" type="submit">Actualizar clave</button>
-              </div>
-              <div class="adminResult" id="adminRootResetResult" aria-live="polite"></div>
-            </form>
+              <form class="adminForm" id="adminRootResetForm" hidden>
+                <p class="adminAuth__hint">Nueva clave.</p>
+                <input class="adminInput" id="adminRootNewPassword" type="password" placeholder="Nueva password" required minlength="6" style="margin-bottom:12px;" />
+                <button class="adminBtn adminBtn--primary" id="adminRootUpdatePasswordBtn" type="submit">Actualizar</button>
+                <div class="adminResult" id="adminRootResetResult" aria-live="polite"></div>
+              </form>
+            </div>
           </div>
         </section>
 
-        <section class="adminCard" id="adminRootClients" hidden aria-label="Buscador de Clientes">
-          <div class="adminCard__title">Buscador de Clientes</div>
-          <p class="adminCard__hint">Escribe nombre o cédula para ver las transacciones del cliente.</p>
-          <div class="adminForm">
-            <label class="adminField">
-              <span class="adminField__label">Buscar cliente</span>
-              <input class="adminField__input" id="adminClientSearch" type="text" autocomplete="off" placeholder="Ej. Juan Perez" aria-label="Buscar cliente">
-            </label>
-            <div id="adminClientSearchResults" style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px;"></div>
+        <!-- DASHBOARD PRINCIPAL ADMIN -->
+        <div class="adminDashboard" id="adminRootPanel" hidden>
+          <div class="adminGrid">
+            <aside class="adminStats">
+              <div class="statCard statCard--blue">
+                <div class="statCard__label">Total Puntos Sistema</div>
+                <div class="statCard__value" id="statClientCount">0</div>
+              </div>
+              <div class="statCard statCard--violet">
+                <div class="statCard__label">Modo</div>
+                <div class="statCard__value">Admin</div>
+              </div>
+            </aside>
+
+            <section class="adminPanelCard" id="adminRootClients">
+              <div class="adminPanelCard__header">
+                <div class="adminPanelCard__icon">
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                </div>
+                <h2 class="adminPanelCard__title">Buscador de Clientes</h2>
+              </div>
+              <div class="adminSearchBox">
+                <input class="adminSearchBox__input" id="adminClientSearch" type="text" autocomplete="off" placeholder="Escribe nombre o cédula..." aria-label="Buscar cliente">
+                <div id="adminClientSearchResults" class="adminSearchResults"></div>
+              </div>
+              <div class="adminResult" id="adminClientsResult" aria-live="polite"></div>
+            </section>
+
+            <section class="adminPanelCard" id="adminRootCardTx" hidden>
+              <div class="adminPanelCard__header">
+                <h2 class="adminPanelCard__title" id="adminCardTxHint">Historial Cliente</h2>
+              </div>
+              <div class="adminTableWrapper" id="adminCardTxList"></div>
+              <div class="adminResult" id="adminCardTxResult" aria-live="polite"></div>
+            </section>
+
+            <section class="adminPanelCard" id="adminRootAllTx">
+              <div class="adminPanelCard__header">
+                <h2 class="adminPanelCard__title">Últimos Movimientos</h2>
+                <button class="adminIconButton" id="adminTxRefresh" type="button">
+                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/></svg>
+                </button>
+              </div>
+              <div class="adminTableWrapper" id="adminTxList"></div>
+              <div class="adminResult" id="adminTxResult" aria-live="polite"></div>
+            </section>
           </div>
-          <div class="adminResult" id="adminClientsResult" aria-live="polite"></div>
-        </section>
+        </div>
 
-        <section class="adminCard" id="adminRootCardTx" hidden aria-label="Transacciones de tarjeta">
-          <div class="adminCard__title">Transacciones de tarjeta</div>
-          <p class="adminCard__hint" id="adminCardTxHint">Selecciona un cliente.</p>
-          <div class="adminForm" id="adminCardTxList"></div>
-          <div class="adminResult" id="adminCardTxResult" aria-live="polite"></div>
-        </section>
-
-        <section class="adminCard" id="adminRootAllTx" hidden aria-label="Transacciones generales">
-          <div class="adminCard__title">Transacciones</div>
-          <p class="adminCard__hint">Listado general (reciente).</p>
-          <div class="adminActions">
-            <button class="adminButton adminButton--wide" id="adminTxRefresh" type="button">Recargar</button>
-          </div>
-          <div class="adminForm" id="adminTxList"></div>
-          <div class="adminResult" id="adminTxResult" aria-live="polite"></div>
-        </section>
-
+        <!-- TARJETA CLIENTE -->
         <section
           class="card card--client"
           aria-label="Tarjeta digital de puntos"
@@ -220,49 +226,21 @@
           </div>
         </section>
 
+        <!-- ACTIVIDAD CLIENTE -->
         <section class="activity" aria-label="Actividad reciente">
           <div class="activity__header">
             <h2 class="activity__title">Actividad</h2>
             <button class="activity__refresh" id="activityRefresh" type="button" aria-label="Actualizar actividad">
               <svg viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden="true">
-                <path
-                  d="M20 12a8 8 0 0 1-14.3 4.9"
-                  stroke="currentColor"
-                  stroke-width="1.8"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  opacity="0.9"
-                />
-                <path
-                  d="M4 12a8 8 0 0 1 14.3-4.9"
-                  stroke="currentColor"
-                  stroke-width="1.8"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  opacity="0.55"
-                />
-                <path
-                  d="M17.8 3.8V7.6h-3.8"
-                  stroke="currentColor"
-                  stroke-width="1.8"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  opacity="0.55"
-                />
-                <path
-                  d="M6.2 20.2V16.4H10"
-                  stroke="currentColor"
-                  stroke-width="1.8"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  opacity="0.9"
-                />
+                <path d="M20 12a8 8 0 0 1-14.3 4.9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" opacity="0.9" />
+                <path d="M4 12a8 8 0 0 1 14.3-4.9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" opacity="0.55" />
+                <path d="M17.8 3.8V7.6h-3.8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" opacity="0.55" />
+                <path d="M6.2 20.2V16.4H10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" opacity="0.9" />
               </svg>
             </button>
           </div>
 
-          <ul class="activity__list" role="list">
-          </ul>
+          <ul class="activity__list" role="list"></ul>
           <button class="activity__more" id="activityMoreBtn" type="button" aria-expanded="false" hidden>Mostrar todas</button>
         </section>
       </main>
@@ -277,23 +255,20 @@
         </button>
       </div>
     </div>
-    <!-- Overlay de escaneo QR -->
+
+    <!-- SCANNER -->
     <div class="scanner" id="qrScanner" aria-hidden="true">
       <div class="scanner__backdrop"></div>
       <div class="scanner__frame">
         <header class="scanner__header">
           <span class="scanner__title">Escanear código</span>
-          <button class="scanner__close" id="qrClose" type="button" aria-label="Cerrar escáner">
-            ✕
-          </button>
+          <button class="scanner__close" id="qrClose" type="button" aria-label="Cerrar escáner">✕</button>
         </header>
-
         <div class="scanner__body">
           <video id="qrVideo" class="scanner__video" playsinline></video>
           <div class="scanner__reticle" aria-hidden="true"></div>
           <canvas id="qrCanvas" class="scanner__canvas" aria-hidden="true"></canvas>
         </div>
-
         <footer class="scanner__footer">
           <span class="scanner__hint" id="qrHint">Apunta al código QR para escanear</span>
           <span class="scanner__result" id="qrResult" aria-live="polite"></span>
@@ -301,45 +276,35 @@
       </div>
     </div>
 
-    <!-- Modal de perfil -->
+    <!-- PROFILE MENU -->
     <div class="profileMenu" id="profileMenu" aria-hidden="true">
       <div class="profileMenu__backdrop" data-profile-close></div>
-
       <div class="profileMenu__frame" role="dialog" aria-modal="true" aria-label="Opciones de perfil">
         <header class="profileMenu__header">
           <span class="profileMenu__title">Perfil</span>
-          <button class="profileMenu__close" id="profileClose" type="button" aria-label="Cerrar menú">
-            ✕
-          </button>
+          <button class="profileMenu__close" id="profileClose" type="button" aria-label="Cerrar menú">✕</button>
         </header>
-
         <div class="profileMenu__body">
-          <button class="profileMenu__item" id="installPwa" type="button">
-            Instalar la app
-          </button>
-          <button class="profileMenu__item" id="adminLogout" type="button" hidden>
-            Cerrar sesión admin
-          </button>
+          <button class="profileMenu__item" id="installPwa" type="button">Instalar la app</button>
+          <button class="profileMenu__item" id="adminLogout" type="button" hidden>Cerrar sesión admin</button>
           <div class="profileMenu__hint" id="installHint" aria-live="polite"></div>
         </div>
       </div>
     </div>
 
-    <!-- Modal de historial de transacciones -->
+    <!-- HISTORIAL MODAL -->
     <div class="historyModal" id="historyModal" aria-hidden="true" role="dialog" aria-modal="true" aria-label="Todas las transacciones">
       <div class="historyModal__frame">
         <header class="historyModal__header">
-          <span class="historyModal__title">Todas las transacciones</span>
+          <span class="historyModal__title">Historial completo</span>
           <button class="historyModal__close" id="historyCloseBtn" type="button" aria-label="Cerrar">✕</button>
         </header>
         <div class="historyModal__body">
-          <ul class="activity__list" id="historyList" role="list">
-          </ul>
+          <ul class="activity__list" id="historyList" role="list"></ul>
         </div>
       </div>
     </div>
 
-    <!-- Librería ligera de decodificación QR -->
     <script src="https://unpkg.com/jsqr@1.4.0/dist/jsQR.js" crossorigin="anonymous"></script>
     <script src="/app.js" defer></script>
   </body>
