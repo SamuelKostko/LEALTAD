@@ -308,6 +308,7 @@ if (qrButton) {
       const headLabels = mode === 'card'
         ? ['Fecha', 'Tipo', 'Estado', 'Pts', 'Antes', 'Después', 'Descripción']
         : ['Fecha', 'Tipo', 'Estado', 'Pts', 'Cliente', 'Descripción'];
+      // Desktop header row (hidden on mobile via CSS)
       const head = document.createElement('div');
       head.className = mode === 'card' ? 'aTxRow aTxRow--card aTxRow--head' : 'aTxRow aTxRow--head';
       for (const lbl of headLabels) {
@@ -323,23 +324,24 @@ if (qrButton) {
         const pts = Number.isFinite(Number(t.points)) ? Number(t.points) : 0;
         const before = Number.isFinite(Number(t.balanceBefore)) ? Number(t.balanceBefore) : null;
         const after = Number.isFinite(Number(t.balanceAfter)) ? Number(t.balanceAfter) : null;
-        const addCell = (text, cls) => {
+        const addCell = (label, text, cls) => {
           const c = document.createElement('div');
           c.className = 'aTxCell' + (cls ? ` ${cls}` : '');
+          c.setAttribute('data-label', label);
           c.textContent = text;
           row.appendChild(c);
         };
-        addCell(formatTxDate(t));
-        addCell(String(t.type || '—'));
-        addCell(String(t.status || '—'), 'aTxCell--strong');
-        addCell(String(pts), 'aTxCell--pts');
+        addCell('Fecha', formatTxDate(t));
+        addCell('Tipo', String(t.type || '—'));
+        addCell('Estado', String(t.status || '—'), 'aTxCell--strong');
+        addCell('Pts', String(pts), 'aTxCell--pts');
         if (mode === 'card') {
-          addCell(before === null ? '—' : String(before));
-          addCell(after === null ? '—' : String(after));
+          addCell('Antes', before === null ? '—' : String(before));
+          addCell('Después', after === null ? '—' : String(after));
         } else {
-          addCell(String(t?.name || t?.token || '—'));
+          addCell('Cliente', String(t?.name || t?.token || '—'));
         }
-        addCell(String(t.description || '—'));
+        addCell('Descripción', String(t.description || '—'));
         wrap.appendChild(row);
       }
       container.appendChild(wrap);
@@ -366,6 +368,9 @@ if (qrButton) {
     const showDash = () => {
       if (loginModal) loginModal.hidden = true;
       if (dash) dash.hidden = false;
+      // Show mobile nav only on small screens
+      const mobileNav = document.getElementById('aMobileNav');
+      if (mobileNav && window.innerWidth <= 640) mobileNav.style.display = 'flex';
     };
 
     const switchPanel = (panel) => {
@@ -373,13 +378,47 @@ if (qrButton) {
       if (panelTx) panelTx.hidden = panel !== 'transacciones';
       if (panelStats) panelStats.hidden = panel !== 'metricas';
 
+      // Sync sidebar nav
       if (navClientes) navClientes.classList.toggle('is-active', panel === 'clientes');
       if (navTx) navTx.classList.toggle('is-active', panel === 'transacciones');
       if (navStats) navStats.classList.toggle('is-active', panel === 'metricas');
+
+      // Sync mobile bottom nav
+      const mobClientes = document.getElementById('aMobNavClientes');
+      const mobTx = document.getElementById('aMobNavTx');
+      const mobStats = document.getElementById('aMobNavStats');
+      if (mobClientes) mobClientes.classList.toggle('is-active', panel === 'clientes');
+      if (mobTx) mobTx.classList.toggle('is-active', panel === 'transacciones');
+      if (mobStats) mobStats.classList.toggle('is-active', panel === 'metricas');
+
+      // Scroll content to top on panel switch (mobile)
+      const main = document.querySelector('.aDash__main');
+      if (main) main.scrollTop = 0;
     };
     if (navClientes) navClientes.addEventListener('click', () => switchPanel('clientes'));
     if (navTx) navTx.addEventListener('click', () => { switchPanel('transacciones'); loadAllTransactions(); });
     if (navStats) navStats.addEventListener('click', () => { switchPanel('metricas'); loadAdminStats(); });
+
+    // Mobile bottom nav events
+    const mobNavClientes = document.getElementById('aMobNavClientes');
+    const mobNavTx = document.getElementById('aMobNavTx');
+    const mobNavStats = document.getElementById('aMobNavStats');
+    const mobNavLogout = document.getElementById('aMobNavLogout');
+    if (mobNavClientes) mobNavClientes.addEventListener('click', () => switchPanel('clientes'));
+    if (mobNavTx) mobNavTx.addEventListener('click', () => { switchPanel('transacciones'); loadAllTransactions(); });
+    if (mobNavStats) mobNavStats.addEventListener('click', () => { switchPanel('metricas'); loadAdminStats(); });
+    // mobNavLogout wired after doLogout is defined below
+
+    // Responsive: show/hide mobile nav based on screen width
+    const mobileNav = document.getElementById('aMobileNav');
+    if (mobileNav) {
+      const updateNavVisibility = () => {
+        if (!dash.hidden) {
+          mobileNav.style.display = window.innerWidth <= 640 ? 'flex' : 'none';
+        }
+      };
+      window.addEventListener('resize', updateNavVisibility);
+    }
 
     if (goQrBtn) goQrBtn.addEventListener('click', () => { window.location.href = '/admin/qr'; });
 
@@ -394,6 +433,8 @@ if (qrButton) {
       }
     };
     if (logoutBtn) logoutBtn.addEventListener('click', doLogout);
+    // Wire mobile nav logout now that doLogout is defined
+    if (mobNavLogout) mobNavLogout.addEventListener('click', (e) => doLogout(e));
 
     const getInitials = (name) => {
       const parts = String(name || '').trim().split(/\s+/).filter(Boolean);
@@ -656,7 +697,7 @@ if (qrButton) {
         else showLogin();
       } catch (err) { showLogin(); }
       finally {
-        setTimeout(() => document.body.classList.add('is-ready'), 1500);
+        document.body.classList.add('is-ready');
       }
     };
     checkAuth();

@@ -58,7 +58,7 @@
       inset: 0;
       z-index: 999999;
       background: #000000;
-      display: flex;
+      display: var(--_splash-hide, flex);
       align-items: center;
       justify-content: center;
       transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.6s;
@@ -66,11 +66,15 @@
 
     /* Prevent double-splash in installed PWAs where OS handles the heavy native splash */
     @media (display-mode: standalone) {
-      .bootSplash { display: none !important; }
+      .bootSplash {
+        display: none !important;
+      }
     }
-    
+
     @media (prefers-color-scheme: light) {
-      .bootSplash { background: #f6f7fb; }
+      .bootSplash {
+        background: #f6f7fb;
+      }
     }
 
     body.is-ready .bootSplash {
@@ -85,13 +89,31 @@
     }
 
     @keyframes bootPulse {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.5; transform: scale(0.95); }
+
+      0%,
+      100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+
+      50% {
+        opacity: 0.5;
+        transform: scale(0.95);
+      }
     }
   </style>
 </head>
 
 <body>
+  <!-- Hide splash immediately on /admin (before JS loads, before class is set) -->
+  <script>
+    if (window.location.pathname === '/admin' || window.location.pathname.startsWith('/admin/')) {
+      document.documentElement.style.setProperty('--_splash-hide', 'none');
+    }
+    // Hard failsafe: always dismiss after 3.5s no matter what
+    setTimeout(function () { document.body.classList.add('is-ready'); }, 3500);
+  </script>
+
   <!-- Pantalla de carga inicial (Splash Screen) -->
   <div id="bootSplash" class="bootSplash">
     <div class="bootSplash__logo">
@@ -144,8 +166,8 @@
             </div>
             <div class="aField">
               <label class="aField__label" for="adminRootPassword">Contraseña</label>
-              <input class="aField__input" id="adminRootPassword" name="password" type="password" autocomplete="current-password"
-                placeholder="••••••••" required />
+              <input class="aField__input" id="adminRootPassword" name="password" type="password"
+                autocomplete="current-password" placeholder="••••••••" required />
             </div>
             <button class="aBtn aBtn--primary" id="adminRootLoginBtn" type="submit">Entrar</button>
             <button class="aBtn aBtn--link" type="button" id="adminRootForgotBtn">¿Olvidaste la clave?</button>
@@ -366,6 +388,48 @@
             <div class="aResult" id="adminTxResult" aria-live="polite"></div>
           </section>
         </div>
+
+        <!-- Mobile bottom navigation bar (visible only on ≤640px) -->
+        <nav class="aMobileNav" id="aMobileNav" aria-label="Navegación admin" style="display:none;">
+          <button class="aMobileNav__item is-active" id="aMobNavClientes" type="button" aria-label="Clientes">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none">
+              <circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="1.7" />
+              <path d="M4 20c0-4 3.58-7 8-7s8 3 8 7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+            </svg>
+            Clientes
+          </button>
+          <button class="aMobileNav__item" id="aMobNavTx" type="button" aria-label="Transacciones">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none">
+              <path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+            </svg>
+            Historial
+          </button>
+          <button class="aMobileNav__item" id="aMobNavStats" type="button" aria-label="Métricas">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none">
+              <path d="M18 20V10M12 20V4M6 20v-6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+            </svg>
+            Métricas
+          </button>
+          <a class="aMobileNav__qr" href="/admin/qr" aria-label="Crear QR">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none">
+              <rect x="3" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.7" />
+              <rect x="14" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.7" />
+              <rect x="3" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.7" />
+              <path d="M14 14h2v2h-2zM18 14h3v3h-3zM14 18h3v3h-3zM18 19h3v2h-3z" fill="currentColor" />
+            </svg>
+            Crear QR
+          </a>
+          <button class="aMobileNav__logout" id="aMobNavLogout" type="button" aria-label="Cerrar sesión">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" stroke="currentColor" stroke-width="1.7"
+                stroke-linecap="round" />
+              <polyline points="16 17 21 12 16 7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"
+                stroke-linejoin="round" />
+              <line x1="21" y1="12" x2="9" y2="12" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+            </svg>
+            Salir
+          </button>
+        </nav>
       </div>
 
       <section class="card card--client" aria-label="Tarjeta digital de puntos" role="button" tabindex="0"

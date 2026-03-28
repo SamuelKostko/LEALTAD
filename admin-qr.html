@@ -21,72 +21,84 @@
     <div class="bg__orb bg__orb--b" style="bottom:-20%; right:-10%;"></div>
   </div>
 
-  <div class="aDash" style="flex-direction: column; justify-content: center; align-items: center; padding: 24px;">
-
-    <div
-      style="width: 100%; max-width: 420px; margin-bottom: 24px; position: relative; z-index: 99999; pointer-events: auto;">
-      <a href="/admin" class="aBtn aBtn--ghost"
-        style="display: inline-flex; width: auto; padding: 12px 20px; font-size: 15px; font-weight: 600; gap: 8px; color: #fff; background: rgba(255,255,255,0.05); text-decoration: none; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; cursor: pointer; pointer-events: auto; position: relative; z-index: 99999;">
+  <div class="aQrPage">
+    <!-- Top bar -->
+    <header class="aQrPage__header">
+      <a href="/admin" class="aQrPage__back" aria-label="Volver al Panel">
         <svg viewBox="0 0 24 24" width="18" height="18" fill="none">
-          <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
-            stroke-linejoin="round" />
+          <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
-        Volver al Panel
+        Panel
       </a>
-    </div>
+      <span class="aQrPage__title">Generar QR</span>
+      <div style="width:60px;"></div><!-- Balance spacer -->
+    </header>
 
-    <!-- Login Card -->
-    <div class="aLogin__card" id="loginCard">
-      <div class="aLogin__logo" aria-hidden="true">
-        <svg viewBox="0 0 24 24" width="28" height="28" fill="none">
-          <rect x="3" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.8" />
-          <rect x="14" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.8" />
-          <rect x="3" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.8" />
-          <path d="M14 14h2v2h-2zM18 14h3v3h-3zM14 18h3v3h-3zM18 19h3v2h-3z" fill="currentColor" />
-        </svg>
+    <!-- Scrollable body -->
+    <main class="aQrPage__body">
+
+      <!-- Login Card -->
+      <div class="aLogin__card aQrPage__card" id="loginCard">
+        <div class="aLogin__logo" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="none">
+            <rect x="3" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.8" />
+            <rect x="14" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.8" />
+            <rect x="3" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.8" />
+            <path d="M14 14h2v2h-2zM18 14h3v3h-3zM14 18h3v3h-3zM18 19h3v2h-3z" fill="currentColor" />
+          </svg>
+        </div>
+        <h1 class="aLogin__title">Acceso QR</h1>
+        <p class="aLogin__sub">Inicia sesión para generar cobros</p>
+
+        <form class="aLogin__form" id="loginForm">
+          <div class="aField">
+            <label class="aField__label" for="adminPassword">Contraseña de Admin</label>
+            <input class="aField__input" id="adminPassword" name="password" type="password" autocomplete="current-password"
+              placeholder="••••••••" required />
+          </div>
+          <button class="aBtn aBtn--primary" id="loginBtn" type="submit">Entrar</button>
+          <div class="aResult" id="loginResult" aria-live="polite"></div>
+        </form>
       </div>
-      <h1 class="aLogin__title">Acceso QR</h1>
-      <p class="aLogin__sub">Inicia sesión para generar cobros</p>
 
-      <form class="aLogin__form" id="loginForm">
-        <div class="aField">
-          <label class="aField__label" for="adminPassword">Contraseña de Admin</label>
-          <input class="aField__input" id="adminPassword" type="password" autocomplete="current-password"
-            placeholder="••••••••" required />
+      <!-- QR Generation Card -->
+      <div class="aLogin__card aQrPage__card" id="qrSection" hidden>
+        <div class="aLogin__logo" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="none">
+            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
         </div>
-        <button class="aBtn aBtn--primary" id="loginBtn" type="submit">Entrar</button>
-        <div class="aResult" id="loginResult" aria-live="polite"></div>
-      </form>
-    </div>
+        <h1 class="aLogin__title">Crear Cobro</h1>
+        <p class="aLogin__sub">Genera un QR para descontar puntos al cliente</p>
 
-    <!-- QR Generation Card -->
-    <div class="aLogin__card" id="qrSection" hidden style="max-width: 420px; width: 100%;">
-      <div class="aLogin__logo" aria-hidden="true">
-        <svg viewBox="0 0 24 24" width="28" height="28" fill="none">
-          <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round" />
-        </svg>
+        <form class="aLogin__form" id="qrForm">
+          <div class="aField">
+            <label class="aField__label" for="points">Puntos a cobrar</label>
+            <input class="aField__input" id="points" type="number" inputmode="numeric" min="1" max="50000" step="1"
+              placeholder="Ej: 50" required style="font-size: 22px; font-weight: 700; text-align: center;" />
+          </div>
+
+          <div class="aField">
+            <label class="aField__label" for="description">Descripción (Opcional)</label>
+            <input class="aField__input" id="description" type="text" autocomplete="off"
+              placeholder="Ej: Canje por café" />
+          </div>
+
+          <button class="aBtn aBtn--primary" id="genBtn" type="submit">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" style="vertical-align: middle; margin-right: 6px;">
+              <rect x="3" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.8"/>
+              <rect x="14" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.8"/>
+              <rect x="3" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.8"/>
+              <path d="M14 14h2v2h-2zM18 14h3v3h-3zM14 18h3v3h-3zM18 19h3v2h-3z" fill="currentColor"/>
+            </svg>
+            Generar QR
+          </button>
+          <div class="aResult" id="result" aria-live="polite"></div>
+        </form>
       </div>
-      <h1 class="aLogin__title">Generar QR</h1>
-      <p class="aLogin__sub">Crea un código para descontar puntos al cliente</p>
 
-      <form class="aLogin__form" id="qrForm" style="margin-top: 24px;">
-        <div class="aField">
-          <label class="aField__label" for="points">Puntos a cobrar</label>
-          <input class="aField__input" id="points" type="number" inputmode="numeric" min="1" max="50000" step="1"
-            placeholder="Ej: 50" required style="font-size: 20px; font-weight: 600;" />
-        </div>
-
-        <div class="aField">
-          <label class="aField__label" for="description">Descripción / Motivo (Opcional)</label>
-          <input class="aField__input" id="description" type="text" autocomplete="off"
-            placeholder="Ej: Canje por café" />
-        </div>
-
-        <button class="aBtn aBtn--primary" id="genBtn" type="submit" style="margin-top: 16px;">Generar QR</button>
-        <div class="aResult" id="result" aria-live="polite"></div>
-      </form>
-    </div>
+    </main>
   </div>
 
   <!-- QR Presentation Modal -->
@@ -138,6 +150,9 @@
   </div>
 
   <style>
+    /* Override global body overflow so aQrPage can scroll */
+    body.mode-admin { overflow: hidden !important; }
+
     .aQrLoader {
       font-size: 14px;
       font-weight: 500;
@@ -146,15 +161,8 @@
     }
 
     @keyframes pulse {
-
-      0%,
-      100% {
-        opacity: 0.5;
-      }
-
-      50% {
-        opacity: 1;
-      }
+      0%, 100% { opacity: 0.5; }
+      50% { opacity: 1; }
     }
   </style>
 
