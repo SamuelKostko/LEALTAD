@@ -120,10 +120,16 @@ export default async function handler(req, res) {
   try {
     const result = await firestore.runTransaction(async (tx) => {
       const txRef = firestore.collection('transactions').doc(nonce);
-      const cardRef = firestore.collection('cards').doc(token);
+      // We must find the client document where the 'token' field matches
+      const clientQuery = firestore.collection('clientes').where('token', '==', token).limit(1);
+      const clientSnap = await tx.get(clientQuery);
 
-      const [txSnap, cardSnap] = await Promise.all([tx.get(txRef), tx.get(cardRef)]);
+      if (clientSnap.empty) throw new Error('Card not found');
+      const clientDoc = clientSnap.docs[0];
+      const clientRef = clientDoc.ref;
+      const clientData = clientDoc.data() || {};
 
+      const txSnap = await tx.get(txRef);
       if (!txSnap.exists) throw new Error('Transaction not found');
       const txData = txSnap.data() || {};
       const status = String(txData.status ?? '');
@@ -146,9 +152,7 @@ export default async function handler(req, res) {
         throw new Error('Invalid transaction payload');
       }
 
-      if (!cardSnap.exists) throw new Error('Card not found');
-      const cardData = cardSnap.data() || {};
-      const current = Number(cardData.balance ?? 0);
+      const current = Number(clientData.totalPoints ?? 0);
       if (!Number.isFinite(current)) throw new Error('Invalid balance');
 
       const next = current - points;
@@ -156,7 +160,7 @@ export default async function handler(req, res) {
         throw new Error('Insufficient balance');
       }
 
-      tx.set(cardRef, { balance: next, updatedAt: new Date().toISOString() }, { merge: true });
+      tx.update(clientRef, { totalPoints: next, updatedAt: FieldValue.serverTimestamp() });
 
       tx.set(
         txRef,

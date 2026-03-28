@@ -1,311 +1,478 @@
 <!doctype html>
 <html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 
-    <title>Wallet NEXUS</title>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 
-    <meta name="theme-color" content="#000000" id="themeColor" />
-    <meta name="color-scheme" content="light dark" />
-    <meta name="description" content="WALLET DE NEXUS." />
+  <title>Wallet NEXUS</title>
 
-    <script>
-      // Dynamic manifest: when visiting /card/<token>, installing the PWA should open that same card.
-      (() => {
-        try {
-          const path = window.location.pathname || "";
-          let token = "";
-          if (path.startsWith("/card/")) {
-            token = decodeURIComponent(path.slice("/card/".length)).trim();
-          }
-          if (!token) {
-            const url = new URL(window.location.href);
-            token = (url.searchParams.get("token") || url.searchParams.get("t") || "").trim();
-          }
+  <meta name="theme-color" content="#000000" id="themeColor" />
+  <meta name="color-scheme" content="light dark" />
+  <meta name="description" content="WALLET DE NEXUS." />
 
-          const link = document.createElement("link");
-          link.rel = "manifest";
-          link.href = token
-            ? `/api/manifest.webmanifest?token=${encodeURIComponent(token)}`
-            : "/api/manifest.webmanifest";
-          document.head.appendChild(link);
-        } catch {
-          // Ignore.
+  <script>
+    // Dynamic manifest: when visiting /card/<token>, installing the PWA should open that same card.
+    (() => {
+      try {
+        const path = window.location.pathname || "";
+        let token = "";
+        if (path.startsWith("/card/")) {
+          token = decodeURIComponent(path.slice("/card/".length)).trim();
         }
-      })();
-    </script>
+        if (!token) {
+          const url = new URL(window.location.href);
+          token = (url.searchParams.get("token") || url.searchParams.get("t") || "").trim();
+        }
 
-    <!-- Android/Chrome: allow standalone (installed web app) -->
-    <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="application-name" content="Wallet NEXUS" />
+        const link = document.createElement("link");
+        link.rel = "manifest";
+        link.href = token
+          ? `/api/manifest.webmanifest?token=${encodeURIComponent(token)}`
+          : "/api/manifest.webmanifest";
+        document.head.appendChild(link);
+      } catch {
+        // Ignore.
+      }
+    })();
+  </script>
 
-    <!-- iOS: standalone + status bar + icons -->
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="Wallet NEXUS" />
-    <link rel="apple-touch-icon" href="/icons/icon.svg" />
+  <!-- Android/Chrome: allow standalone (installed web app) -->
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="application-name" content="Wallet NEXUS" />
 
-    <link rel="icon" href="/icons/icon.svg" type="image/svg+xml" />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/styles.css" />
-  </head>
+  <!-- iOS: standalone + status bar + icons -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Wallet NEXUS" />
+  <link rel="apple-touch-icon" href="/icons/icon.svg" />
 
-  <body>
-    <div class="bg" aria-hidden="true"></div>
 
-    <div class="app" id="app">
-      <header class="header">
-        <div class="header__text">
-          <div class="header__greeting">Hola, <span id="greetingName">—</span></div>
-          <div class="header__label" id="headerLabel">Tu Wallet de puntos</div>
+  <link rel="icon" href="/icons/icon.svg" type="image/svg+xml" />
+
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+
+<body>
+  <div class="bg" aria-hidden="true"></div>
+
+  <div class="app" id="app">
+    <header class="header">
+      <div class="header__text">
+        <div class="header__greeting">Hola, <span id="greetingName">—</span></div>
+        <div class="header__label" id="headerLabel">Tu Wallet de puntos</div>
+      </div>
+
+      <button class="adminHeaderAction" id="adminHeaderGoQr" type="button" hidden>CREAR TRANSACCION</button>
+      <button class="adminHeaderAction adminHeaderAction--danger" id="adminHeaderLogout" type="button" hidden>CERRAR
+        SESION</button>
+
+
+      <button class="avatar" id="profileButton" type="button" aria-label="Perfil" aria-haspopup="dialog"
+        aria-controls="profileMenu" aria-expanded="false">
+        <span class="avatar__ring" aria-hidden="true"></span>
+        <span class="avatar__initials" id="avatarInitials">A</span>
+      </button>
+    </header>
+
+    <main class="content" id="scroll" aria-label="Contenido">
+      <!-- LOGIN MODAL -->
+      <div class="aLogin" id="adminRootLogin" hidden role="dialog" aria-modal="true" aria-label="Acceso admin">
+        <div class="aLogin__backdrop" aria-hidden="true"></div>
+        <div class="aLogin__card">
+          <div class="aLogin__logo" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="32" height="32" fill="none">
+              <path d="M12 2L2 7l10 5 10-5-10-5z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" />
+              <path d="M2 17l10 5 10-5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
+                stroke-linejoin="round" />
+              <path d="M2 12l10 5 10-5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
+                stroke-linejoin="round" />
+            </svg>
+          </div>
+          <h1 class="aLogin__title">Panel Admin</h1>
+          <p class="aLogin__sub">NEXUS Rewards</p>
+
+          <form class="aLogin__form" id="adminRootLoginForm">
+            <div class="aField">
+              <label class="aField__label" for="adminRootPassword">Contraseña</label>
+              <input class="aField__input" id="adminRootPassword" type="password" autocomplete="current-password"
+                placeholder="••••••••" required />
+            </div>
+            <button class="aBtn aBtn--primary" id="adminRootLoginBtn" type="submit">Entrar</button>
+            <button class="aBtn aBtn--link" type="button" id="adminRootForgotBtn">¿Olvidaste la clave?</button>
+            <div class="aResult" id="adminRootLoginResult" aria-live="polite"></div>
+          </form>
+
+          <form class="aLogin__form" id="adminRootForgotForm" hidden>
+            <p class="aLogin__hint">Ingresa el correo configurado para recuperar tu acceso.</p>
+            <div class="aField">
+              <label class="aField__label" for="adminRootForgotEmail">Correo Admin</label>
+              <input class="aField__input" id="adminRootForgotEmail" type="email" placeholder="tucorreo@ejemplo.com"
+                required />
+            </div>
+            <button class="aBtn aBtn--primary" id="adminRootSendForgotBtn" type="submit">Enviar código</button>
+            <button class="aBtn aBtn--ghost" type="button" id="adminRootCancelForgotBtn">Volver</button>
+            <div class="aResult" id="adminRootForgotResult" aria-live="polite"></div>
+          </form>
+
+          <form class="aLogin__form" id="adminRootVerifyForm" hidden>
+            <p class="aLogin__hint">Código enviado. Ingrésalo para continuar.</p>
+            <div class="aField">
+              <label class="aField__label" for="adminRootVerifyCode">Código de 6 dígitos</label>
+              <input class="aField__input" id="adminRootVerifyCode" type="text" inputmode="numeric" placeholder="123456"
+                required autocomplete="one-time-code" maxlength="6" />
+            </div>
+            <button class="aBtn aBtn--primary" id="adminRootVerifyBtn" type="submit">Validar código</button>
+            <button class="aBtn aBtn--ghost" type="button" id="adminRootCancelVerifyBtn">Cancelar</button>
+            <div class="aResult" id="adminRootVerifyResult" aria-live="polite"></div>
+          </form>
+
+          <form class="aLogin__form" id="adminRootResetForm" hidden>
+            <p class="aLogin__hint">Código validado. Crea una nueva contraseña.</p>
+            <div class="aField">
+              <label class="aField__label" for="adminRootNewPassword">Nueva contraseña</label>
+              <input class="aField__input" id="adminRootNewPassword" type="password" placeholder="Mínimo 6 caracteres"
+                required minlength="6" />
+            </div>
+            <button class="aBtn aBtn--primary" id="adminRootUpdatePasswordBtn" type="submit">Actualizar clave</button>
+            <div class="aResult" id="adminRootResetResult" aria-live="polite"></div>
+          </form>
+        </div>
+      </div>
+
+      <!-- ADMIN DASHBOARD -->
+      <div class="aDash" id="adminDash" hidden>
+        <aside class="aSidebar">
+          <div class="aSidebar__brand">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" aria-hidden="true">
+              <path d="M12 2L2 7l10 5 10-5-10-5z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" />
+              <path d="M2 17l10 5 10-5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
+                stroke-linejoin="round" />
+              <path d="M2 12l10 5 10-5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
+                stroke-linejoin="round" />
+            </svg>
+            <span class="aSidebar__brandName">Samuel Admin</span>
+          </div>
+          <nav class="aSidebar__nav">
+            <button class="aSidebar__navItem is-active" id="aNavClientes" type="button" data-panel="clientes">
+              <svg viewBox="0 0 24 24" width="17" height="17" fill="none">
+                <circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="1.6" />
+                <path d="M4 20c0-4 3.58-7 8-7s8 3 8 7" stroke="currentColor" stroke-width="1.6"
+                  stroke-linecap="round" />
+              </svg>
+              Clientes
+            </button>
+            <button class="aSidebar__navItem" id="aNavTx" type="button" data-panel="transacciones">
+              <svg viewBox="0 0 24 24" width="17" height="17" fill="none">
+                <path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+              </svg>
+              Transacciones
+            </button>
+            <button class="aSidebar__navItem" id="aNavStats" type="button" data-panel="metricas">
+              <svg viewBox="0 0 24 24" width="17" height="17" fill="none">
+                <path d="M18 20V10M12 20V4M6 20v-6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
+                  stroke-linejoin="round" />
+              </svg>
+              Información
+            </button>
+          </nav>
+          <div class="aSidebar__bottom">
+            <a class="aSidebar__goQr" id="adminHeaderGoQr" href="/admin/qr">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none">
+                <rect x="3" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.6" />
+                <rect x="14" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.6" />
+                <rect x="3" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.6" />
+                <path d="M14 14h2v2h-2zM18 14h3v3h-3zM14 18h3v3h-3zM18 19h3v2h-3z" fill="currentColor" />
+              </svg>
+              Crear QR
+            </a>
+            <button class="aSidebar__logout" id="adminHeaderLogout" type="button">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" stroke="currentColor" stroke-width="1.6"
+                  stroke-linecap="round" />
+                <polyline points="16 17 21 12 16 7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
+                  stroke-linejoin="round" />
+                <line x1="21" y1="12" x2="9" y2="12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+              </svg>
+              Cerrar sesión
+            </button>
+          </div>
+        </aside>
+
+        <div class="aDash__main">
+
+          <!-- Panel Métricas / Información -->
+          <section class="aPanel" id="aPanelStats" aria-label="Métricas" hidden>
+            <div class="aPanel__header" style="flex-wrap: wrap; gap: 16px;">
+              <div>
+                <h2 class="aPanel__title">Dashboard</h2>
+                <p class="aPanel__sub">Resumen del rendimiento de tu negocio</p>
+              </div>
+              <div class="aFilterGroups">
+                <button class="aFilterBtn is-active" data-range="day">Hoy</button>
+                <button class="aFilterBtn" data-range="week">Semana</button>
+                <button class="aFilterBtn" data-range="month">Mes</button>
+                <button class="aFilterBtn" data-range="semester">Semestre</button>
+                <button class="aFilterBtn" data-range="year">Año</button>
+                <button class="aFilterBtn" data-range="all">Total Histórico</button>
+              </div>
+            </div>
+
+            <div class="aStatCards">
+              <div class="aStatCard">
+                <div class="aStatCard__icon" style="color: #60a5fa; background: rgba(96, 165, 250, 0.1);">
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="1.8"
+                      stroke-linecap="round" stroke-linejoin="round" />
+                    <circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="1.8" />
+                  </svg>
+                </div>
+                <div class="aStatCard__val" id="stUsers">--</div>
+                <div class="aStatCard__lbl">Usuarios Nuevos</div>
+                <div class="aStatCard__sub" id="stUsersSub">Registrados en el periodo</div>
+              </div>
+
+              <div class="aStatCard">
+                <div class="aStatCard__icon" style="color: #34d399; background: rgba(52, 211, 153, 0.1);">
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none">
+                    <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" stroke="currentColor"
+                      stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                  </svg>
+                </div>
+                <div class="aStatCard__val" id="stPtsEarned" style="color: #34d399;">--</div>
+                <div class="aStatCard__lbl">Puntos Acreditados</div>
+                <div class="aStatCard__sub">Total ganado por clientes</div>
+              </div>
+
+              <div class="aStatCard">
+                <div class="aStatCard__icon" style="color: #f87171; background: rgba(248, 113, 113, 0.1);">
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none">
+                    <path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+                  </svg>
+                </div>
+                <div class="aStatCard__val" id="stPtsRedeemed" style="color: #f87171;">--</div>
+                <div class="aStatCard__lbl">Puntos Canjeados</div>
+                <div class="aStatCard__sub">Total consumido / descontado</div>
+              </div>
+            </div>
+
+            <div id="adminStatsLoader" class="aStatLoader" hidden>Actualizando métricas...</div>
+          </section> <!-- Panel Clientes -->
+          <section class="aPanel" id="aPanelClientes" aria-label="Clientes">
+            <div class="aPanel__header">
+              <div>
+                <h2 class="aPanel__title">Clientes</h2>
+                <p class="aPanel__sub">Busca un cliente por nombre o cédula</p>
+              </div>
+            </div>
+            <div class="aSearch">
+              <svg class="aSearch__icon" viewBox="0 0 24 24" width="16" height="16" fill="none">
+                <circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="1.8" />
+                <path d="m21 21-4.35-4.35" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+              </svg>
+              <input class="aSearch__input" id="adminClientSearch" type="search" placeholder="Nombre, cédula…"
+                autocomplete="off" aria-label="Buscar cliente" />
+            </div>
+            <div class="aDropdown" id="adminSearchDropdown" hidden role="listbox" aria-label="Resultados"></div>
+            <div class="aClientCard" id="aClientCard" hidden>
+              <div class="aClientCard__avatar" id="aClientAvatar">?</div>
+              <div class="aClientCard__info">
+                <div class="aClientCard__name" id="aClientName">—</div>
+                <div class="aClientCard__meta" id="aClientMeta">—</div>
+              </div>
+              <div class="aClientCard__balance">
+                <div class="aClientCard__balanceVal" id="aClientBalance">0</div>
+                <div class="aClientCard__balanceLbl">puntos</div>
+              </div>
+              <button class="aClientCard__clear" id="aClientClear" type="button"
+                aria-label="Limpiar selección">✕</button>
+            </div>
+            <div class="aResult" id="adminClientsResult" aria-live="polite"></div>
+            <div id="adminRootCardTx" hidden>
+              <div class="aSection__label" id="adminCardTxHint">Transacciones del cliente</div>
+              <div id="adminCardTxList"></div>
+              <div class="aResult" id="adminCardTxResult" aria-live="polite"></div>
+            </div>
+          </section>
+
+          <!-- Panel Transacciones -->
+          <section class="aPanel" id="aPanelTx" aria-label="Transacciones" hidden>
+            <div class="aPanel__header">
+              <div>
+                <h2 class="aPanel__title">Transacciones</h2>
+                <p class="aPanel__sub">Historial reciente de todas las tarjetas</p>
+              </div>
+              <button class="aIconBtn" id="adminTxRefresh" type="button" aria-label="Recargar">
+                <svg viewBox="0 0 24 24" width="17" height="17" fill="none">
+                  <path d="M20 12a8 8 0 0 1-14.3 4.9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+                  <path d="M4 12a8 8 0 0 1 14.3-4.9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+                    opacity=".55" />
+                  <path d="M17.8 3.8V7.6h-3.8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+                    opacity=".55" />
+                  <path d="M6.2 20.2V16.4H10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+                </svg>
+              </button>
+            </div>
+            <div id="adminTxList"></div>
+            <div class="aResult" id="adminTxResult" aria-live="polite"></div>
+          </section>
+        </div>
+      </div>
+
+      <section class="card card--client" aria-label="Tarjeta digital de puntos" role="button" tabindex="0"
+        aria-expanded="false" aria-controls="cardDetails" id="clientCard">
+        <img class="card__art" src="/images/card-cliente.png" alt="Tarjeta de puntos" draggable="false" />
+
+        <div class="card__details" id="cardDetails" aria-hidden="true">
+          <div class="card__detailsTitle">Datos del cliente</div>
+
+          <dl class="card__detailsGrid">
+            <div class="card__detailsRow">
+              <dt>Nombre</dt>
+              <dd id="clientName">—</dd>
+            </div>
+            <div class="card__detailsRow">
+              <dt>Cédula</dt>
+              <dd id="clientId">—</dd>
+            </div>
+            <div class="card__detailsRow">
+              <dt>Saldo disponible</dt>
+              <dd id="clientBalance">0</dd>
+            </div>
+          </dl>
         </div>
 
-        <button class="adminHeaderAction" id="adminHeaderGoQr" type="button" hidden>CREAR TRANSACCION</button>
-        <button class="adminHeaderAction adminHeaderAction--danger" id="adminHeaderLogout" type="button" hidden>CERRAR SESION</button>
+        <div class="card__sheen" aria-hidden="true"></div>
 
-        <button class="avatar" id="profileButton" type="button" aria-label="Perfil" aria-haspopup="dialog" aria-controls="profileMenu" aria-expanded="false">
-          <span class="avatar__ring" aria-hidden="true"></span>
-          <span class="avatar__initials" id="avatarInitials">A</span>
+        <div class="card__top">
+          <div class="brand" aria-label="Marca">
+            <div class="brand__word">SAMUEL</div>
+            <div class="brand__sub">Rewards</div>
+          </div>
+
+          <div class="chip" aria-hidden="true">
+            <div class="chip__inner"></div>
+            <div class="chip__line chip__line--a"></div>
+            <div class="chip__line chip__line--b"></div>
+            <div class="chip__line chip__line--c"></div>
+          </div>
+        </div>
+
+        <div class="balance">
+          <div class="balance__label">Saldo de puntos</div>
+          <div class="balance__value" id="points">0</div>
+        </div>
+
+        <div class="card__bottom">
+          <div class="card__divider" aria-hidden="true"></div>
+          <div class="card__meta" id="cardUpdated">Actualizado hoy</div>
+        </div>
+      </section>
+
+      <section class="activity" aria-label="Actividad reciente">
+        <div class="activity__header">
+          <h2 class="activity__title">Actividad</h2>
+          <button class="activity__refresh" id="activityRefresh" type="button" aria-label="Actualizar actividad">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden="true">
+              <path d="M20 12a8 8 0 0 1-14.3 4.9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+                stroke-linejoin="round" opacity="0.9" />
+              <path d="M4 12a8 8 0 0 1 14.3-4.9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+                stroke-linejoin="round" opacity="0.55" />
+              <path d="M17.8 3.8V7.6h-3.8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+                stroke-linejoin="round" opacity="0.55" />
+              <path d="M6.2 20.2V16.4H10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+                stroke-linejoin="round" opacity="0.9" />
+            </svg>
+          </button>
+        </div>
+
+        <ul class="activity__list" role="list">
+        </ul>
+        <button class="activity__more" id="activityMoreBtn" type="button" aria-expanded="false" hidden>Mostrar
+          todas</button>
+      </section>
+    </main>
+
+    <div class="cta" aria-label="Acción principal">
+      <button class="qr" id="qrButton" type="button" aria-label="Mostrar codigo QR">
+        <span class="qr__glow" aria-hidden="true"></span>
+        <svg class="qr__icon" viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true">
+          <path
+            d="M8.25 7.25h1.9l1.2-1.55a1.5 1.5 0 0 1 1.19-.58h2.92a1.5 1.5 0 0 1 1.19.58l1.2 1.55h1.9A2.25 2.25 0 0 1 22 9.5v7.25A2.25 2.25 0 0 1 19.75 19H4.25A2.25 2.25 0 0 1 2 16.75V9.5a2.25 2.25 0 0 1 2.25-2.25Z"
+            stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" opacity="0.92" />
+          <circle cx="12" cy="13.1" r="3.1" stroke="currentColor" stroke-width="1.8" opacity="0.92" />
+        </svg>
+      </button>
+    </div>
+  </div>
+  <!-- Overlay de escaneo QR -->
+  <div class="scanner" id="qrScanner" aria-hidden="true">
+    <div class="scanner__backdrop"></div>
+    <div class="scanner__frame">
+      <header class="scanner__header">
+        <span class="scanner__title">Escanear código</span>
+        <button class="scanner__close" id="qrClose" type="button" aria-label="Cerrar escáner">
+          ✕
         </button>
       </header>
 
-      <main class="content" id="scroll" aria-label="Contenido">
-        
-        <!-- SECCIÓN ADMIN LOGIN -->
-        <section class="adminAuth" id="adminRootLogin" hidden aria-modal="true" role="dialog">
-          <div class="adminAuth__backdrop" aria-hidden="true"></div>
-          <div class="adminAuth__card">
-            <div class="adminAuth__header">
-              <h1 class="adminAuth__title">Nexus Admin</h1>
-              <p class="adminAuth__hint">Introduce tu clave de acceso</p>
-            </div>
-            <div class="adminAuth__body">
-              <form class="adminForm" id="adminRootLoginForm">
-                <div class="adminForm__group">
-                  <label class="adminLabel">Contraseña</label>
-                  <input class="adminInput" id="adminRootPassword" type="password" autocomplete="current-password" placeholder="Tu password admin" required />
-                </div>
-                <button class="adminBtn adminBtn--primary" id="adminRootLoginBtn" type="submit">Acceder al Sistema</button>
-                <div class="adminResult" id="adminRootLoginResult" aria-live="polite"></div>
-              </form>
+      <div class="scanner__body">
+        <video id="qrVideo" class="scanner__video" playsinline></video>
+        <div class="scanner__reticle" aria-hidden="true"></div>
+        <canvas id="qrCanvas" class="scanner__canvas" aria-hidden="true"></canvas>
+      </div>
 
-              <!-- Recovery forms hidden by default -->
-              <form class="adminForm" id="adminRootForgotForm" hidden>
-                <p class="adminAuth__hint">Ingresa el correo configurado.</p>
-                <input class="adminInput" id="adminRootForgotEmail" type="email" placeholder="tucorreo@ejemplo.com" required style="margin-bottom:12px;" />
-                <button class="adminBtn adminBtn--primary" id="adminRootSendForgotBtn" type="submit">Enviar Codigo</button>
-                <button class="adminBtn adminBtn--ghost" type="button" id="adminRootCancelForgotBtn" style="margin-top:10px;">Volver</button>
-                <div class="adminResult" id="adminRootForgotResult" aria-live="polite"></div>
-              </form>
+      <footer class="scanner__footer">
+        <span class="scanner__hint" id="qrHint">Apunta al código QR para escanear</span>
+        <span class="scanner__result" id="qrResult" aria-live="polite"></span>
+      </footer>
+    </div>
+  </div>
 
-              <form class="adminForm" id="adminRootVerifyForm" hidden>
-                <p class="adminAuth__hint">Ingresa el código de 6 dígitos.</p>
-                <input class="adminInput adminInput--center" id="adminRootVerifyCode" type="text" placeholder="······" required autocomplete="off" style="margin-bottom:12px;" />
-                <button class="adminBtn adminBtn--primary" id="adminRootVerifyBtn" type="submit">Validar</button>
-                <button class="adminBtn adminBtn--ghost" type="button" id="adminRootCancelVerifyBtn" style="margin-top:10px;">Cancelar</button>
-                <div class="adminResult" id="adminRootVerifyResult" aria-live="polite"></div>
-              </form>
+  <!-- Modal de perfil -->
+  <div class="profileMenu" id="profileMenu" aria-hidden="true">
+    <div class="profileMenu__backdrop" data-profile-close></div>
 
-              <form class="adminForm" id="adminRootResetForm" hidden>
-                <p class="adminAuth__hint">Nueva clave.</p>
-                <input class="adminInput" id="adminRootNewPassword" type="password" placeholder="Nueva password" required minlength="6" style="margin-bottom:12px;" />
-                <button class="adminBtn adminBtn--primary" id="adminRootUpdatePasswordBtn" type="submit">Actualizar</button>
-                <div class="adminResult" id="adminRootResetResult" aria-live="polite"></div>
-              </form>
-            </div>
-          </div>
-        </section>
-
-        <!-- DASHBOARD PRINCIPAL ADMIN -->
-        <div class="adminDashboard" id="adminRootPanel" hidden>
-          <div class="adminGrid">
-            <aside class="adminStats">
-              <div class="statCard statCard--blue">
-                <div class="statCard__label">Total Puntos Sistema</div>
-                <div class="statCard__value" id="statClientCount">0</div>
-              </div>
-              <div class="statCard statCard--violet">
-                <div class="statCard__label">Modo</div>
-                <div class="statCard__value">Admin</div>
-              </div>
-            </aside>
-
-            <section class="adminPanelCard" id="adminRootClients">
-              <div class="adminPanelCard__header">
-                <div class="adminPanelCard__icon">
-                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-                </div>
-                <h2 class="adminPanelCard__title">Buscador de Clientes</h2>
-              </div>
-              <div class="adminSearchBox">
-                <input class="adminSearchBox__input" id="adminClientSearch" type="text" autocomplete="off" placeholder="Escribe nombre o cédula..." aria-label="Buscar cliente">
-                <div id="adminClientSearchResults" class="adminSearchResults"></div>
-              </div>
-              <div class="adminResult" id="adminClientsResult" aria-live="polite"></div>
-            </section>
-
-            <section class="adminPanelCard" id="adminRootCardTx" hidden>
-              <div class="adminPanelCard__header">
-                <h2 class="adminPanelCard__title" id="adminCardTxHint">Historial Cliente</h2>
-              </div>
-              <div class="adminTableWrapper" id="adminCardTxList"></div>
-              <div class="adminResult" id="adminCardTxResult" aria-live="polite"></div>
-            </section>
-
-            <section class="adminPanelCard" id="adminRootAllTx">
-              <div class="adminPanelCard__header">
-                <h2 class="adminPanelCard__title">Últimos Movimientos</h2>
-                <button class="adminIconButton" id="adminTxRefresh" type="button">
-                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/></svg>
-                </button>
-              </div>
-              <div class="adminTableWrapper" id="adminTxList"></div>
-              <div class="adminResult" id="adminTxResult" aria-live="polite"></div>
-            </section>
-          </div>
-        </div>
-
-        <!-- TARJETA CLIENTE -->
-        <section
-          class="card card--client"
-          aria-label="Tarjeta digital de puntos"
-          role="button"
-          tabindex="0"
-          aria-expanded="false"
-          aria-controls="cardDetails"
-          id="clientCard"
-        >
-          <img class="card__art" src="/images/card-cliente.png" alt="Tarjeta de puntos" draggable="false" />
-
-          <div class="card__details" id="cardDetails" aria-hidden="true">
-            <div class="card__detailsTitle">Datos del cliente</div>
-
-            <dl class="card__detailsGrid">
-              <div class="card__detailsRow">
-                <dt>Nombre</dt>
-                <dd id="clientName">—</dd>
-              </div>
-              <div class="card__detailsRow">
-                <dt>Cédula</dt>
-                <dd id="clientId">—</dd>
-              </div>
-              <div class="card__detailsRow">
-                <dt>Saldo disponible</dt>
-                <dd id="clientBalance">0</dd>
-              </div>
-            </dl>
-          </div>
-
-          <div class="card__sheen" aria-hidden="true"></div>
-
-          <div class="card__top">
-            <div class="brand" aria-label="Marca">
-              <div class="brand__word">SAMUEL</div>
-              <div class="brand__sub">Rewards</div>
-            </div>
-
-            <div class="chip" aria-hidden="true">
-              <div class="chip__inner"></div>
-              <div class="chip__line chip__line--a"></div>
-              <div class="chip__line chip__line--b"></div>
-              <div class="chip__line chip__line--c"></div>
-            </div>
-          </div>
-
-          <div class="balance">
-            <div class="balance__label">Saldo de puntos</div>
-            <div class="balance__value" id="points">0</div>
-          </div>
-
-          <div class="card__bottom">
-            <div class="card__divider" aria-hidden="true"></div>
-            <div class="card__meta" id="cardUpdated">Actualizado hoy</div>
-          </div>
-        </section>
-
-        <!-- ACTIVIDAD CLIENTE -->
-        <section class="activity" aria-label="Actividad reciente">
-          <div class="activity__header">
-            <h2 class="activity__title">Actividad</h2>
-            <button class="activity__refresh" id="activityRefresh" type="button" aria-label="Actualizar actividad">
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden="true">
-                <path d="M20 12a8 8 0 0 1-14.3 4.9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" opacity="0.9" />
-                <path d="M4 12a8 8 0 0 1 14.3-4.9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" opacity="0.55" />
-                <path d="M17.8 3.8V7.6h-3.8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" opacity="0.55" />
-                <path d="M6.2 20.2V16.4H10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" opacity="0.9" />
-              </svg>
-            </button>
-          </div>
-
-          <ul class="activity__list" role="list"></ul>
-          <button class="activity__more" id="activityMoreBtn" type="button" aria-expanded="false" hidden>Mostrar todas</button>
-        </section>
-      </main>
-
-      <div class="cta" aria-label="Acción principal">
-        <button class="qr" id="qrButton" type="button" aria-label="Mostrar codigo QR">
-          <span class="qr__glow" aria-hidden="true"></span>
-          <svg class="qr__icon" viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true">
-            <path d="M8.25 7.25h1.9l1.2-1.55a1.5 1.5 0 0 1 1.19-.58h2.92a1.5 1.5 0 0 1 1.19.58l1.2 1.55h1.9A2.25 2.25 0 0 1 22 9.5v7.25A2.25 2.25 0 0 1 19.75 19H4.25A2.25 2.25 0 0 1 2 16.75V9.5a2.25 2.25 0 0 1 2.25-2.25Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" opacity="0.92"/>
-            <circle cx="12" cy="13.1" r="3.1" stroke="currentColor" stroke-width="1.8" opacity="0.92"/>
-          </svg>
+    <div class="profileMenu__frame" role="dialog" aria-modal="true" aria-label="Opciones de perfil">
+      <header class="profileMenu__header">
+        <span class="profileMenu__title">Perfil</span>
+        <button class="profileMenu__close" id="profileClose" type="button" aria-label="Cerrar menú">
+          ✕
         </button>
+      </header>
+
+      <div class="profileMenu__body">
+        <button class="profileMenu__item" id="installPwa" type="button">
+          Instalar la app
+        </button>
+        <button class="profileMenu__item" id="adminLogout" type="button" hidden>
+          Cerrar sesión admin
+        </button>
+        <div class="profileMenu__hint" id="installHint" aria-live="polite"></div>
       </div>
     </div>
+  </div>
 
-    <!-- SCANNER -->
-    <div class="scanner" id="qrScanner" aria-hidden="true">
-      <div class="scanner__backdrop"></div>
-      <div class="scanner__frame">
-        <header class="scanner__header">
-          <span class="scanner__title">Escanear código</span>
-          <button class="scanner__close" id="qrClose" type="button" aria-label="Cerrar escáner">✕</button>
-        </header>
-        <div class="scanner__body">
-          <video id="qrVideo" class="scanner__video" playsinline></video>
-          <div class="scanner__reticle" aria-hidden="true"></div>
-          <canvas id="qrCanvas" class="scanner__canvas" aria-hidden="true"></canvas>
-        </div>
-        <footer class="scanner__footer">
-          <span class="scanner__hint" id="qrHint">Apunta al código QR para escanear</span>
-          <span class="scanner__result" id="qrResult" aria-live="polite"></span>
-        </footer>
+  <!-- Modal de historial de transacciones -->
+  <div class="historyModal" id="historyModal" aria-hidden="true" role="dialog" aria-modal="true"
+    aria-label="Todas las transacciones">
+    <div class="historyModal__frame">
+      <header class="historyModal__header">
+        <span class="historyModal__title">Todas las transacciones</span>
+        <button class="historyModal__close" id="historyCloseBtn" type="button" aria-label="Cerrar">✕</button>
+      </header>
+      <div class="historyModal__body">
+        <ul class="activity__list" id="historyList" role="list">
+        </ul>
+        <div id="historyLoading" class="activity__loading" hidden>Cargando más...</div>
+        <button class="activity__more" id="historyLoadMoreBtn" type="button" hidden>Cargar más</button>
       </div>
     </div>
+  </div>
 
-    <!-- PROFILE MENU -->
-    <div class="profileMenu" id="profileMenu" aria-hidden="true">
-      <div class="profileMenu__backdrop" data-profile-close></div>
-      <div class="profileMenu__frame" role="dialog" aria-modal="true" aria-label="Opciones de perfil">
-        <header class="profileMenu__header">
-          <span class="profileMenu__title">Perfil</span>
-          <button class="profileMenu__close" id="profileClose" type="button" aria-label="Cerrar menú">✕</button>
-        </header>
-        <div class="profileMenu__body">
-          <button class="profileMenu__item" id="installPwa" type="button">Instalar la app</button>
-          <button class="profileMenu__item" id="adminLogout" type="button" hidden>Cerrar sesión admin</button>
-          <div class="profileMenu__hint" id="installHint" aria-live="polite"></div>
-        </div>
-      </div>
-    </div>
+  <!-- Librería ligera de decodificación QR -->
+  <script src="https://unpkg.com/jsqr@1.4.0/dist/jsQR.js" crossorigin="anonymous"></script>
+  <script src="/app.js" defer></script>
+</body>
 
-    <!-- HISTORIAL MODAL -->
-    <div class="historyModal" id="historyModal" aria-hidden="true" role="dialog" aria-modal="true" aria-label="Todas las transacciones">
-      <div class="historyModal__frame">
-        <header class="historyModal__header">
-          <span class="historyModal__title">Historial completo</span>
-          <button class="historyModal__close" id="historyCloseBtn" type="button" aria-label="Cerrar">✕</button>
-        </header>
-        <div class="historyModal__body">
-          <ul class="activity__list" id="historyList" role="list"></ul>
-        </div>
-      </div>
-    </div>
-
-    <script src="https://unpkg.com/jsqr@1.4.0/dist/jsQR.js" crossorigin="anonymous"></script>
-    <script src="/app.js" defer></script>
-  </body>
 </html>

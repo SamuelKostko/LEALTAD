@@ -283,85 +283,150 @@ if (qrButton) {
     if (updatedEl) updatedEl.textContent = "Actualizando...";
     setPoints(0);
   } else {
-    // Root domain without token shows admin panel (password required).
+    // Root domain without token → NEW admin dashboard
     document.body.classList.add('mode-admin');
-    if (greetingNameEl) greetingNameEl.textContent = "Admin";
-    if (avatarInitialsEl) avatarInitialsEl.textContent = "AD";
-    if (updatedEl) updatedEl.textContent = "";
-    setPoints(0);
 
-    const headerLabel = document.getElementById('headerLabel');
-    if (headerLabel) headerLabel.textContent = "Panel administrador";
-    const adminHeaderGoQr = document.getElementById('adminHeaderGoQr');
-    const adminHeaderLogout = document.getElementById('adminHeaderLogout');
-    const profileButton = document.getElementById('profileButton');
-    if (adminHeaderGoQr) {
-      adminHeaderGoQr.hidden = true;
-      adminHeaderGoQr.addEventListener('click', () => { window.location.href = '/admin/qr'; });
-    }
-    if (adminHeaderLogout) {
-      adminHeaderLogout.hidden = true;
-    }
-    if (profileButton) profileButton.hidden = true;
-
-    // Hide client wallet UI.
+    // Hide client wallet UI completely
     card.hidden = true;
     const activity = document.querySelector('.activity');
     if (activity) activity.hidden = true;
     const cta = document.querySelector('.cta');
     if (cta) cta.hidden = true;
+    const profileButton = document.getElementById('profileButton');
+    if (profileButton) profileButton.hidden = true;
 
-    const loginCard = document.getElementById('adminRootLogin');
+    // ── DOM refs ─────────────────────────────────────────────
+    const loginModal = document.getElementById('adminRootLogin');
     const loginForm = document.getElementById('adminRootLoginForm');
-    
-    // Forgot / Reset DOM Elements
-    const forgotBtn = document.getElementById('adminRootForgotBtn');
     const forgotForm = document.getElementById('adminRootForgotForm');
-    const cancelForgotBtn = document.getElementById('adminRootCancelForgotBtn');
-    const forgotEmailEl = document.getElementById('adminRootForgotEmail');
-
     const verifyForm = document.getElementById('adminRootVerifyForm');
+    const resetForm = document.getElementById('adminRootResetForm');
+    const passwordEl = document.getElementById('adminRootPassword');
+    const forgotEmailEl = document.getElementById('adminRootForgotEmail');
     const verifyCodeEl = document.getElementById('adminRootVerifyCode');
+    const newPasswordEl = document.getElementById('adminRootNewPassword');
+    const loginResultEl = document.getElementById('adminRootLoginResult');
+    const forgotBtn = document.getElementById('adminRootForgotBtn');
+    const cancelForgotBtn = document.getElementById('adminRootCancelForgotBtn');
     const cancelVerifyBtn = document.getElementById('adminRootCancelVerifyBtn');
 
-    const resetForm = document.getElementById('adminRootResetForm');
-    const newPasswordEl = document.getElementById('adminRootNewPassword');
-    
-    const passwordEl = document.getElementById('adminRootPassword');
-    const loginResultEl = document.getElementById('adminRootLoginResult');
+    const dash = document.getElementById('adminDash');
+    const goQrBtn = document.getElementById('adminHeaderGoQr');
+    const logoutBtn = document.getElementById('adminHeaderLogout');
 
-    const clientsCard = document.getElementById('adminRootClients');
-    const cardTxCard = document.getElementById('adminRootCardTx');
-    const allTxCard = document.getElementById('adminRootAllTx');
+    // Panels
+    const panelClientes = document.getElementById('aPanelClientes');
+    const panelTx = document.getElementById('aPanelTx');
+    const panelStats = document.getElementById('aPanelStats');
+    const navClientes = document.getElementById('aNavClientes');
+    const navTx = document.getElementById('aNavTx');
+    const navStats = document.getElementById('aNavStats');
 
-    const txRefresh = document.getElementById('adminTxRefresh');
-    const adminLogout = document.getElementById('adminLogout');
-
-    const clientsList = document.getElementById('adminClientsList');
-    const clientSearch = document.getElementById('adminClientSearch');
-    const clientSearchResults = document.getElementById('adminClientSearchResults');
+    // Client search
+    const searchInput = document.getElementById('adminClientSearch');
+    const dropdown = document.getElementById('adminSearchDropdown');
+    const clientCard = document.getElementById('aClientCard');
+    const clientAvatarEl = document.getElementById('aClientAvatar');
+    const clientNameEl = document.getElementById('aClientName');
+    const clientMetaEl = document.getElementById('aClientMeta');
+    const clientBalanceEl = document.getElementById('aClientBalance');
+    const clientClearBtn = document.getElementById('aClientClear');
     const clientsResult = document.getElementById('adminClientsResult');
+
+    // Card tx
+    const cardTxSection = document.getElementById('adminRootCardTx');
     const cardTxHint = document.getElementById('adminCardTxHint');
     const cardTxList = document.getElementById('adminCardTxList');
     const cardTxResult = document.getElementById('adminCardTxResult');
+
+    // All tx
+    const txRefresh = document.getElementById('adminTxRefresh');
     const txList = document.getElementById('adminTxList');
     const txResult = document.getElementById('adminTxResult');
 
-    let allClientsData = [];
+    // ── State ────────────────────────────────────────────────
+    let allCards = [];
     let selectedToken = '';
-    let tokenToDisplayName = new Map();
-    let clientSearchBound = false;
+    let currentValidCode = null;
 
-    const setLoginResult = (type, message) => {
-      if (!loginResultEl) return;
-      loginResultEl.classList.remove('adminResult--ok', 'adminResult--err', 'adminResult--info');
-      loginResultEl.classList.add(type);
-      loginResultEl.textContent = message;
+    // ── Helpers ──────────────────────────────────────────────
+    const setText = (el, text) => { if (el) el.textContent = String(text ?? ''); };
+
+    const setResult = (el, type, msg) => {
+      if (!el) return;
+      el.className = 'aResult' + (type ? ` aResult--${type}` : '');
+      el.textContent = msg;
     };
 
-    const setText = (el, text) => {
-      if (!el) return;
-      el.textContent = String(text ?? '');
+    const apiGet = async (path) => {
+      const res = await fetch(path, { cache: 'no-store' });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        const err = new Error(data?.error || data?.message || `Error (${res.status})`);
+        err.status = res.status;
+        throw err;
+      }
+      return data;
+    };
+
+    const formatTxDate = (tx) => {
+      const iso = tx.processedAt || tx.createdAt || '';
+      if (!iso) return '—';
+      const d = new Date(iso);
+      if (Number.isNaN(d.getTime())) return '—';
+      return d.toLocaleString('es-VE', { year: '2-digit', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+    };
+
+    const renderTxTable = (container, txs, mode) => {
+      if (!container) return;
+      container.innerHTML = '';
+      if (!txs.length) {
+        const empty = document.createElement('div');
+        empty.className = 'aTxEmpty';
+        empty.textContent = 'Sin transacciones registradas';
+        container.appendChild(empty);
+        return;
+      }
+      const wrap = document.createElement('div');
+      wrap.className = 'aTxTable';
+      const headLabels = mode === 'card'
+        ? ['Fecha', 'Tipo', 'Estado', 'Pts', 'Antes', 'Después', 'Descripción']
+        : ['Fecha', 'Tipo', 'Estado', 'Pts', 'Cliente', 'Descripción'];
+      const head = document.createElement('div');
+      head.className = mode === 'card' ? 'aTxRow aTxRow--card aTxRow--head' : 'aTxRow aTxRow--head';
+      for (const lbl of headLabels) {
+        const c = document.createElement('div');
+        c.className = 'aTxCell';
+        c.textContent = lbl;
+        head.appendChild(c);
+      }
+      wrap.appendChild(head);
+      for (const t of txs) {
+        const row = document.createElement('div');
+        row.className = mode === 'card' ? 'aTxRow aTxRow--card' : 'aTxRow';
+        const pts = Number.isFinite(Number(t.points)) ? Number(t.points) : 0;
+        const before = Number.isFinite(Number(t.balanceBefore)) ? Number(t.balanceBefore) : null;
+        const after = Number.isFinite(Number(t.balanceAfter)) ? Number(t.balanceAfter) : null;
+        const addCell = (text, cls) => {
+          const c = document.createElement('div');
+          c.className = 'aTxCell' + (cls ? ` ${cls}` : '');
+          c.textContent = text;
+          row.appendChild(c);
+        };
+        addCell(formatTxDate(t));
+        addCell(String(t.type || '—'));
+        addCell(String(t.status || '—'), 'aTxCell--strong');
+        addCell(String(pts), 'aTxCell--pts');
+        if (mode === 'card') {
+          addCell(before === null ? '—' : String(before));
+          addCell(after === null ? '—' : String(after));
+        } else {
+          addCell(String(t?.name || t?.token || '—'));
+        }
+        addCell(String(t.description || '—'));
+        wrap.appendChild(row);
+      }
+      container.appendChild(wrap);
     };
 
     const showLoginStep = (step) => {
@@ -372,457 +437,298 @@ if (qrButton) {
     };
 
     const clearRecoveryResults = () => {
-      setText(document.getElementById('adminRootForgotResult'), '');
-      setText(document.getElementById('adminRootVerifyResult'), '');
-      setText(document.getElementById('adminRootResetResult'), '');
+      setResult(document.getElementById('adminRootForgotResult'), '', '');
+      setResult(document.getElementById('adminRootVerifyResult'), '', '');
+      setResult(document.getElementById('adminRootResetResult'), '', '');
     };
 
-    const setAuthenticatedUi = (authed) => {
-      const loginCard = document.getElementById('adminRootLogin');
-      const adminPanel = document.getElementById('adminRootPanel');
-      if (loginCard) loginCard.hidden = authed;
-      if (adminPanel) adminPanel.hidden = !authed;
-      if (adminHeaderGoQr) adminHeaderGoQr.hidden = !authed;
-      if (adminHeaderLogout) adminHeaderLogout.hidden = !authed;
+    const showLogin = () => {
+      if (loginModal) loginModal.hidden = false;
+      if (dash) dash.hidden = true;
     };
+
+    const showDash = () => {
+      if (loginModal) loginModal.hidden = true;
+      if (dash) dash.hidden = false;
+    };
+
+    const switchPanel = (panel) => {
+      if (panelClientes) panelClientes.hidden = panel !== 'clientes';
+      if (panelTx) panelTx.hidden = panel !== 'transacciones';
+      if (panelStats) panelStats.hidden = panel !== 'metricas';
+      
+      if (navClientes) navClientes.classList.toggle('is-active', panel === 'clientes');
+      if (navTx) navTx.classList.toggle('is-active', panel === 'transacciones');
+      if (navStats) navStats.classList.toggle('is-active', panel === 'metricas');
+    };
+    if (navClientes) navClientes.addEventListener('click', () => switchPanel('clientes'));
+    if (navTx) navTx.addEventListener('click', () => { switchPanel('transacciones'); loadAllTransactions(); });
+    if (navStats) navStats.addEventListener('click', () => { switchPanel('metricas'); loadAdminStats(); });
+
+    if (goQrBtn) goQrBtn.addEventListener('click', () => { window.location.href = '/admin/qr'; });
 
     const doLogout = async () => {
-      try {
-        await fetch('/api/admin/logout', { method: 'POST' });
-      } catch {
-        // Ignore.
-      }
-
-      if (clientSearch) clientSearch.value = '';
-      if (clientSearchResults) clientSearchResults.innerHTML = '';
-      if (cardTxList) cardTxList.innerHTML = '';
-      if (txList) txList.innerHTML = '';
-      if (cardTxHint) cardTxHint.textContent = 'Selecciona un cliente.';
+      try { await fetch('/api/admin/logout', { method: 'POST' }); } catch (err) { /* ignore */ }
+      allCards = [];
       selectedToken = '';
-      updateClientTxVisibility();
-      setAuthenticatedUi(false);
-      setLoginResult('adminResult--info', 'Sesión cerrada.');
+      clearClient();
+      showLogin();
+      showLoginStep('login');
+      setResult(loginResultEl, 'info', 'Sesión cerrada.');
+    };
+    if (logoutBtn) logoutBtn.addEventListener('click', doLogout);
+
+    const getInitials = (name) => {
+      const parts = String(name || '').trim().split(/\s+/).filter(Boolean);
+      return parts.slice(0, 2).map(p => p[0]).join('').toUpperCase() || '?';
     };
 
-    const updateClientTxVisibility = () => {
-      const cardTxCard = document.getElementById('adminRootCardTx');
-      if (cardTxCard) cardTxCard.hidden = !selectedToken;
+    const clearClient = () => {
+      selectedToken = '';
+      if (clientCard) clientCard.hidden = true;
+      if (cardTxSection) cardTxSection.hidden = true;
+      if (searchInput) searchInput.value = '';
+      if (dropdown) { dropdown.hidden = true; dropdown.innerHTML = ''; }
     };
 
-    const formatTxDate = (tx) => {
-      const iso = tx.processedAt || tx.createdAt || '';
-      if (!iso) return '—';
-      const d = new Date(iso);
-      if (Number.isNaN(d.getTime())) return '—';
-      return d.toLocaleString('es-VE', {
-        year: '2-digit',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
+    const selectClient = (c) => {
+      selectedToken = c.token;
+      if (searchInput) searchInput.value = '';
+      if (dropdown) { dropdown.hidden = true; dropdown.innerHTML = ''; }
+      if (clientAvatarEl) clientAvatarEl.textContent = getInitials(c.name);
+      if (clientNameEl) clientNameEl.textContent = c.name || '—';
+      if (clientMetaEl) clientMetaEl.textContent = c.cedula ? `CI: ${c.cedula}` : 'Sin cédula';
+      if (clientBalanceEl) clientBalanceEl.textContent = String(c.balance ?? 0);
+      if (clientCard) clientCard.hidden = false;
+      if (cardTxSection) { cardTxSection.hidden = false; }
+      if (cardTxHint) cardTxHint.textContent = `Transacciones · ${c.name || '—'}`;
+      loadCardTransactions(c.token);
     };
 
-    const renderTxList = (container, transactions, mode) => {
-      if (!container) return;
-      container.innerHTML = '';
-      container.className = `adminTable ${mode === 'card' ? 'adminTable--card' : 'adminTable--all'}`;
+    if (clientClearBtn) clientClearBtn.addEventListener('click', clearClient);
 
-      if (!transactions.length) {
-        const empty = document.createElement('div');
-        empty.className = 'adminResult';
-        empty.textContent = 'Sin transacciones';
-        empty.style.padding = '20px';
-        empty.style.textAlign = 'center';
-        empty.style.color = 'var(--admin-text-muted)';
-        container.appendChild(empty);
+    const buildDropdown = (query) => {
+      if (!dropdown || !searchInput) return;
+      const q = query.trim().toLowerCase();
+      if (!q) { dropdown.hidden = true; dropdown.innerHTML = ''; return; }
+      const matches = allCards.filter(c => c.name.toLowerCase().includes(q) || c.cedula.includes(q)).slice(0, 8);
+      dropdown.innerHTML = '';
+      if (!matches.length) {
+        const el = document.createElement('div');
+        el.className = 'aDropdown__empty';
+        el.textContent = 'Sin resultados';
+        dropdown.appendChild(el);
+        dropdown.hidden = false;
         return;
       }
-
-      const table = document.createElement('table');
-      table.style.width = '100%';
-      table.style.borderCollapse = 'collapse';
-      
-      const thead = document.createElement('thead');
-      const hrow = document.createElement('tr');
-      const cols = mode === 'card' 
-        ? ['Fecha', 'Tipo', 'Estado', 'Pts', 'Antes', 'Después']
-        : ['Fecha', 'Tipo', 'Estado', 'Pts', 'Cliente'];
-      
-      cols.forEach(c => {
-        const th = document.createElement('th');
-        th.className = 'adminTableCell adminTableCell--muted';
-        th.style.textAlign = 'left';
-        th.style.background = 'var(--admin-bg)';
-        th.textContent = c;
-        hrow.appendChild(th);
-      });
-      thead.appendChild(hrow);
-      table.appendChild(thead);
-
-      const tbody = document.createElement('tbody');
-      transactions.forEach(t => {
-        const row = document.createElement('tr');
-        const pts = Number(t.points) || 0;
-        
-        const cells = [
-          formatTxDate(t),
-          t.type || '—',
-          t.status || '—',
-          pts,
-          mode === 'card' ? (t.balanceBefore || 0) : (t.name || t.token || '—'),
-          mode === 'card' ? (t.balanceAfter || 0) : null
-        ].filter(v => v !== null);
-
-        cells.forEach((val, idx) => {
-          const td = document.createElement('td');
-          td.className = 'adminTableCell';
-          if (idx === 2 || idx === 3) td.classList.add('adminTableCell--strong');
-          td.textContent = val;
-          row.appendChild(td);
-        });
-        tbody.appendChild(row);
-      });
-      table.appendChild(tbody);
-      container.appendChild(table);
-    };
-
-    const apiGet = async (path) => {
-      const res = await fetch(path, { cache: 'no-store' });
-      const data = await res.json().catch(() => null);
-      if (!res.ok) {
-        const msg = data?.error || data?.message || `Error (${res.status})`;
-        const err = new Error(msg);
-        err.status = res.status;
-        throw err;
+      for (const c of matches) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'aDropdown__item';
+        btn.innerHTML = `<span class="aDropdown__name">${c.name || '—'}</span><span class="aDropdown__cedula">${c.cedula || ''}</span><span class="aDropdown__pts">${c.balance} pts</span>`;
+        btn.addEventListener('click', () => selectClient(c));
+        dropdown.appendChild(btn);
       }
-      return data;
+      dropdown.hidden = false;
     };
+
+    if (searchInput) {
+      searchInput.addEventListener('input', () => buildDropdown(searchInput.value));
+      searchInput.addEventListener('focus', () => { if (searchInput.value) buildDropdown(searchInput.value); });
+      document.addEventListener('click', (e) => {
+        if (!searchInput.contains(e.target) && !dropdown?.contains(e.target)) { if (dropdown) { dropdown.hidden = true; } }
+      });
+    }
 
     const loadClients = async () => {
-      const clientsResult = document.getElementById('adminClientsResult');
-      setText(clientsResult, 'Cargando clientes...');
+      setResult(clientsResult, 'info', 'Cargando clientes…');
       try {
-        const data = await apiGet('/api/admin/cards?limit=500');
-        allClientsData = Array.isArray(data?.cards) ? data.cards : [];
-        tokenToDisplayName = new Map();
-        allClientsData.forEach(c => {
-          if (c.token) tokenToDisplayName.set(c.token, c.name || '—');
-        });
-        setText(clientsResult, '');
+        const data = await apiGet('/api/admin/cards?limit=200');
+        allCards = (Array.isArray(data?.cards) ? data.cards : []).map(c => ({
+          token: String(c?.token ?? '').trim(),
+          name: String(c?.name ?? '').trim(),
+          cedula: String(c?.cedula ?? '').trim(),
+          balance: Number.isFinite(Number(c?.balance)) ? Number(c.balance) : 0,
+        })).filter(c => c.token);
+        setResult(clientsResult, '', '');
       } catch (err) {
-        setText(clientsResult, err?.message || 'Error al cargar');
+        if (err?.status === 401) { doLogout(); return; }
+        setResult(clientsResult, 'err', err?.message ?? 'Error al cargar clientes');
       }
     };
 
     const loadAllTransactions = async () => {
-      const txList = document.getElementById('adminTxList');
-      const txResult = document.getElementById('adminTxResult');
-      setText(txResult, 'Cargando movimientos...');
+      if (!txList) return;
+      setResult(txResult, 'info', 'Cargando…');
       try {
-        const data = await apiGet('/api/admin/transactions?limit=50');
-        renderTxList(txList, data?.transactions || [], 'all');
-        setText(txResult, '');
+        const data = await apiGet('/api/admin/transactions?limit=80');
+        const txs = Array.isArray(data?.transactions) ? data.transactions : [];
+        renderTxTable(txList, txs, 'all');
+        setResult(txResult, '', '');
       } catch (err) {
-        setText(txResult, err?.message || 'Error');
+        if (err?.status === 401) { doLogout(); return; }
+        setResult(txResult, 'err', err?.message ?? 'Error');
       }
     };
 
     const loadCardTransactions = async (token) => {
-      const cardTxList = document.getElementById('adminCardTxList');
-      const cardTxResult = document.getElementById('adminCardTxResult');
-      setText(cardTxResult, 'Buscando...');
+      if (!cardTxList) return;
+      setResult(cardTxResult, 'info', 'Cargando…');
       try {
-        const data = await apiGet(`/api/admin/transactions?token=${encodeURIComponent(token)}&limit=50`);
-        renderTxList(cardTxList, data?.transactions || [], 'card');
-        setText(cardTxResult, '');
+        const data = await apiGet(`/api/admin/transactions?token=${encodeURIComponent(token)}&limit=80`);
+        const txs = Array.isArray(data?.transactions) ? data.transactions : [];
+        renderTxTable(cardTxList, txs, 'card');
+        setResult(cardTxResult, '', '');
       } catch (err) {
-        setText(cardTxResult, err?.message || 'Error');
+        if (err?.status === 401) { doLogout(); return; }
+        setResult(cardTxResult, 'err', err?.message ?? 'Error');
       }
     };
 
-    const initAuthed = () => {
-      setAuthenticatedUi(true);
+    if (txRefresh) txRefresh.addEventListener('click', loadAllTransactions);
 
-      const clientSearch = document.getElementById('adminClientSearch');
-      const clientSearchResults = document.getElementById('adminClientSearchResults');
-      const cardTxHint = document.getElementById('adminCardTxHint');
-      const txRefresh = document.getElementById('adminTxRefresh');
-      const statBalance = document.getElementById('statClientCount');
-
-      selectedToken = '';
-      if (cardTxHint) cardTxHint.textContent = 'Selecciona un cliente';
+    // -- Dashboard Stats Logic --
+    let currentStatsRange = 'day';
+    const loadAdminStats = async (range = currentStatsRange) => {
+      const loader = document.getElementById('adminStatsLoader');
+      if (loader) loader.hidden = false;
       
-      const renderSearch = (query) => {
-        if (!clientSearchResults) return;
-        clientSearchResults.innerHTML = '';
-        const q = String(query || '').toLowerCase().trim();
-        if (!q) return;
-
-        const matches = allClientsData.filter(c => 
-          (c.name || '').toLowerCase().includes(q) || 
-          (c.cedula || '').toLowerCase().includes(q)
-        ).slice(0, 10);
-
-        if (!matches.length) {
-          const div = document.createElement('div');
-          div.className = 'adminResultItem';
-          div.textContent = 'No se encontraron resultados';
-          clientSearchResults.appendChild(div);
-          return;
-        }
-
-        matches.forEach(c => {
-          const btn = document.createElement('button');
-          btn.className = 'adminResultItem';
-          btn.type = 'button';
-          btn.innerHTML = `<div><div class="adminResultItem__title">${c.name || '—'}</div><div class="adminResultItem__subtitle">${c.cedula || 'Sin cédula'}</div></div><div class="adminTableCell--strong">${c.balance || 0} pts</div>`;
-          btn.onclick = () => {
-            selectedToken = c.token;
-            if (clientSearch) clientSearch.value = c.name || '';
-            clientSearchResults.innerHTML = '';
-            updateClientTxVisibility();
-            if (cardTxHint) cardTxHint.textContent = `Movimientos: ${c.name || '—'}`;
-            loadCardTransactions(c.token);
-          };
-          clientSearchResults.appendChild(btn);
-        });
-      };
-
-      if (clientSearch) {
-        clientSearch.oninput = (e) => renderSearch(e.target.value);
-        clientSearch.onfocus = (e) => renderSearch(e.target.value);
-      }
-
-      if (txRefresh) {
-        txRefresh.onclick = () => {
-          loadClients().then(() => {
-            const total = allClientsData.reduce((a, b) => a + (Number(b.balance) || 0), 0);
-            if (statBalance) statBalance.textContent = total.toLocaleString();
-          });
-          loadAllTransactions();
-          if (selectedToken) loadCardTransactions(selectedToken);
-        };
-      }
-
-      loadClients().then(() => {
-        const total = allClientsData.reduce((a, b) => a + (Number(b.balance) || 0), 0);
-        if (statBalance) statBalance.textContent = total.toLocaleString();
-      });
-      loadAllTransactions();
-    };
-
-    const checkAuth = async () => {
       try {
-        const data = await apiGet('/api/admin/me');
-        const authed = Boolean(data?.authenticated);
-        if (authed) {
-          initAuthed();
-        } else {
-          setAuthenticatedUi(false);
-          if (adminLogout) adminLogout.hidden = true;
+        const data = await apiGet(`/api/admin/stats?range=${encodeURIComponent(range)}`);
+        
+        const elUsers = document.getElementById('stUsers');
+        const elEarned = document.getElementById('stPtsEarned');
+        const elRedeemed = document.getElementById('stPtsRedeemed');
+        const elUsersSub = document.getElementById('stUsersSub');
+        
+        if (elUsers) {
+          elUsers.textContent = String(data.newUsers || 0);
+          if (elUsersSub) elUsersSub.textContent = `Registrados en el periodo (Histórico: ${data.totalUsers || 0})`;
         }
-      } catch {
-        setAuthenticatedUi(false);
-        if (adminLogout) adminLogout.hidden = true;
+        if (elEarned) elEarned.textContent = String(data.pointsEarned || 0);
+        if (elRedeemed) elRedeemed.textContent = String(data.pointsRedeemed || 0);
+        
+      } catch (err) {
+        if (err?.status === 401) { doLogout(); return; }
+      } finally {
+        if (loader) loader.hidden = true;
       }
     };
 
-    // Show login by default until we know session state.
-    setAuthenticatedUi(false);
-    showLoginStep('login');
-    clearRecoveryResults();
-    
-    let currentValidCode = null; // Guardar temporalmente en el cliente
+    const filterBtns = document.querySelectorAll('.aFilterBtn');
+    filterBtns.forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const r = e.target.getAttribute('data-range') || 'all';
+        currentStatsRange = r;
+        filterBtns.forEach(b => b.classList.remove('is-active'));
+        e.target.classList.add('is-active');
+        loadAdminStats(r);
+      });
+    });
 
-    if (forgotBtn) {
-      forgotBtn.addEventListener('click', () => {
-        clearRecoveryResults();
-        showLoginStep('forgot');
+    const initAuthed = () => { showDash(); switchPanel('clientes'); loadClients(); };
+
+    if (loginForm) {
+      loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const password = String(passwordEl?.value ?? '').trim();
+        if (!password) { setResult(loginResultEl, 'err', 'Contraseña requerida.'); return; }
+        setResult(loginResultEl, 'info', 'Entrando…');
+        try {
+          const res = await fetch('/api/admin/login', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ password })
+          });
+          const data = await res.json().catch(() => null);
+          if (!res.ok) { setResult(loginResultEl, 'err', data?.error || data?.message || `Error (${res.status})`); return; }
+          setResult(loginResultEl, 'ok', 'Acceso concedido.');
+          if (passwordEl) passwordEl.value = '';
+          initAuthed();
+        } catch (err) { setResult(loginResultEl, 'err', 'Fallo de red.'); }
       });
     }
 
-    if (cancelForgotBtn) {
-      cancelForgotBtn.addEventListener('click', () => {
-        clearRecoveryResults();
-        showLoginStep('login');
-        setText(document.getElementById('adminRootLoginResult'), '');
-      });
-    }
-
-    if (cancelVerifyBtn) {
-      cancelVerifyBtn.addEventListener('click', () => {
-        clearRecoveryResults();
-        showLoginStep('login');
-        setText(document.getElementById('adminRootLoginResult'), '');
-      });
-    }
+    if (forgotBtn) forgotBtn.addEventListener('click', () => { clearRecoveryResults(); showLoginStep('forgot'); });
+    if (cancelForgotBtn) cancelForgotBtn.addEventListener('click', () => { clearRecoveryResults(); showLoginStep('login'); setResult(loginResultEl,'',''); });
+    if (cancelVerifyBtn) cancelVerifyBtn.addEventListener('click', () => { clearRecoveryResults(); showLoginStep('login'); setResult(loginResultEl,'',''); });
 
     if (forgotForm) {
       forgotForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const resultEl = document.getElementById('adminRootForgotResult');
         const email = String(forgotEmailEl?.value ?? '').trim();
-        resultEl.className = 'adminResult adminResult--info';
-        resultEl.textContent = 'Enviando codigo...';
-        
-        const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort(), 15000);
-
+        setResult(resultEl, 'info', 'Enviando código…');
+        const ctrl = new AbortController();
+        const t = setTimeout(() => ctrl.abort(), 15000);
         try {
           const res = await fetch('/api/admin/forgot-password', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email }),
-            signal: controller.signal
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({ email }), signal: ctrl.signal
           });
-          clearTimeout(timer);
-
+          clearTimeout(t);
           const data = await res.json().catch(() => null);
-
-          if (!res.ok) {
-            resultEl.className = 'adminResult adminResult--err';
-            resultEl.textContent = data?.error || 'Correo incorrecto o error al enviar.';
-            return;
-          }
-
-          resultEl.className = 'adminResult adminResult--ok';
-          resultEl.textContent = 'Correo enviado. Revisa tu bandeja.';
+          if (!res.ok) { setResult(resultEl,'err', data?.error || 'Correo incorrecto.'); return; }
+          setResult(resultEl,'ok','Correo enviado. Revisa tu bandeja.');
           setTimeout(() => showLoginStep('verify'), 1500);
         } catch (err) {
-          clearTimeout(timer);
-          resultEl.className = 'adminResult adminResult--err';
-          resultEl.textContent =
-            err?.name === 'AbortError'
-              ? 'Tiempo de espera agotado con SMTP. Revisa configuracion.'
-              : 'Error de red.';
+          clearTimeout(t);
+          setResult(resultEl,'err', err?.name==='AbortError' ? 'Tiempo agotado. Revisa SMTP.' : 'Error de red.');
         }
       });
     }
 
     if (verifyForm) {
-       verifyForm.addEventListener('submit', async (e) => {
-          e.preventDefault();
-          const resultEl = document.getElementById('adminRootVerifyResult');
-          const code = String(verifyCodeEl?.value ?? '').trim();
-          
-          if (!code) {
-             resultEl.className = 'adminResult adminResult--err';
-             resultEl.textContent = 'Ingresa el código.';
-             return;
-          }
-          resultEl.className = 'adminResult adminResult--info';
-          resultEl.textContent = 'Verificando...';
-
-          try {
-             const res = await fetch('/api/admin/verify-code', {
-               method: 'POST',
-               headers: { 'Content-Type': 'application/json' },
-               body: JSON.stringify({ code })
-             });
-             const data = await res.json().catch(() => null);
-
-             if (!res.ok) {
-                resultEl.className = 'adminResult adminResult--err';
-                resultEl.textContent = data?.error || 'Código incorrecto.';
-                return;
-             }
-             
-             resultEl.className = 'adminResult adminResult--ok';
-             resultEl.textContent = 'Código correcto.';
-             currentValidCode = code;
-             
-             setTimeout(() => {
-               showLoginStep('reset');
-             }, 1000);
-
-          } catch {
-             resultEl.className = 'adminResult adminResult--err';
-             resultEl.textContent = 'Error de red.';
-          }
-       });
-    }
-
-    if (resetForm) {
-        resetForm.addEventListener('submit', async (e) => {
-          e.preventDefault();
-          const resultEl = document.getElementById('adminRootResetResult');
-          const newPassword = String(newPasswordEl?.value ?? '').trim();
-          
-          if (!newPassword || newPassword.length < 6) {
-            resultEl.className = 'adminResult adminResult--err';
-            resultEl.textContent = 'Clave muy corta.';
-            return;
-          }
-
-          resultEl.className = 'adminResult adminResult--info';
-          resultEl.textContent = 'Actualizando...';
-
-          try {
-            const res = await fetch('/api/admin/reset-password', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ code: currentValidCode, newPassword })
-            });
-            const data = await res.json().catch(() => null);
-
-            if (!res.ok) {
-              resultEl.className = 'adminResult adminResult--err';
-              resultEl.textContent = data?.error || 'Error al actualizar.';
-              return;
-            }
-
-            resultEl.className = 'adminResult adminResult--ok';
-            resultEl.textContent = 'Clave actualizada. Redirigiendo...';
-            setTimeout(() => {
-              showLoginStep('login');
-              clearRecoveryResults();
-              if (passwordEl) passwordEl.focus();
-              window.location.href = '/admin';
-            }, 2000);
-          } catch {
-            resultEl.className = 'adminResult adminResult--err';
-            resultEl.textContent = 'Error de red.';
-          }
-        });
-    }
-
-    if (loginForm) {
-      loginForm.addEventListener('submit', async (e) => {
+      verifyForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const password = String(passwordEl?.value ?? '').trim();
-        if (!password) {
-          setLoginResult('adminResult--err', 'Password requerido.');
-          return;
-        }
-
-        setLoginResult('adminResult--info', 'Entrando...');
+        const resultEl = document.getElementById('adminRootVerifyResult');
+        const code = String(verifyCodeEl?.value ?? '').trim();
+        if (!code) { setResult(resultEl,'err','Ingresa el código.'); return; }
+        setResult(resultEl, 'info', 'Verificando…');
         try {
-          const res = await fetch('/api/admin/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ password })
+          const res = await fetch('/api/admin/verify-code', {
+            method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ code })
           });
           const data = await res.json().catch(() => null);
-          if (!res.ok) {
-            const msg = data?.error || data?.message || `Error (${res.status})`;
-            setLoginResult('adminResult--err', msg);
-            return;
-          }
-
-          setLoginResult('adminResult--ok', 'Listo.');
-          if (passwordEl) passwordEl.value = '';
-          initAuthed();
-        } catch {
-          setLoginResult('adminResult--err', 'Fallo de red.');
-        }
+          if (!res.ok) { setResult(resultEl,'err', data?.error || 'Código incorrecto.'); return; }
+          setResult(resultEl,'ok','Código correcto.');
+          currentValidCode = code;
+          setTimeout(() => showLoginStep('reset'), 1000);
+        } catch (err) { setResult(resultEl,'err','Error de red.'); }
       });
     }
 
+    if (resetForm) {
+      resetForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const resultEl = document.getElementById('adminRootResetResult');
+        const newPassword = String(newPasswordEl?.value ?? '').trim();
+        if (!newPassword || newPassword.length < 6) { setResult(resultEl,'err','Clave muy corta.'); return; }
+        setResult(resultEl, 'info', 'Actualizando…');
+        try {
+          const res = await fetch('/api/admin/reset-password', {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({ code: currentValidCode, newPassword })
+          });
+          const data = await res.json().catch(() => null);
+          if (!res.ok) { setResult(resultEl,'err', data?.error || 'Error al actualizar.'); return; }
+          setResult(resultEl,'ok','¡Clave actualizada! Redirigiendo…');
+          setTimeout(() => { showLoginStep('login'); clearRecoveryResults(); window.location.href = '/admin'; }, 2000);
+        } catch (err) { setResult(resultEl,'err','Error de red.'); }
+      });
+    }
+
+    const checkAuth = async () => {
+      try {
+        const data = await apiGet('/api/admin/me');
+        if (Boolean(data?.authenticated)) initAuthed();
+        else showLogin();
+      } catch (err) { showLogin(); }
+    };
     checkAuth();
+
     return;
   }
- 
+
   syncBalance();
   loadCardData();
 
@@ -832,7 +738,6 @@ if (qrButton) {
     setExpanded(!expanded);
   };
 
-  // Prevent long-press context menu (e.g., save image) and drag behaviors.
   card.addEventListener("contextmenu", (e) => e.preventDefault());
   card.addEventListener("dragstart", (e) => e.preventDefault());
 
@@ -872,7 +777,6 @@ if (qrButton) {
       activePointerId = null;
     });
   } else {
-    // Fallback
     card.addEventListener("click", toggle);
   }
   card.addEventListener("keydown", (e) => {
@@ -1107,7 +1011,7 @@ if (qrButton) {
       root.addEventListener("click", close);
       return { show, close };
     } catch {
-      return { show: () => {}, close: () => {} };
+      return { show: () => { }, close: () => { } };
     }
   })();
 
@@ -1365,6 +1269,9 @@ if (qrButton) {
   const moreBtn = document.getElementById('activityMoreBtn');
   const historyModal = document.getElementById('historyModal');
   const historyCloseBtn = document.getElementById('historyCloseBtn');
+  const historyLoadMoreBtn = document.getElementById('historyLoadMoreBtn');
+  const historyLoading = document.getElementById('historyLoading');
+
   if (!refreshBtn || !mainList) return;
 
   const getTokenFromUrl = () => {
@@ -1437,63 +1344,106 @@ if (qrButton) {
     return 'Movimiento';
   };
 
-  const render = (targetList, transactions) => {
+  const createTxElement = (t) => {
+    const delta = computeDelta(t);
+    const isNeg = delta < 0;
+
+    const li = document.createElement('li');
+    li.className = 'activity__item';
+
+    const icon = document.createElement('div');
+    icon.className = 'activity__icon';
+    icon.innerHTML = isNeg ? iconSvg.debit : iconSvg.credit;
+
+    const text = document.createElement('div');
+    text.className = 'activity__text';
+    const name = document.createElement('div');
+    name.className = 'activity__name';
+    name.textContent = getTitle(t, delta);
+    const time = document.createElement('div');
+    time.className = 'activity__time';
+    time.textContent = formatTime(t.processedAt || t.createdAt);
+    text.appendChild(name);
+    text.appendChild(time);
+
+    const amount = document.createElement('div');
+    amount.className = `activity__amount${isNeg ? ' activity__amount--neg' : ''}`;
+    const abs = Math.abs(Number(delta) || 0);
+    amount.textContent = `${isNeg ? '-' : '+'}${abs}`;
+
+    li.appendChild(icon);
+    li.appendChild(text);
+    li.appendChild(amount);
+    return li;
+  };
+
+  const render = (targetList, transactions, append = false) => {
     if (!targetList) return;
-    clearList(targetList);
+    if (!append) clearList(targetList);
 
     const txs = Array.isArray(transactions) ? transactions : [];
-    if (!txs.length) {
+    if (!txs.length && !append) {
       renderEmpty(targetList, 'Sin actividad');
       return;
     }
 
     for (const t of txs) {
-      const delta = computeDelta(t);
-      const isNeg = delta < 0;
-
-      const li = document.createElement('li');
-      li.className = 'activity__item';
-
-      const icon = document.createElement('div');
-      icon.className = 'activity__icon';
-      icon.innerHTML = isNeg ? iconSvg.debit : iconSvg.credit;
-
-      const text = document.createElement('div');
-      text.className = 'activity__text';
-      const name = document.createElement('div');
-      name.className = 'activity__name';
-      name.textContent = getTitle(t, delta);
-      const time = document.createElement('div');
-      time.className = 'activity__time';
-      time.textContent = formatTime(t.processedAt || t.createdAt);
-      text.appendChild(name);
-      text.appendChild(time);
-
-      const amount = document.createElement('div');
-      amount.className = `activity__amount${isNeg ? ' activity__amount--neg' : ''}`;
-      const abs = Math.abs(Number(delta) || 0);
-      amount.textContent = `${isNeg ? '-' : '+'}${abs}`;
-
-      li.appendChild(icon);
-      li.appendChild(text);
-      li.appendChild(amount);
-      targetList.appendChild(li);
+      targetList.appendChild(createTxElement(t));
     }
   };
 
   let loading = false;
+  let lastVisibleTx = null; // { id, date }
+  const PAGE_SIZE = 5;
+
+  const cargarMasTransacciones = async () => {
+    if (loading || !lastVisibleTx) return;
+    const token = getTokenFromUrl();
+    if (!token) return;
+
+    loading = true;
+    if (historyLoadMoreBtn) historyLoadMoreBtn.hidden = true;
+    if (historyLoading) historyLoading.hidden = false;
+
+    try {
+      const url = `/api/card?mode=activity&token=${encodeURIComponent(token)}&limit=${PAGE_SIZE}&afterDate=${encodeURIComponent(lastVisibleTx.date)}&afterId=${encodeURIComponent(lastVisibleTx.id)}`;
+      const res = await fetch(url, { cache: 'no-store' });
+      const data = await res.json().catch(() => null);
+
+      if (!res.ok || !data?.ok) throw new Error(data?.error || 'Error');
+
+      const txs = Array.isArray(data?.transactions) ? data.transactions : [];
+      if (txs.length > 0) {
+        render(historyList, txs, true);
+        const last = txs[txs.length - 1];
+        lastVisibleTx = { id: last.id, date: last.processedAt || last.createdAt };
+      }
+
+      if (historyLoadMoreBtn) {
+        historyLoadMoreBtn.hidden = txs.length < PAGE_SIZE;
+      }
+    } catch (err) {
+      console.error('Error cargando más transacciones:', err);
+    } finally {
+      loading = false;
+      if (historyLoading) historyLoading.hidden = true;
+    }
+  };
+
   const loadActivity = async () => {
     if (loading) return;
     const token = getTokenFromUrl();
     if (!token) return;
 
     loading = true;
+    lastVisibleTx = null;
     refreshBtn.disabled = true;
     renderEmpty(mainList, 'Cargando...');
     if (historyList) renderEmpty(historyList, 'Cargando...');
+    if (historyLoadMoreBtn) historyLoadMoreBtn.hidden = true;
 
     try {
-      const res = await fetch(`/api/card?mode=activity&token=${encodeURIComponent(token)}&limit=80`, { cache: 'no-store' });
+      const res = await fetch(`/api/card?mode=activity&token=${encodeURIComponent(token)}&limit=${PAGE_SIZE}`, { cache: 'no-store' });
       const data = await res.json().catch(() => null);
       if (!res.ok || !data?.ok) {
         const msg = data?.error || data?.message || `Error (${res.status})`;
@@ -1503,18 +1453,17 @@ if (qrButton) {
       }
 
       const txs = Array.isArray(data?.transactions) ? data.transactions : [];
-      
-      const recentTxs = txs.slice(0, 5);
-      render(mainList, recentTxs);
+      render(mainList, txs);
       if (historyList) render(historyList, txs);
 
-      if (moreBtn) {
-        if (txs.length > 5) {
-          moreBtn.hidden = false;
-        } else {
-          moreBtn.hidden = true;
-        }
+      if (txs.length > 0) {
+        const last = txs[txs.length - 1];
+        lastVisibleTx = { id: last.id, date: last.processedAt || last.createdAt };
       }
+
+      if (moreBtn) moreBtn.hidden = txs.length < PAGE_SIZE;
+      if (historyLoadMoreBtn) historyLoadMoreBtn.hidden = txs.length < PAGE_SIZE;
+
     } catch {
       renderEmpty(mainList, 'Error de red');
       if (historyList) renderEmpty(historyList, 'Error de red');
@@ -1535,6 +1484,10 @@ if (qrButton) {
       historyModal.setAttribute('aria-hidden', 'true');
       document.body.style.overflow = '';
     });
+  }
+
+  if (historyLoadMoreBtn) {
+    historyLoadMoreBtn.addEventListener('click', cargarMasTransacciones);
   }
 
   refreshBtn.addEventListener('click', () => {

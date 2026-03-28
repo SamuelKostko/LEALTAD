@@ -45,29 +45,22 @@ async function attachCardNames(firestore, transactions) {
         .map((t) => String(t?.token ?? '').trim())
         .filter(Boolean)
     )
-  ).slice(0, 80);
+  ).slice(0, 30); // Firestore 'in' query limit is 30
 
   if (!uniqueTokens.length) return transactions;
 
-  const refs = uniqueTokens.map((token) => firestore.collection('cards').doc(token));
-
-  let snaps = [];
-  try {
-    if (typeof firestore.getAll === 'function') {
-      snaps = await firestore.getAll(...refs);
-    } else {
-      snaps = await Promise.all(refs.map((r) => r.get()));
-    }
-  } catch {
-    snaps = [];
-  }
+  const snaps = await firestore.collection('clientes')
+    .where('token', 'in', uniqueTokens)
+    .get();
 
   const tokenToName = new Map();
-  for (const snap of snaps) {
-    if (!snap?.exists) continue;
+  for (const snap of snaps.docs) {
     const data = snap.data() || {};
-    const name = typeof data.name === 'string' ? data.name.trim() : '';
-    tokenToName.set(String(snap.id), name);
+    const name = typeof data.nombre === 'string' ? data.nombre.trim() : '';
+    const token = typeof data.token === 'string' ? data.token.trim() : '';
+    if (token) {
+      tokenToName.set(token, name);
+    }
   }
 
   return transactions.map((t) => ({

@@ -73,20 +73,36 @@ export default async function handler(req, res) {
         };
       });
 
+    const afterDate = url.searchParams.get('afterDate');
+    const afterId = url.searchParams.get('afterId');
+
     try {
       let transactions = [];
       try {
-        const snap = await firestore
+        let query = firestore
           .collection('transactions')
           .where('token', '==', token)
-          .orderBy('createdAt', 'desc')
-          .limit(limit)
-          .get();
+          .orderBy('createdAt', 'desc');
+        
+        if (afterDate) {
+          // If createdAt is stored as a Timestamp in Firestore, we need to convert it.
+          // However, toIso handles strings and timestamps, so we might need to check the data type.
+          // Usually, startAfter works with the same type as the field.
+          // I will attempt to detect if afterDate is a number or string.
+          const dateVal = 
+            /^\d+$/.test(afterDate) ? Number(afterDate) : 
+            (isNaN(Date.parse(afterDate)) ? afterDate : new Date(afterDate));
+          
+          query = query.startAfter(dateVal);
+        }
+
+        const snap = await query.limit(limit).get();
         transactions = mapTxSnap(snap);
       } catch (err) {
         if (!isMissingIndexError(err)) throw err;
 
-        const fallbackLimit = Math.max(limit, 200);
+        // Fallback: limited in-memory pagination (not ideal but works without composite index)
+        const fallbackLimit = afterDate ? 400 : 200;
         const snap = await firestore
           .collection('transactions')
           .where('token', '==', token)
@@ -100,6 +116,11 @@ export default async function handler(req, res) {
           return bMs - aMs;
         });
 
+        if (afterDate) {
+          const afterMs = toMs(afterDate);
+          transactions = transactions.filter(t => Math.max(toMs(t.processedAt), toMs(t.createdAt)) < afterMs);
+        }
+
         if (transactions.length > limit) transactions = transactions.slice(0, limit);
       }
 
@@ -111,13 +132,23 @@ export default async function handler(req, res) {
   }
 
   try {
-    const snap = await getFirestoreDb().collection('cards').doc(token).get();
-    if (!snap.exists) {
+    const snap = await getFirestoreDb().collection('clientes').where('token', '==', token).limit(1).get();
+    if (snap.empty) {
       sendJson(res, 404, { error: 'Not Found' });
       return;
     }
 
-    sendJson(res, 200, { token, ...snap.data() });
+    const data = snap.docs[0].data();
+    // Map Firestore fields to what the frontend expects
+    const clientData = {
+      token,
+      name: data.nombre,
+      cedula: data.idNumber,
+      balance: data.totalPoints,
+      updatedAt: toIso(data.updatedAt)
+    };
+
+    sendJson(res, 200, clientData);
   } catch (err) {
     sendJson(res, 500, { error: err?.message ?? String(err) });
   }

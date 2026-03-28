@@ -12,14 +12,19 @@ export default async function handler(req, res) {
     const db = getFirestoreDb();
     const adminDoc = await db.collection('config').doc('admin').get();
     
-    if (!adminDoc.exists) {
-      sendJson(res, 500, { error: 'Admin settings not found in database. Create config/admin.' });
-      return;
+    let expected = '';
+    if (adminDoc.exists) {
+      expected = String(adminDoc.data()?.password ?? '').trim();
+    }
+    
+    // Fallback to local .env if Firestore config isn't set up yet
+    if (!expected) {
+      const { getAdminPassword } = await import('../_lib/adminAuth.js');
+      expected = getAdminPassword();
     }
 
-    const expected = String(adminDoc.data()?.password ?? '').trim();
     if (!expected) {
-      sendJson(res, 500, { error: 'Admin password not set in database.' });
+      sendJson(res, 500, { error: 'Admin password not set in .env or database.' });
       return;
     }
 

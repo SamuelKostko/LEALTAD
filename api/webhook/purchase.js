@@ -7,9 +7,10 @@ import { sendActivationEmail } from '../_lib/email.js';
 import { notifyTokenActivity } from '../_lib/push.js';
 
 async function dbProcessPurchase({ email, name, cedula, balance }) {
-  const now = new Date().toISOString();
+  const now = new Date(); // Using Date object for Firestore Timestamp compatibility
   const firestore = getFirestoreDb();
-  const customerRef = firestore.collection('customers').doc(email);
+  // Using email as doc ID for 'clientes' is fine, but we need to ensure fields match
+  const customerRef = firestore.collection('clientes').doc(email);
 
   let token = '';
   let firstActivation = false;
@@ -32,54 +33,47 @@ async function dbProcessPurchase({ email, name, cedula, balance }) {
         customerRef,
         {
           token,
-          purchases: 1,
-          activatedAt: now,
+          nombre: name,
+          idNumber: cedula,
+          email,
+          totalPoints: balance,
+          createdAt: now,
           updatedAt: now
         },
         { merge: true }
       );
+      creditedPoints = balance;
+      balanceBefore = 0;
     } else {
       token = existingToken;
+      const current = Number(data.totalPoints ?? 0);
+      const currentSafe = Number.isFinite(current) ? current : 0;
+      const credited = Math.max(0, balance - currentSafe);
+
+      creditedPoints = credited;
+      balanceBefore = currentSafe;
+
       tx.set(
         customerRef,
         {
-          purchases: FieldValue.increment(1),
+          nombre: name,
+          idNumber: cedula,
+          totalPoints: balance,
           updatedAt: now
         },
         { merge: true }
       );
     }
 
-    const cardRef = firestore.collection('cards').doc(token);
-
-    const cardSnap = await tx.get(cardRef);
-    const current = cardSnap.exists ? Number(cardSnap.data()?.balance ?? 0) : 0;
-    const currentSafe = Number.isFinite(current) ? current : 0;
-    const credited = Math.max(0, balance - currentSafe);
-
-    creditedPoints = credited;
-    balanceBefore = currentSafe;
-
-    tx.set(
-      cardRef,
-      {
-        name,
-        cedula,
-        balance,
-        updatedAt: now
-      },
-      { merge: true }
-    );
-
     // Only create a credit transaction when the balance increased.
-    if (credited > 0) {
+    if (creditedPoints > 0) {
       tx.set(purchaseTxRef, {
-        type: 'purchase_credit',
+        type: 'credit',
         status: 'success',
         token,
-        points: credited,
+        points: creditedPoints,
         description: firstActivation ? 'Activación' : 'Crédito',
-        balanceBefore: currentSafe,
+        balanceBefore: balanceBefore,
         balanceAfter: balance,
         createdAt: FieldValue.serverTimestamp(),
         processedAt: FieldValue.serverTimestamp()
@@ -148,7 +142,7 @@ export default async function handler(req, res) {
           url: linkPath,
           tag: 'wallet-credit',
           payload: {
-            type: 'purchase_credit',
+            type: 'credit',
             points: creditedPoints,
             balanceBefore,
             balanceAfter,

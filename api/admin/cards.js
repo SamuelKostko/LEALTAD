@@ -11,6 +11,19 @@ function clampInt(value, { min, max, fallback }) {
   return i;
 }
 
+function toIso(value) {
+  if (!value) return '';
+  if (typeof value === 'string') return value;
+  if (typeof value?.toDate === 'function') {
+    try {
+      return value.toDate().toISOString();
+    } catch {
+      return '';
+    }
+  }
+  return '';
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
     sendJson(res, 405, { error: 'Method Not Allowed' });
@@ -25,15 +38,15 @@ export default async function handler(req, res) {
   const firestore = getFirestoreDb();
 
   try {
-    const snap = await firestore.collection('cards').orderBy('updatedAt', 'desc').limit(limit).get();
+    const snap = await firestore.collection('clientes').orderBy('updatedAt', 'desc').limit(limit).get();
     const cards = snap.docs.map((d) => {
       const data = d.data() || {};
       return {
-        token: d.id,
-        name: typeof data.name === 'string' ? data.name : '',
-        cedula: typeof data.cedula === 'string' ? data.cedula : '',
-        balance: Number.isFinite(Number(data.balance)) ? Number(data.balance) : 0,
-        updatedAt: typeof data.updatedAt === 'string' ? data.updatedAt : ''
+        token: typeof data.token === 'string' ? data.token : d.id, // Fallback to doc ID if token field is missing
+        name: typeof data.nombre === 'string' ? data.nombre : '',
+        cedula: typeof data.idNumber === 'string' ? data.idNumber : '',
+        balance: Number.isFinite(Number(data.totalPoints)) ? Number(data.totalPoints) : 0,
+        updatedAt: toIso(data.updatedAt)
       };
     });
 

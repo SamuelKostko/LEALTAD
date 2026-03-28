@@ -12,7 +12,14 @@ const copyBtn = document.getElementById('copyBtn');
 const qrCanvas = document.getElementById('qrCanvas');
 const qrImg = document.getElementById('qrImg');
 
+const qroModal = document.getElementById('qroModal');
+const qroModalCloseBtn = document.getElementById('qroModalCloseBtn');
+const txSuccessModal = document.getElementById('txSuccessModal');
+const txSuccessCloseBtn = document.getElementById('txSuccessCloseBtn');
+
 let lastUrl = '';
+let pollInterval = null;
+let currentTxId = '';
 
 const setLoginResult = (type, message) => {
   if (!loginResultEl) return;
@@ -29,6 +36,8 @@ const setResult = (type, message) => {
 };
 
 const setAuthenticated = (authenticated) => {
+  const loginCard = document.getElementById('loginCard');
+  if (loginCard) loginCard.hidden = authenticated;
   if (!qrSection) return;
   qrSection.hidden = !authenticated;
 };
@@ -37,6 +46,66 @@ const setCopyEnabled = (enabled) => {
   if (!copyBtn) return;
   copyBtn.disabled = !enabled;
 };
+
+const closeQroModal = () => {
+  if (qroModal) {
+    qroModal.classList.remove('profileMenu--active');
+    qroModal.setAttribute('aria-hidden', 'true');
+  }
+  stopPolling();
+};
+
+const openQroModal = () => {
+  if (qroModal) {
+    qroModal.classList.add('profileMenu--active');
+    qroModal.setAttribute('aria-hidden', 'false');
+  }
+};
+
+const openSuccessModal = () => {
+  if (txSuccessModal) {
+    txSuccessModal.classList.add('profileMenu--active');
+    txSuccessModal.setAttribute('aria-hidden', 'false');
+  }
+};
+
+const closeSuccessModal = () => {
+  if (txSuccessModal) {
+    txSuccessModal.classList.remove('profileMenu--active');
+    txSuccessModal.setAttribute('aria-hidden', 'true');
+  }
+  if (pointsEl) pointsEl.value = '';
+  if (descriptionEl) descriptionEl.value = '';
+  setResult('', '');
+};
+
+const stopPolling = () => {
+  if (pollInterval) {
+    clearInterval(pollInterval);
+    pollInterval = null;
+  }
+};
+
+const startPolling = (txId) => {
+  stopPolling();
+  currentTxId = txId;
+  pollInterval = setInterval(async () => {
+    try {
+      const res = await fetch(`/api/admin/check-tx?id=${encodeURIComponent(txId)}`);
+      const data = await res.json().catch(() => null);
+      if (res.ok && data?.status === 'success') {
+        stopPolling();
+        closeQroModal();
+        openSuccessModal();
+      }
+    } catch {
+      // ignore network errors on poll
+    }
+  }, 2000);
+};
+
+if (qroModalCloseBtn) qroModalCloseBtn.addEventListener('click', closeQroModal);
+if (txSuccessCloseBtn) txSuccessCloseBtn.addEventListener('click', closeSuccessModal);
 
 const copyText = async (text) => {
   try {
@@ -121,14 +190,14 @@ if (qrForm) {
 
     setCopyEnabled(false);
     lastUrl = '';
-    if (qrCanvas) {
-      const ctx = qrCanvas.getContext && qrCanvas.getContext('2d');
-      if (ctx) ctx.clearRect(0, 0, qrCanvas.width, qrCanvas.height);
-      qrCanvas.style.display = 'none';
-    }
+    
+    // Hide wrap within modal temporarily while we generate it
+    const wrap = document.getElementById('qrWrap');
+    if (wrap) wrap.hidden = true;
+    if (qrCanvas) qrCanvas.hidden = true;
     if (qrImg) {
       qrImg.src = '';
-      qrImg.style.display = 'none';
+      qrImg.hidden = true;
     }
 
     const points = Number(String(pointsEl?.value ?? '').trim());
@@ -166,25 +235,29 @@ if (qrForm) {
       }
 
       const transactionId = String(data?.transactionId ?? '').trim();
-
       const fullUrl = `${window.location.origin}${urlPath}`;
       lastUrl = fullUrl;
 
       const qrPngDataUrl = String(data?.qrPngDataUrl ?? '').trim();
       if (qrImg && qrPngDataUrl.startsWith('data:image/')) {
         qrImg.src = qrPngDataUrl;
+        qrImg.hidden = false;
         qrImg.style.display = 'block';
+        if (wrap) {
+          wrap.hidden = false;
+          wrap.style.display = 'flex';
+        }
       }
 
       setCopyEnabled(true);
-      setResult(
-        'adminResult--ok',
-        transactionId
-          ? `QR listo. Tx: ${transactionId}. Link: ${fullUrl}`
-          : `QR listo. Link: ${fullUrl}`
-      );
+      setResult('adminResult--ok', 'QR listo, esperando escaneo...');
+      
+      openQroModal();
+      if (transactionId) {
+        startPolling(transactionId);
+      }
     } catch {
-      setResult('adminResult--err', 'Fallo de red.');
+      setResult('adminResult--err', 'Fallo de red al generar.');
     }
   });
 }
