@@ -275,7 +275,7 @@ if (qrButton) {
     };
 
     const apiGet = async (path) => {
-      const res = await fetch(path, { cache: 'no-store' });
+      const res = await fetch(path, { cache: 'no-store', credentials: 'include' });
       const data = await res.json().catch(() => null);
       if (!res.ok) {
         const err = new Error(data?.error || data?.message || `Error (${res.status})`);
@@ -425,7 +425,7 @@ if (qrButton) {
     const doLogout = async (e) => {
       if (e && typeof e.preventDefault === 'function') e.preventDefault();
       try {
-        await fetch('/api/admin/logout', { method: 'POST' });
+        await fetch('/api/admin/logout', { method: 'POST', credentials: 'include' });
         // Force fully clean reload
         window.location.href = '/admin';
       } catch (err) {
@@ -602,6 +602,7 @@ if (qrButton) {
           const res = await fetch('/api/admin/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
             body: JSON.stringify({ email, password })
           });
 

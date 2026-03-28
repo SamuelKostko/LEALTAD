@@ -132,15 +132,18 @@ export async function requireAdmin(req, res) {
  * Sets the session cookie on the response.
  */
 export function setSessionCookie(res, sessionId, req) {
-  const proto = String(req?.headers?.['x-forwarded-proto'] ?? '').toLowerCase();
-  const secure = proto === 'https';
+  // req.secure is true when express detects HTTPS (respects trust proxy=1).
+  // Fall back to x-forwarded-proto for any other proxy setup.
+  const secure =
+    (req?.secure === true) ||
+    String(req?.headers?.['x-forwarded-proto'] ?? '').toLowerCase() === 'https';
   const maxAge = Math.floor(SESSION_DURATION_MS / 1000);
 
   const attrs = [
     `${COOKIE_NAME}=${encodeURIComponent(sessionId)}`,
     `Path=/`,
     `HttpOnly`,
-    `SameSite=Strict`,
+    `SameSite=Lax`,   // Lax: cookie is sent on top-level navigations; Strict was too aggressive for Chrome mobile
     `Max-Age=${maxAge}`
   ];
   if (secure) attrs.push('Secure');
@@ -152,14 +155,15 @@ export function setSessionCookie(res, sessionId, req) {
  * Clears the session cookie on the response.
  */
 export function clearSessionCookie(res, req) {
-  const proto = String(req?.headers?.['x-forwarded-proto'] ?? '').toLowerCase();
-  const secure = proto === 'https';
+  const secure =
+    (req?.secure === true) ||
+    String(req?.headers?.['x-forwarded-proto'] ?? '').toLowerCase() === 'https';
 
   const attrs = [
     `${COOKIE_NAME}=`,
     `Path=/`,
     `HttpOnly`,
-    `SameSite=Strict`,
+    `SameSite=Lax`,
     `Max-Age=0`,
     `Expires=Thu, 01 Jan 1970 00:00:00 GMT`
   ];

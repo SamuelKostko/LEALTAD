@@ -131,7 +131,7 @@ const copyText = async (text) => {
 
 const checkAuth = async () => {
   try {
-    const res = await fetch('/api/admin/me', { cache: 'no-store' });
+    const res = await fetch('/api/admin/me', { cache: 'no-store', credentials: 'include' });
     const data = await res.json().catch(() => null);
     const authed = Boolean(data?.authenticated);
     setAuthenticated(authed);
@@ -156,6 +156,7 @@ if (loginForm) {
       const res = await fetch('/api/admin/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ password })
       });
 
@@ -214,6 +215,7 @@ if (qrForm) {
       const res = await fetch('/api/admin/mint-charge', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ points, description })
       });
 

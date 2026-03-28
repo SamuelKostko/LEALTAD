@@ -14,7 +14,43 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const HOST = process.env.HOST || '0.0.0.0';
 
-app.use(cors());
+// Trust proxy headers from Railway / Render / any reverse proxy (needed so
+// x-forwarded-proto is recognized and HTTPS cookies are set correctly).
+app.set('trust proxy', 1);
+
+// ── CORS ──────────────────────────────────────────────────────────────────
+// Build an allowlist: the deployed origin + any local network (dev).
+const ALLOWED_ORIGINS = new Set([
+  // Production URL on Railway (set APP_URL env var on Railway, e.g. https://myapp.up.railway.app)
+  ...(process.env.APP_URL ? [process.env.APP_URL.replace(/\/$/, '')] : []),
+  // Local development variants
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+]);
+
+const corsOptions = {
+  credentials: true,
+  origin(origin, callback) {
+    // Allow requests with no origin (e.g. mobile apps, Postman, same-origin)
+    if (!origin) return callback(null, true);
+    if (ALLOWED_ORIGINS.has(origin)) return callback(null, origin);
+    // Also allow any local-network IP (192.168.x.x or 10.x.x.x) for mobile dev
+    if (/^https?:\/\/(192\.168\.|10\.|172\.(1[6-9]|2\d|3[01])\.)/.test(origin)) {
+      return callback(null, origin);
+    }
+    // In production allow same-host requests that lack an Origin header
+    callback(null, false);
+  },
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
+  exposedHeaders: ['Set-Cookie'],
+};
+
+app.use(cors(corsOptions));
+
+// Respond to ALL OPTIONS preflight requests immediately (before any limiter)
+app.options('*', cors(corsOptions));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
