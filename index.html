@@ -51,6 +51,39 @@
   <link rel="icon" href="/icons/icon.svg" type="image/svg+xml" />
 
   <link rel="stylesheet" href="/styles.css" />
+  <style>
+    /* Splash Screen Loaders (Inlined for SW Cache Safety) */
+    .bootSplash {
+      position: fixed;
+      inset: 0;
+      z-index: 999999;
+      background: #000000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.6s;
+    }
+    
+    @media (prefers-color-scheme: light) {
+      .bootSplash { background: #f6f7fb; }
+    }
+
+    body.is-ready .bootSplash {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .bootSplash__logo {
+      color: var(--text-strong, #fff);
+      animation: bootPulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+
+    @keyframes bootPulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.95); }
+    }
+  </style>
 </head>
 
 <body>
@@ -60,6 +93,10 @@
       <img src="/icons/icon.svg" width="64" height="64" alt="Cargando NEXUS..." style="display: block;" />
     </div>
   </div>
+  <script>
+    // Fallback dismissal in case cached app.js misses the new hook
+    window.addEventListener('load', () => { setTimeout(() => document.body.classList.add('is-ready'), 2000); });
+  </script>
 
   <div class="bg" aria-hidden="true"></div>
 
