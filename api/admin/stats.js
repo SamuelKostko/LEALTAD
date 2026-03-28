@@ -8,7 +8,7 @@ export default async function handler(req, res) {
     return;
   }
 
-  if (!requireAdmin(req, res)) return;
+  if (!(await requireAdmin(req, res))) return;
 
   const url = new URL(req.url, 'http://localhost');
   const range = String(url.searchParams.get('range') ?? 'all').trim();

@@ -149,8 +149,8 @@ export default async function handler(req, res) {
             description: firstActivation ? 'Activacion' : 'Credito'
           }
         });
-      } catch {
-        // Ignore push failures.
+      } catch (err) {
+        console.error('[PUSH ERROR in webhook]', err);
       }
     }
 

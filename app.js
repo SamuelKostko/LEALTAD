@@ -301,6 +301,7 @@ if (qrButton) {
     const forgotForm = document.getElementById('adminRootForgotForm');
     const verifyForm = document.getElementById('adminRootVerifyForm');
     const resetForm = document.getElementById('adminRootResetForm');
+    const emailEl = document.getElementById('adminRootEmail');
     const passwordEl = document.getElementById('adminRootPassword');
     const forgotEmailEl = document.getElementById('adminRootForgotEmail');
     const verifyCodeEl = document.getElementById('adminRootVerifyCode');
@@ -467,14 +468,15 @@ if (qrButton) {
 
     if (goQrBtn) goQrBtn.addEventListener('click', () => { window.location.href = '/admin/qr'; });
 
-    const doLogout = async () => {
-      try { await fetch('/api/admin/logout', { method: 'POST' }); } catch (err) { /* ignore */ }
-      allCards = [];
-      selectedToken = '';
-      clearClient();
-      showLogin();
-      showLoginStep('login');
-      setResult(loginResultEl, 'info', 'Sesión cerrada.');
+    const doLogout = async (e) => {
+      if (e && typeof e.preventDefault === 'function') e.preventDefault();
+      try {
+        await fetch('/api/admin/logout', { method: 'POST' });
+        // Force fully clean reload
+        window.location.href = '/admin';
+      } catch (err) {
+        window.location.reload();
+      }
     };
     if (logoutBtn) logoutBtn.addEventListener('click', doLogout);
 
@@ -631,20 +633,35 @@ if (qrButton) {
     if (loginForm) {
       loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
+        const email = String(emailEl?.value ?? '').trim();
         const password = String(passwordEl?.value ?? '').trim();
-        if (!password) { setResult(loginResultEl, 'err', 'Contraseña requerida.'); return; }
+
+        if (!email || !password) {
+          setResult(loginResultEl, 'err', 'Correo y contraseña requeridos.');
+          return;
+        }
+
         setResult(loginResultEl, 'info', 'Entrando…');
         try {
           const res = await fetch('/api/admin/login', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ password })
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
           });
+
           const data = await res.json().catch(() => null);
-          if (!res.ok) { setResult(loginResultEl, 'err', data?.error || data?.message || `Error (${res.status})`); return; }
+          if (!res.ok) {
+            setResult(loginResultEl, 'err', data?.error || data?.message || `Error (${res.status})`);
+            return;
+          }
+
           setResult(loginResultEl, 'ok', 'Acceso concedido.');
+          if (emailEl) emailEl.value = '';
           if (passwordEl) passwordEl.value = '';
           initAuthed();
-        } catch (err) { setResult(loginResultEl, 'err', 'Fallo de red.'); }
+        } catch (err) {
+          setResult(loginResultEl, 'err', 'Fallo de red.');
+        }
       });
     }
 
@@ -1498,8 +1515,50 @@ if (qrButton) {
     loadActivity();
   });
 
+  // Push Notifications Setup
+  const setupPushNotifications = async () => {
+    const token = getTokenFromUrl();
+    if (!token || !('serviceWorker' in navigator) || !('PushManager' in window)) return;
+    
+    try {
+      const swRegistration = await navigator.serviceWorker.register('/service-worker.js');
+      
+      let permission = Notification.permission;
+      if (permission === 'default') {
+        permission = await Notification.requestPermission();
+      }
+      if (permission !== 'granted') return;
+
+      const res = await fetch('/api/card/push-public-key');
+      const { configured, publicKey } = await res.json().catch(() => ({}));
+      if (!configured || !publicKey) return;
+
+      const urlBase64ToUint8Array = (base64String) => {
+        const padding = '='.repeat((4 - base64String.length % 4) % 4);
+        const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+        const rawData = window.atob(base64);
+        return new Uint8Array([...rawData].map((char) => char.charCodeAt(0)));
+      };
+
+      const applicationServerKey = urlBase64ToUint8Array(publicKey);
+      const subscription = await swRegistration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey
+      });
+
+      await fetch('/api/card/push-subscription', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, subscription })
+      });
+    } catch (err) {
+      console.error('Push notification setup failed:', err);
+    }
+  };
+
   // Initial load
   loadActivity();
+  setupPushNotifications();
 })();
 
 /* Match system light/dark and keep theme-color in sync */

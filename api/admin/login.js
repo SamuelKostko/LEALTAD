@@ -1,5 +1,5 @@
 import { readJsonBody, sendJson } from '../_lib/http.js';
-import { createAdminSessionCookie, setAdminCookie } from '../_lib/adminAuth.js';
+import { createSession, setSessionCookie } from '../_lib/adminAuth.js';
 import { getFirestoreDb } from '../_lib/firestore.js';
 
 export default async function handler(req, res) {
@@ -9,48 +9,56 @@ export default async function handler(req, res) {
   }
 
   try {
+    const body = await readJsonBody(req);
+    const email = String(body?.email ?? '').trim().toLowerCase();
+    const password = String(body?.password ?? '').trim();
+
+    if (!email || !password) {
+      sendJson(res, 400, { error: 'Correo y contraseña son requeridos.' });
+      return;
+    }
+
     const db = getFirestoreDb();
     const adminDoc = await db.collection('config').doc('admin').get();
-    
-    let expected = '';
-    if (adminDoc.exists) {
-      expected = String(adminDoc.data()?.password ?? '').trim();
-    }
-    
-    // Fallback to local .env if Firestore config isn't set up yet
-    if (!expected) {
-      const { getAdminPassword } = await import('../_lib/adminAuth.js');
-      expected = getAdminPassword();
-    }
 
-    if (!expected) {
-      sendJson(res, 500, { error: 'Admin password not set in .env or database.' });
+    if (!adminDoc.exists) {
+      sendJson(res, 500, { error: 'Configuración de admin no encontrada.' });
       return;
     }
 
-    const body = await readJsonBody(req);
-    const password = String(body?.password ?? '').trim();
-    if (!password) {
-      sendJson(res, 400, { error: 'Missing password' });
+    const data = adminDoc.data();
+    const adminEmail = String(data?.email ?? '').trim().toLowerCase();
+    const adminPassword = String(data?.password ?? '').trim();
+
+    // Fallback to .env if no password in Firestore
+    const expectedPassword = adminPassword || String(process.env.ADMIN_PASSWORD ?? '').trim();
+
+    if (!adminEmail || !expectedPassword) {
+      sendJson(res, 500, { error: 'Admin no configurado en la base de datos.' });
       return;
     }
 
-    // Comparación directa (si prefieres usar hash más adelante, se cambia aquí)
-    if (password !== expected) {
-      sendJson(res, 403, { error: 'Forbidden' });
+    // Validate email
+    if (email !== adminEmail) {
+      sendJson(res, 403, { error: 'Credenciales incorrectas.' });
       return;
     }
 
-    let cookieValue = '';
-    try {
-      cookieValue = createAdminSessionCookie();
-    } catch (err) {
-      sendJson(res, 500, { error: err?.message ?? String(err) });
+    // Validate password
+    if (password !== expectedPassword) {
+      sendJson(res, 403, { error: 'Credenciales incorrectas.' });
       return;
     }
-    setAdminCookie(res, cookieValue, req);
+
+    // Create session in Firestore
+    const { sessionId } = await createSession();
+
+    // Set cookie
+    setSessionCookie(res, sessionId, req);
+
     sendJson(res, 200, { ok: true });
   } catch (err) {
-    sendJson(res, 500, { error: 'Internal server error' });
+    console.error('Login error:', err);
+    sendJson(res, 500, { error: 'Error interno del servidor.' });
   }
 }

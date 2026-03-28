@@ -1,25 +1,12 @@
 import crypto from 'node:crypto';
-import { timingSafeEqualString } from './utils.js';
+import { getFirestoreDb } from './firestore.js';
 
 const COOKIE_NAME = 'admin_session';
-const VERSION = 'v1';
-
-function base64urlEncode(buffer) {
-  return Buffer.from(buffer).toString('base64url');
-}
-
-function base64urlDecodeToString(value) {
-  return Buffer.from(String(value), 'base64url').toString('utf8');
-}
-
-function sign(data, secret) {
-  return crypto.createHmac('sha256', secret).update(data).digest('base64url');
-}
+const SESSION_DURATION_MS = 60 * 60 * 1000; // 1 hour
 
 function parseCookies(header) {
   const raw = String(header ?? '');
   if (!raw) return {};
-
   const out = {};
   for (const part of raw.split(';')) {
     const idx = part.indexOf('=');
@@ -32,67 +19,107 @@ function parseCookies(header) {
   return out;
 }
 
-function getSessionSecret() {
-  return String(process.env.SESSION_SECRET ?? '').trim();
-}
-
 export function getAdminPassword() {
-  // Backwards compatible with existing env
   return String(process.env.ADMIN_PASSWORD ?? process.env.ADMIN_KEY ?? '').trim();
 }
 
-export function createAdminSessionCookie({ now = Date.now() } = {}) {
-  const secret = getSessionSecret();
-  if (!secret) throw new Error('SESSION_SECRET not set');
+/**
+ * Creates a new session in Firestore and returns the sessionId.
+ * Stores: sessionId, sessionCreatedAt, sessionExpiresAt in config/admin.
+ */
+export async function createSession() {
+  const db = getFirestoreDb();
+  const sessionId = crypto.randomBytes(32).toString('hex');
+  const now = Date.now();
+  const expiresAt = now + SESSION_DURATION_MS;
 
-  const iat = Math.floor(now / 1000);
-  const exp = iat + 60 * 60 * 24 * 7; // 7 days
-  const payload = { iat, exp };
-  const encoded = base64urlEncode(JSON.stringify(payload));
-  const data = `${VERSION}.${encoded}`;
-  const sig = sign(data, secret);
-  return `${data}.${sig}`;
+  await db.collection('config').doc('admin').update({
+    sessionId,
+    sessionCreatedAt: now,
+    sessionExpiresAt: expiresAt
+  });
+
+  return { sessionId, expiresAt };
 }
 
-export function verifyAdminSessionCookie(cookieValue, { now = Date.now() } = {}) {
-  const secret = getSessionSecret();
-  if (!secret) return { ok: false, reason: 'missing_secret' };
-
-  const raw = String(cookieValue ?? '').trim();
-  if (!raw) return { ok: false, reason: 'missing_cookie' };
-
-  const parts = raw.split('.');
-  if (parts.length !== 3) return { ok: false, reason: 'bad_format' };
-
-  const [version, encoded, sig] = parts;
-  if (version !== VERSION) return { ok: false, reason: 'bad_version' };
-
-  const data = `${version}.${encoded}`;
-  const expected = sign(data, secret);
-  if (!timingSafeEqualString(sig, expected)) return { ok: false, reason: 'bad_sig' };
+/**
+ * Validates the sessionId from the cookie against Firestore.
+ * Returns { ok: true } if the session is valid and not expired.
+ */
+export async function verifySession(cookieValue) {
+  if (!cookieValue || typeof cookieValue !== 'string' || !cookieValue.trim()) {
+    return { ok: false, reason: 'missing_cookie' };
+  }
 
   try {
-    const parsed = JSON.parse(base64urlDecodeToString(encoded));
-    const exp = Number(parsed?.exp ?? 0);
-    if (!Number.isFinite(exp) || exp <= 0) return { ok: false, reason: 'bad_payload' };
+    const db = getFirestoreDb();
+    const adminDoc = await db.collection('config').doc('admin').get();
 
-    const nowSec = Math.floor(now / 1000);
-    if (nowSec > exp) return { ok: false, reason: 'expired' };
+    if (!adminDoc.exists) {
+      return { ok: false, reason: 'no_admin_config' };
+    }
 
-    return { ok: true, payload: parsed };
-  } catch {
-    return { ok: false, reason: 'bad_payload' };
+    const data = adminDoc.data();
+    const storedSessionId = String(data?.sessionId ?? '').trim();
+    const expiresAt = Number(data?.sessionExpiresAt ?? 0);
+
+    if (!storedSessionId) {
+      return { ok: false, reason: 'no_session' };
+    }
+
+    // Compare session IDs using constant-time comparison
+    const a = Buffer.from(cookieValue.trim());
+    const b = Buffer.from(storedSessionId);
+    if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
+      return { ok: false, reason: 'invalid_session' };
+    }
+
+    // Check expiration
+    if (Date.now() > expiresAt) {
+      return { ok: false, reason: 'expired' };
+    }
+
+    return { ok: true };
+  } catch (err) {
+    console.error('Session verify error:', err);
+    return { ok: false, reason: 'error' };
   }
 }
 
-export function isAdminRequest(req) {
-  const cookies = parseCookies(req.headers.cookie);
-  const session = cookies[COOKIE_NAME];
-  return verifyAdminSessionCookie(session).ok;
+/**
+ * Destroys the session in Firestore.
+ */
+export async function destroySession() {
+  try {
+    const db = getFirestoreDb();
+    await db.collection('config').doc('admin').update({
+      sessionId: null,
+      sessionCreatedAt: null,
+      sessionExpiresAt: null
+    });
+    return true;
+  } catch (err) {
+    console.error('Session destroy error:', err);
+    return false;
+  }
 }
 
-export function requireAdmin(req, res) {
-  if (isAdminRequest(req)) return true;
+/**
+ * Checks if the current request has a valid admin session.
+ */
+export async function isAdminRequest(req) {
+  const cookies = parseCookies(req.headers.cookie);
+  const sessionId = cookies[COOKIE_NAME];
+  const result = await verifySession(sessionId);
+  return result.ok;
+}
+
+/**
+ * Middleware: returns true if authorized, sends 401 and returns false otherwise.
+ */
+export async function requireAdmin(req, res) {
+  const authorized = await isAdminRequest(req);
+  if (authorized) return true;
 
   res.statusCode = 401;
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
@@ -101,13 +128,16 @@ export function requireAdmin(req, res) {
   return false;
 }
 
-export function setAdminCookie(res, cookieValue, req) {
+/**
+ * Sets the session cookie on the response.
+ */
+export function setSessionCookie(res, sessionId, req) {
   const proto = String(req?.headers?.['x-forwarded-proto'] ?? '').toLowerCase();
   const secure = proto === 'https';
+  const maxAge = Math.floor(SESSION_DURATION_MS / 1000);
 
-  const maxAge = 60 * 60 * 24 * 7;
   const attrs = [
-    `${COOKIE_NAME}=${encodeURIComponent(cookieValue)}`,
+    `${COOKIE_NAME}=${encodeURIComponent(sessionId)}`,
     `Path=/`,
     `HttpOnly`,
     `SameSite=Strict`,
@@ -118,7 +148,10 @@ export function setAdminCookie(res, cookieValue, req) {
   res.setHeader('Set-Cookie', attrs.join('; '));
 }
 
-export function clearAdminCookie(res, req) {
+/**
+ * Clears the session cookie on the response.
+ */
+export function clearSessionCookie(res, req) {
   const proto = String(req?.headers?.['x-forwarded-proto'] ?? '').toLowerCase();
   const secure = proto === 'https';
 
@@ -127,7 +160,8 @@ export function clearAdminCookie(res, req) {
     `Path=/`,
     `HttpOnly`,
     `SameSite=Strict`,
-    `Max-Age=0`
+    `Max-Age=0`,
+    `Expires=Thu, 01 Jan 1970 00:00:00 GMT`
   ];
   if (secure) attrs.push('Secure');
   res.setHeader('Set-Cookie', attrs.join('; '));

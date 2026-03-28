@@ -63,11 +63,6 @@
         <div class="header__label" id="headerLabel">Tu Wallet de puntos</div>
       </div>
 
-      <button class="adminHeaderAction" id="adminHeaderGoQr" type="button" hidden>CREAR TRANSACCION</button>
-      <button class="adminHeaderAction adminHeaderAction--danger" id="adminHeaderLogout" type="button" hidden>CERRAR
-        SESION</button>
-
-
       <button class="avatar" id="profileButton" type="button" aria-label="Perfil" aria-haspopup="dialog"
         aria-controls="profileMenu" aria-expanded="false">
         <span class="avatar__ring" aria-hidden="true"></span>
@@ -93,6 +88,11 @@
           <p class="aLogin__sub">NEXUS Rewards</p>
 
           <form class="aLogin__form" id="adminRootLoginForm">
+            <div class="aField">
+              <label class="aField__label" for="adminRootEmail">Correo Admin</label>
+              <input class="aField__input" id="adminRootEmail" type="email" autocomplete="username"
+                placeholder="admin@nexus.com" required />
+            </div>
             <div class="aField">
               <label class="aField__label" for="adminRootPassword">Contraseña</label>
               <input class="aField__input" id="adminRootPassword" type="password" autocomplete="current-password"
@@ -151,7 +151,7 @@
               <path d="M2 12l10 5 10-5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
                 stroke-linejoin="round" />
             </svg>
-            <span class="aSidebar__brandName">Samuel Admin</span>
+            <span class="aSidebar__brandName">Administrador</span>
           </div>
           <nav class="aSidebar__nav">
             <button class="aSidebar__navItem is-active" id="aNavClientes" type="button" data-panel="clientes">

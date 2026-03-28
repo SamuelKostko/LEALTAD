@@ -75,7 +75,7 @@ export default async function handler(req, res) {
     return;
   }
 
-  if (!requireAdmin(req, res)) return;
+  if (!(await requireAdmin(req, res))) return;
 
   const url = new URL(req.url, 'http://localhost');
   const limit = clampInt(url.searchParams.get('limit'), { min: 1, max: 200, fallback: 50 });

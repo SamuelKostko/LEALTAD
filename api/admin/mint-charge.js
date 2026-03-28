@@ -19,7 +19,7 @@ export default async function handler(req, res) {
     return;
   }
 
-  if (!requireAdmin(req, res)) return;
+  if (!(await requireAdmin(req, res))) return;
 
   const secret = getQrSecret();
   if (!secret) {
