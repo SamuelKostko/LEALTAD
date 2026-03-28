@@ -26,97 +26,7 @@ window.addEventListener("beforeinstallprompt", (e) => {
   deferredInstallPrompt = e;
 });
 
-/* Push notifications: subscribe this device for the current card token */
-(() => {
-  if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) {
-    return;
-  }
 
-  const getTokenFromUrl = () => {
-    try {
-      const url = new URL(window.location.href);
-      const qp = (url.searchParams.get("token") || url.searchParams.get("t") || "").trim();
-      if (qp) return qp;
-
-      const path = url.pathname || "";
-      if (path.startsWith("/card/")) {
-        return decodeURIComponent(path.slice("/card/".length)).trim();
-      }
-    } catch {
-      // Ignore parse errors.
-    }
-    return "";
-  };
-
-  const token = getTokenFromUrl();
-  if (!token) return;
-
-  const PROMPT_KEY = "wallet.pushPromptSeen.v1";
-
-  const hasPrompted = () => {
-    try {
-      return localStorage.getItem(PROMPT_KEY) === "1";
-    } catch {
-      return false;
-    }
-  };
-
-  const markPrompted = () => {
-    try {
-      localStorage.setItem(PROMPT_KEY, "1");
-    } catch {
-      // Ignore storage failures.
-    }
-  };
-
-  const urlBase64ToUint8Array = (base64String) => {
-    const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
-    const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
-    const rawData = window.atob(base64);
-    const outputArray = new Uint8Array(rawData.length);
-    for (let i = 0; i < rawData.length; i += 1) {
-      outputArray[i] = rawData.charCodeAt(i);
-    }
-    return outputArray;
-  };
-
-  const subscribePush = async () => {
-    const keyRes = await fetch('/api/card/push-public-key', { cache: 'no-store' });
-    const keyData = await keyRes.json().catch(() => null);
-    if (!keyRes.ok || !keyData?.configured || !keyData?.publicKey) return;
-
-    if (Notification.permission === 'default' && !hasPrompted()) {
-      markPrompted();
-      const permission = await Notification.requestPermission();
-      if (permission !== 'granted') return;
-    }
-
-    if (Notification.permission !== 'granted') return;
-
-    const registration = await navigator.serviceWorker.ready;
-    let subscription = await registration.pushManager.getSubscription();
-    if (!subscription) {
-      subscription = await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(String(keyData.publicKey))
-      });
-    }
-
-    await fetch('/api/card/push-subscription', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token, subscription: subscription.toJSON() })
-    });
-  };
-
-  window.addEventListener('load', () => {
-    window.setTimeout(() => {
-      subscribePush().catch(() => {
-        // Silent by design: push setup should not block the UI.
-      });
-    }, 700);
-  });
-})();
 
 /* CTA glow on tap/click (works reliably on iOS) */
 const qrButton = document.getElementById("qrButton");
@@ -215,7 +125,10 @@ if (qrButton) {
 
   const loadCardData = async () => {
     const token = getTokenFromUrl();
-    if (!token) return;
+    if (!token) {
+      setTimeout(() => document.body.classList.add('is-ready'), 2000);
+      return;
+    }
 
     try {
       const res = await fetch(`/api/card?token=${encodeURIComponent(token)}`,
@@ -244,6 +157,8 @@ if (qrButton) {
       }
     } catch {
       // Ignore network/parse errors.
+    } finally {
+      setTimeout(() => document.body.classList.add('is-ready'), 2000);
     }
   };
 
@@ -457,7 +372,7 @@ if (qrButton) {
       if (panelClientes) panelClientes.hidden = panel !== 'clientes';
       if (panelTx) panelTx.hidden = panel !== 'transacciones';
       if (panelStats) panelStats.hidden = panel !== 'metricas';
-      
+
       if (navClientes) navClientes.classList.toggle('is-active', panel === 'clientes');
       if (navTx) navTx.classList.toggle('is-active', panel === 'transacciones');
       if (navStats) navStats.classList.toggle('is-active', panel === 'metricas');
@@ -594,22 +509,22 @@ if (qrButton) {
     const loadAdminStats = async (range = currentStatsRange) => {
       const loader = document.getElementById('adminStatsLoader');
       if (loader) loader.hidden = false;
-      
+
       try {
         const data = await apiGet(`/api/admin/stats?range=${encodeURIComponent(range)}`);
-        
+
         const elUsers = document.getElementById('stUsers');
         const elEarned = document.getElementById('stPtsEarned');
         const elRedeemed = document.getElementById('stPtsRedeemed');
         const elUsersSub = document.getElementById('stUsersSub');
-        
+
         if (elUsers) {
           elUsers.textContent = String(data.newUsers || 0);
           if (elUsersSub) elUsersSub.textContent = `Registrados en el periodo (Histórico: ${data.totalUsers || 0})`;
         }
         if (elEarned) elEarned.textContent = String(data.pointsEarned || 0);
         if (elRedeemed) elRedeemed.textContent = String(data.pointsRedeemed || 0);
-        
+
       } catch (err) {
         if (err?.status === 401) { doLogout(); return; }
       } finally {
@@ -666,8 +581,8 @@ if (qrButton) {
     }
 
     if (forgotBtn) forgotBtn.addEventListener('click', () => { clearRecoveryResults(); showLoginStep('forgot'); });
-    if (cancelForgotBtn) cancelForgotBtn.addEventListener('click', () => { clearRecoveryResults(); showLoginStep('login'); setResult(loginResultEl,'',''); });
-    if (cancelVerifyBtn) cancelVerifyBtn.addEventListener('click', () => { clearRecoveryResults(); showLoginStep('login'); setResult(loginResultEl,'',''); });
+    if (cancelForgotBtn) cancelForgotBtn.addEventListener('click', () => { clearRecoveryResults(); showLoginStep('login'); setResult(loginResultEl, '', ''); });
+    if (cancelVerifyBtn) cancelVerifyBtn.addEventListener('click', () => { clearRecoveryResults(); showLoginStep('login'); setResult(loginResultEl, '', ''); });
 
     if (forgotForm) {
       forgotForm.addEventListener('submit', async (e) => {
@@ -679,17 +594,17 @@ if (qrButton) {
         const t = setTimeout(() => ctrl.abort(), 15000);
         try {
           const res = await fetch('/api/admin/forgot-password', {
-            method:'POST', headers:{'Content-Type':'application/json'},
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email }), signal: ctrl.signal
           });
           clearTimeout(t);
           const data = await res.json().catch(() => null);
-          if (!res.ok) { setResult(resultEl,'err', data?.error || 'Correo incorrecto.'); return; }
-          setResult(resultEl,'ok','Correo enviado. Revisa tu bandeja.');
+          if (!res.ok) { setResult(resultEl, 'err', data?.error || 'Correo incorrecto.'); return; }
+          setResult(resultEl, 'ok', 'Correo enviado. Revisa tu bandeja.');
           setTimeout(() => showLoginStep('verify'), 1500);
         } catch (err) {
           clearTimeout(t);
-          setResult(resultEl,'err', err?.name==='AbortError' ? 'Tiempo agotado. Revisa SMTP.' : 'Error de red.');
+          setResult(resultEl, 'err', err?.name === 'AbortError' ? 'Tiempo agotado. Revisa SMTP.' : 'Error de red.');
         }
       });
     }
@@ -699,18 +614,18 @@ if (qrButton) {
         e.preventDefault();
         const resultEl = document.getElementById('adminRootVerifyResult');
         const code = String(verifyCodeEl?.value ?? '').trim();
-        if (!code) { setResult(resultEl,'err','Ingresa el código.'); return; }
+        if (!code) { setResult(resultEl, 'err', 'Ingresa el código.'); return; }
         setResult(resultEl, 'info', 'Verificando…');
         try {
           const res = await fetch('/api/admin/verify-code', {
-            method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ code })
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code })
           });
           const data = await res.json().catch(() => null);
-          if (!res.ok) { setResult(resultEl,'err', data?.error || 'Código incorrecto.'); return; }
-          setResult(resultEl,'ok','Código correcto.');
+          if (!res.ok) { setResult(resultEl, 'err', data?.error || 'Código incorrecto.'); return; }
+          setResult(resultEl, 'ok', 'Código correcto.');
           currentValidCode = code;
           setTimeout(() => showLoginStep('reset'), 1000);
-        } catch (err) { setResult(resultEl,'err','Error de red.'); }
+        } catch (err) { setResult(resultEl, 'err', 'Error de red.'); }
       });
     }
 
@@ -719,18 +634,18 @@ if (qrButton) {
         e.preventDefault();
         const resultEl = document.getElementById('adminRootResetResult');
         const newPassword = String(newPasswordEl?.value ?? '').trim();
-        if (!newPassword || newPassword.length < 6) { setResult(resultEl,'err','Clave muy corta.'); return; }
+        if (!newPassword || newPassword.length < 6) { setResult(resultEl, 'err', 'Clave muy corta.'); return; }
         setResult(resultEl, 'info', 'Actualizando…');
         try {
           const res = await fetch('/api/admin/reset-password', {
-            method:'POST', headers:{'Content-Type':'application/json'},
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ code: currentValidCode, newPassword })
           });
           const data = await res.json().catch(() => null);
-          if (!res.ok) { setResult(resultEl,'err', data?.error || 'Error al actualizar.'); return; }
-          setResult(resultEl,'ok','¡Clave actualizada! Redirigiendo…');
+          if (!res.ok) { setResult(resultEl, 'err', data?.error || 'Error al actualizar.'); return; }
+          setResult(resultEl, 'ok', '¡Clave actualizada! Redirigiendo…');
           setTimeout(() => { showLoginStep('login'); clearRecoveryResults(); window.location.href = '/admin'; }, 2000);
-        } catch (err) { setResult(resultEl,'err','Error de red.'); }
+        } catch (err) { setResult(resultEl, 'err', 'Error de red.'); }
       });
     }
 
@@ -740,6 +655,9 @@ if (qrButton) {
         if (Boolean(data?.authenticated)) initAuthed();
         else showLogin();
       } catch (err) { showLogin(); }
+      finally {
+        setTimeout(() => document.body.classList.add('is-ready'), 1500);
+      }
     };
     checkAuth();
 
@@ -1515,50 +1433,8 @@ if (qrButton) {
     loadActivity();
   });
 
-  // Push Notifications Setup
-  const setupPushNotifications = async () => {
-    const token = getTokenFromUrl();
-    if (!token || !('serviceWorker' in navigator) || !('PushManager' in window)) return;
-    
-    try {
-      const swRegistration = await navigator.serviceWorker.register('/service-worker.js');
-      
-      let permission = Notification.permission;
-      if (permission === 'default') {
-        permission = await Notification.requestPermission();
-      }
-      if (permission !== 'granted') return;
-
-      const res = await fetch('/api/card/push-public-key');
-      const { configured, publicKey } = await res.json().catch(() => ({}));
-      if (!configured || !publicKey) return;
-
-      const urlBase64ToUint8Array = (base64String) => {
-        const padding = '='.repeat((4 - base64String.length % 4) % 4);
-        const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
-        const rawData = window.atob(base64);
-        return new Uint8Array([...rawData].map((char) => char.charCodeAt(0)));
-      };
-
-      const applicationServerKey = urlBase64ToUint8Array(publicKey);
-      const subscription = await swRegistration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey
-      });
-
-      await fetch('/api/card/push-subscription', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token, subscription })
-      });
-    } catch (err) {
-      console.error('Push notification setup failed:', err);
-    }
-  };
-
   // Initial load
   loadActivity();
-  setupPushNotifications();
 })();
 
 /* Match system light/dark and keep theme-color in sync */

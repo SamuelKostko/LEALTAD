@@ -4,7 +4,7 @@ import { getFirestoreDb } from '../_lib/firestore.js';
 import { getPublicOrigin, readJsonBody, sendJson, sendRedirect } from '../_lib/http.js';
 import { makeToken, normalizeEmail } from '../_lib/utils.js';
 import { sendActivationEmail } from '../_lib/email.js';
-import { notifyTokenActivity } from '../_lib/push.js';
+
 
 async function dbProcessPurchase({ email, name, cedula, pointsToAdd, absoluteBalance }) {
   const now = new Date(); // Using Date object for Firestore Timestamp compatibility
@@ -143,27 +143,7 @@ export default async function handler(req, res) {
       }
     }
 
-    // Best-effort push notification to this wallet owner when balance increases.
-    if (creditedPoints > 0) {
-      try {
-        await notifyTokenActivity({
-          token,
-          title: 'Saldo acreditado',
-          body: `Recibiste ${creditedPoints} puntos. Saldo actual: ${balanceAfter}`,
-          url: link,
-          tag: 'wallet-credit',
-          payload: {
-            type: 'credit',
-            points: creditedPoints,
-            balanceBefore,
-            balanceAfter,
-            description: firstActivation ? 'Activacion' : 'Credito'
-          }
-        });
-      } catch (err) {
-        console.error('[PUSH ERROR in webhook]', err);
-      }
-    }
+
 
     const url = new URL(req.url, 'http://localhost');
     const wantsRedirect = url.searchParams.get('redirect') === '1';

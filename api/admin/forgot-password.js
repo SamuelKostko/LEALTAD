@@ -1,7 +1,5 @@
 import { readJsonBody, sendJson } from '../_lib/http.js';
 import { getFirestoreDb } from '../_lib/firestore.js';
-import nodemailer from 'nodemailer';
-
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return sendJson(res, 405, { error: 'Method Not Allowed' });
@@ -36,64 +34,55 @@ export default async function handler(req, res) {
       resetTokenExpires
     });
 
-    let transporter;
-    const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_FROM_EMAIL } = process.env;
-    const smtpPort = Number(SMTP_PORT);
+    const mailerSendApiKey = process.env.MAILERSEND_API_KEY;
+    const mailerSendSender = process.env.MAILERSEND_SENDER_EMAIL;
 
-    if (SMTP_HOST && SMTP_USER && SMTP_PASS && Number.isFinite(smtpPort) && smtpPort > 0) {
-        transporter = nodemailer.createTransport({
-            host: SMTP_HOST,
-            port: smtpPort,
-            secure: smtpPort === 465,
-            auth: {
-                user: SMTP_USER,
-                pass: SMTP_PASS
-            },
-            connectionTimeout: 10000,
-            greetingTimeout: 10000,
-            socketTimeout: 15000
-        });
+    if (mailerSendApiKey && mailerSendSender) {
+      const response = await fetch('https://api.mailersend.com/v1/email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${mailerSendApiKey}`
+        },
+        body: JSON.stringify({
+          from: {
+            email: mailerSendSender,
+            name: "Admin Panel NEXUS"
+          },
+          to: [
+            {
+              email: adminEmail
+            }
+          ],
+          subject: "Código de Recuperación",
+          html: `<h3>Tu código de recuperación es:</h3>
+                 <div style="font-size: 24px; font-weight: bold; background: #e0f2fe; color: #0369a1; padding: 12px 20px; border-radius: 8px; display: inline-block; letter-spacing: 4px; margin: 10px 0;">${resetCode}</div>
+                 <p style="color: #4b5563; margin-top: 15px;">Este código expira en 15 minutos. Si no lo solicitaste, puedes ignorar este mensaje de seguridad.</p>`
+        })
+      });
 
-        await transporter.sendMail({
-            from: `"Admin Panel" <${SMTP_FROM_EMAIL || SMTP_USER}>`,
-            to: adminEmail,
-            subject: 'Código de Recuperación',
-            html: `<h3>Tu código de recuperación es:</h3>
-                   <div style="font-size: 24px; font-weight: bold; background: #f4f4f4; padding: 10px; display: inline-block; letter-spacing: 2px;">${resetCode}</div>
-                   <p>Este código expira en 15 minutos. Si no lo solicitaste, puedes ignorar este mensaje.</p>`
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        console.error('MailerSend Error:', response.status, errorData);
+        return sendJson(res, 500, {
+          error: `Error de MailerSend (${response.status}). Revisa que tu Sender Email esté verificado y la API key sea correcta.`
         });
+      }
     } else {
         const isProduction = String(process.env.NODE_ENV || '').toLowerCase() === 'production';
         if (isProduction) {
           return sendJson(res, 500, {
-            error: 'SMTP no configurado correctamente. Revisa SMTP_HOST, SMTP_PORT, SMTP_USER y SMTP_PASS.'
+            error: 'Faltan variables MAILERSEND_API_KEY o MAILERSEND_SENDER_EMAIL en el servidor.'
           });
         }
-
-        console.warn('SMTP variables not fully defined, just printing code', resetCode);
+        
+        console.warn('MailerSend variables not fully defined, simulating email send in dev mode:', resetCode);
         return sendJson(res, 200, { ok: true, devMode: true, resetCode });
     }
 
     sendJson(res, 200, { ok: true });
   } catch (err) {
-    const rawMessage = String(err?.message || 'Internal error');
-    const code = String(err?.code || '').toUpperCase();
-    const command = String(err?.command || '');
-    const isTimeout =
-      code.includes('TIMEOUT') ||
-      code === 'ESOCKET' ||
-      /timeout|timed out/i.test(rawMessage);
-
-    if (isTimeout) {
-      const host = String(process.env.SMTP_HOST || '');
-      const port = String(process.env.SMTP_PORT || '');
-      return sendJson(res, 500, {
-        error: `SMTP connection timeout (${host}:${port}). Revisa host/puerto, firewall de Railway y usa 587 o 2525 si 465 no responde.`,
-        code: code || undefined,
-        command: command || undefined
-      });
-    }
-
-    sendJson(res, 500, { error: rawMessage });
+    console.error('Forgot Pass Error:', err);
+    sendJson(res, 500, { error: 'Error interno de red.' });
   }
-}
+}

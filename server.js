@@ -3,6 +3,7 @@ import cors from 'cors';
 import path from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 import fs from 'fs/promises';
+import rateLimit from 'express-rate-limit';
 import { config } from 'dotenv';
 config();
 
@@ -20,6 +21,19 @@ app.use(express.urlencoded({ extended: true }));
 app.get('/health', (_req, res) => {
    res.status(200).json({ ok: true });
 });
+
+// Configure Rate Limiter for sensitive endpoints
+const authLimiter = rateLimit({
+   windowMs: 15 * 60 * 1000, // 15 minutes
+   max: 10, // Limit each IP to 10 requests per windowMs
+   message: { error: 'Demasiados intentos, por favor intenta más tarde.' },
+   standardHeaders: true,
+   legacyHeaders: false,
+});
+
+// Apply limiter to auth endpoints
+app.use('/api/admin/login', authLimiter);
+app.use('/api/admin/forgot-password', authLimiter);
 
 // Simulador de rutas estilo Vercel (/api/*)
 async function registerApiRoutes(dirPath, basePath = '/api') {

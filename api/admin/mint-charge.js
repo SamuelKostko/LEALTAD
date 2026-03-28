@@ -38,8 +38,8 @@ export default async function handler(req, res) {
   const points = Number(body?.points ?? 0);
   const description = String(body?.description ?? '').trim();
 
-  if (!Number.isFinite(points) || points <= 0) {
-    sendJson(res, 400, { error: 'Invalid body. Expected: { points > 0, description? }' });
+  if (!Number.isFinite(points) || points <= 0 || points > 50000) {
+    sendJson(res, 400, { error: 'Puntos inválidos. Máximo permitido: 50000.' });
     return;
   }
 

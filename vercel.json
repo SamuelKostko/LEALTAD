@@ -1,7 +1,0 @@
-{
-  "rewrites": [
-    { "source": "/card/(.*)", "destination": "/index.html" },
-    { "source": "/admin", "destination": "/index.html" },
-    { "source": "/admin/qr", "destination": "/admin-qr.html" }
-  ]
-}

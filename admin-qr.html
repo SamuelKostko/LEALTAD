@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -21,12 +22,17 @@
   </div>
 
   <div class="aDash" style="flex-direction: column; justify-content: center; align-items: center; padding: 24px;">
-    
-    <div style="width: 100%; max-width: 420px; margin-bottom: 24px;">
-      <button onclick="window.location.href='/admin'" class="aBtn aBtn--ghost" style="display: inline-flex; width: auto; padding: 8px 16px; font-size: 14px; gap: 8px; color: var(--a-text-muted);">
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="none"><path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+
+    <div
+      style="width: 100%; max-width: 420px; margin-bottom: 24px; position: relative; z-index: 99999; pointer-events: auto;">
+      <a href="/admin" class="aBtn aBtn--ghost"
+        style="display: inline-flex; width: auto; padding: 12px 20px; font-size: 15px; font-weight: 600; gap: 8px; color: #fff; background: rgba(255,255,255,0.05); text-decoration: none; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; cursor: pointer; pointer-events: auto; position: relative; z-index: 99999;">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none">
+          <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+            stroke-linejoin="round" />
+        </svg>
         Volver al Panel
-      </button>
+      </a>
     </div>
 
     <!-- Login Card -->
@@ -45,7 +51,8 @@
       <form class="aLogin__form" id="loginForm">
         <div class="aField">
           <label class="aField__label" for="adminPassword">Contraseña de Admin</label>
-          <input class="aField__input" id="adminPassword" type="password" autocomplete="current-password" placeholder="••••••••" required />
+          <input class="aField__input" id="adminPassword" type="password" autocomplete="current-password"
+            placeholder="••••••••" required />
         </div>
         <button class="aBtn aBtn--primary" id="loginBtn" type="submit">Entrar</button>
         <div class="aResult" id="loginResult" aria-live="polite"></div>
@@ -56,7 +63,8 @@
     <div class="aLogin__card" id="qrSection" hidden style="max-width: 420px; width: 100%;">
       <div class="aLogin__logo" aria-hidden="true">
         <svg viewBox="0 0 24 24" width="28" height="28" fill="none">
-          <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round" />
         </svg>
       </div>
       <h1 class="aLogin__title">Generar QR</h1>
@@ -65,12 +73,14 @@
       <form class="aLogin__form" id="qrForm" style="margin-top: 24px;">
         <div class="aField">
           <label class="aField__label" for="points">Puntos a cobrar</label>
-          <input class="aField__input" id="points" type="number" inputmode="numeric" min="1" step="1" placeholder="Ej: 50" required style="font-size: 20px; font-weight: 600;" />
+          <input class="aField__input" id="points" type="number" inputmode="numeric" min="1" max="50000" step="1"
+            placeholder="Ej: 50" required style="font-size: 20px; font-weight: 600;" />
         </div>
 
         <div class="aField">
           <label class="aField__label" for="description">Descripción / Motivo (Opcional)</label>
-          <input class="aField__input" id="description" type="text" autocomplete="off" placeholder="Ej: Canje por café" />
+          <input class="aField__input" id="description" type="text" autocomplete="off"
+            placeholder="Ej: Canje por café" />
         </div>
 
         <button class="aBtn aBtn--primary" id="genBtn" type="submit" style="margin-top: 16px;">Generar QR</button>
@@ -85,18 +95,24 @@
     <div class="profileMenu__frame" role="dialog" aria-modal="true" style="max-width: 400px; padding: 24px 24px 32px;">
       <header class="profileMenu__header" style="justify-content: center; border-bottom: none; position: relative;">
         <span class="profileMenu__title" style="font-size: 20px;">Muestra este código</span>
-        <button class="profileMenu__close" id="qroModalCloseBtn" type="button" aria-label="Cerrar" style="position: absolute; right: 0;">✕</button>
+        <button class="profileMenu__close" id="qroModalCloseBtn" type="button" aria-label="Cerrar"
+          style="position: absolute; right: 0;">✕</button>
       </header>
-      <div style="font-size: 14px; color: var(--a-text-muted); text-align: center; margin-bottom: 24px; padding: 0 16px;">
+      <div
+        style="font-size: 14px; color: var(--a-text-muted); text-align: center; margin-bottom: 24px; padding: 0 16px;">
         El cliente debe escanear el QR desde la pantalla principal de su wallet para completar el cobro.
       </div>
-      <div id="qrWrap" class="aQrDisplay" style="margin-top: 0; position: relative; width: 100%; aspect-ratio: 1/1; max-width: 320px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 20px; box-shadow: 0 0 40px rgba(255,255,255,0.15); display: flex; justify-content: center; align-items: center;" hidden>
+      <div id="qrWrap" class="aQrDisplay"
+        style="margin-top: 0; position: relative; width: 100%; aspect-ratio: 1/1; max-width: 320px; margin: 0 auto; background: #fff; padding: 20px; border-radius: 20px; box-shadow: 0 0 40px rgba(255,255,255,0.15); display: flex; justify-content: center; align-items: center;"
+        hidden>
         <canvas id="qrCanvas" width="300" height="300" hidden></canvas>
-        <img id="qrImg" alt="Código QR" hidden style="display: block; width: 100%; height: 100%; border-radius: 12px; pointer-events: none;" />
+        <img id="qrImg" alt="Código QR" hidden
+          style="display: block; width: 100%; height: 100%; border-radius: 12px; pointer-events: none;" />
       </div>
       <div style="text-align: center; margin-top: 32px;">
-         <div class="aQrLoader" id="qroLoaderText">Esperando escaneo...</div>
-         <button class="aBtn aBtn--ghost" id="copyBtn" type="button" style="margin-top: 16px;" disabled>Copiar Link Alternativo</button>
+        <div class="aQrLoader" id="qroLoaderText">Esperando escaneo...</div>
+        <button class="aBtn aBtn--ghost" id="copyBtn" type="button" style="margin-top: 16px;" disabled>Copiar Link
+          Alternativo</button>
       </div>
     </div>
   </div>
@@ -104,21 +120,45 @@
   <!-- TX Success Modal -->
   <div class="profileMenu" id="txSuccessModal" aria-hidden="true" style="z-index: 10000;">
     <div class="profileMenu__backdrop"></div>
-    <div class="profileMenu__frame" role="dialog" aria-modal="true" style="max-width: 400px; padding: 48px 24px; text-align: center; align-items: center;">
-       <div style="width: 80px; height: 80px; border-radius: 50%; background: rgba(34,197,94,0.15); display: flex; align-items: center; justify-content: center; margin: 0 auto 24px;">
-         <svg viewBox="0 0 24 24" width="40" height="40" fill="none" style="color: #4ade80;"><path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
-       </div>
-       <h2 class="profileMenu__title" style="font-size: 24px; margin-bottom: 8px;">¡Cobro Exitoso!</h2>
-       <p style="font-size: 15px; color: var(--a-text-muted); margin-bottom: 32px;">El cliente ha escaneado la tarjeta y los puntos han sido descontados correctamente de su saldo.</p>
-       <button class="aBtn aBtn--primary" id="txSuccessCloseBtn" type="button" style="width: 100%;">Generar Nuevo Cobro</button>
+    <div class="profileMenu__frame" role="dialog" aria-modal="true"
+      style="max-width: 400px; padding: 48px 24px; text-align: center; align-items: center;">
+      <div
+        style="width: 80px; height: 80px; border-radius: 50%; background: rgba(34,197,94,0.15); display: flex; align-items: center; justify-content: center; margin: 0 auto 24px;">
+        <svg viewBox="0 0 24 24" width="40" height="40" fill="none" style="color: #4ade80;">
+          <path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="3" stroke-linecap="round"
+            stroke-linejoin="round" />
+        </svg>
+      </div>
+      <h2 class="profileMenu__title" style="font-size: 24px; margin-bottom: 8px;">¡Cobro Exitoso!</h2>
+      <p style="font-size: 15px; color: var(--a-text-muted); margin-bottom: 32px;">El cliente ha escaneado la tarjeta y
+        los puntos han sido descontados correctamente de su saldo.</p>
+      <button class="aBtn aBtn--primary" id="txSuccessCloseBtn" type="button" style="width: 100%;">Generar Nuevo
+        Cobro</button>
     </div>
   </div>
 
   <style>
-    .aQrLoader { font-size: 14px; font-weight: 500; color: #a5b4fc; animation: pulse 1.5s infinite ease-in-out; }
-    @keyframes pulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
+    .aQrLoader {
+      font-size: 14px;
+      font-weight: 500;
+      color: #a5b4fc;
+      animation: pulse 1.5s infinite ease-in-out;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 0.5;
+      }
+
+      50% {
+        opacity: 1;
+      }
+    }
   </style>
 
   <script src="/admin-qr.js" defer></script>
 </body>
+
 </html>
