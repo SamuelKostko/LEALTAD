@@ -145,7 +145,7 @@ if (loginForm) {
   loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    const password = String(adminPasswordEl?.value ?? '').trim();
+    const password = (document.getElementById('adminPassword')?.value || '').trim();
     if (!password) {
       setLoginResult('adminResult--err', 'Password requerido.');
       return;

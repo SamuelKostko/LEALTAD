@@ -548,8 +548,8 @@ if (qrButton) {
     if (loginForm) {
       loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const email = String(emailEl?.value ?? '').trim();
-        const password = String(passwordEl?.value ?? '').trim();
+        const email = (document.getElementById('adminRootEmail')?.value || '').trim();
+        const password = (document.getElementById('adminRootPassword')?.value || '').trim();
 
         if (!email || !password) {
           setResult(loginResultEl, 'err', 'Correo y contraseña requeridos.');

@@ -63,6 +63,11 @@
       justify-content: center;
       transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.6s;
     }
+
+    /* Prevent double-splash in installed PWAs where OS handles the heavy native splash */
+    @media (display-mode: standalone) {
+      .bootSplash { display: none !important; }
+    }
     
     @media (prefers-color-scheme: light) {
       .bootSplash { background: #f6f7fb; }
@@ -134,12 +139,12 @@
           <form class="aLogin__form" id="adminRootLoginForm">
             <div class="aField">
               <label class="aField__label" for="adminRootEmail">Correo Admin</label>
-              <input class="aField__input" id="adminRootEmail" type="email" autocomplete="username"
+              <input class="aField__input" id="adminRootEmail" name="email" type="email" autocomplete="username"
                 placeholder="admin@nexus.com" required />
             </div>
             <div class="aField">
               <label class="aField__label" for="adminRootPassword">Contraseña</label>
-              <input class="aField__input" id="adminRootPassword" type="password" autocomplete="current-password"
+              <input class="aField__input" id="adminRootPassword" name="password" type="password" autocomplete="current-password"
                 placeholder="••••••••" required />
             </div>
             <button class="aBtn aBtn--primary" id="adminRootLoginBtn" type="submit">Entrar</button>
