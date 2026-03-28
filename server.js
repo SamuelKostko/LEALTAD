@@ -49,7 +49,8 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 // Respond to ALL OPTIONS preflight requests immediately (before any limiter)
-app.options('*', cors(corsOptions));
+// Note: Express 5 / path-to-regexp v8 requires a regex – '*' is no longer valid.
+app.options(/(.*)/, cors(corsOptions));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
