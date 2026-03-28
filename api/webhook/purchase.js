@@ -6,10 +6,9 @@ import { makeToken, normalizeEmail } from '../_lib/utils.js';
 import { sendActivationEmail } from '../_lib/email.js';
 import { notifyTokenActivity } from '../_lib/push.js';
 
-async function dbProcessPurchase({ email, name, cedula, balance }) {
+async function dbProcessPurchase({ email, name, cedula, pointsToAdd, absoluteBalance }) {
   const now = new Date(); // Using Date object for Firestore Timestamp compatibility
   const firestore = getFirestoreDb();
-  // Using email as doc ID for 'clientes' is fine, but we need to ensure fields match
   const customerRef = firestore.collection('clientes').doc(email);
 
   let token = '';
@@ -20,6 +19,7 @@ async function dbProcessPurchase({ email, name, cedula, balance }) {
 
   let creditedPoints = 0;
   let balanceBefore = 0;
+  let finalBalance = 0;
 
   await firestore.runTransaction(async (tx) => {
     const snap = await tx.get(customerRef);
@@ -29,6 +29,8 @@ async function dbProcessPurchase({ email, name, cedula, balance }) {
     if (!existingToken) {
       token = makeToken();
       firstActivation = true;
+      finalBalance = absoluteBalance !== null ? absoluteBalance : (pointsToAdd || 0);
+      
       tx.set(
         customerRef,
         {
@@ -36,29 +38,34 @@ async function dbProcessPurchase({ email, name, cedula, balance }) {
           nombre: name,
           idNumber: cedula,
           email,
-          totalPoints: balance,
+          totalPoints: finalBalance,
           createdAt: now,
           updatedAt: now
         },
         { merge: true }
       );
-      creditedPoints = balance;
+      creditedPoints = finalBalance;
       balanceBefore = 0;
     } else {
       token = existingToken;
       const current = Number(data.totalPoints ?? 0);
       const currentSafe = Number.isFinite(current) ? current : 0;
-      const credited = Math.max(0, balance - currentSafe);
-
-      creditedPoints = credited;
       balanceBefore = currentSafe;
+
+      if (absoluteBalance !== null) {
+        finalBalance = absoluteBalance;
+        creditedPoints = Math.max(0, finalBalance - currentSafe);
+      } else {
+        creditedPoints = Math.max(0, pointsToAdd || 0);
+        finalBalance = currentSafe + creditedPoints;
+      }
 
       tx.set(
         customerRef,
         {
           nombre: name,
           idNumber: cedula,
-          totalPoints: balance,
+          totalPoints: finalBalance,
           updatedAt: now
         },
         { merge: true }
@@ -74,14 +81,14 @@ async function dbProcessPurchase({ email, name, cedula, balance }) {
         points: creditedPoints,
         description: firstActivation ? 'Activación' : 'Crédito',
         balanceBefore: balanceBefore,
-        balanceAfter: balance,
+        balanceAfter: finalBalance,
         createdAt: FieldValue.serverTimestamp(),
         processedAt: FieldValue.serverTimestamp()
       });
     }
   });
 
-  return { token, firstActivation, creditedPoints, balanceBefore, balanceAfter: balance };
+  return { token, firstActivation, creditedPoints, balanceBefore, balanceAfter: finalBalance };
 }
 
 export default async function handler(req, res) {
@@ -104,10 +111,13 @@ export default async function handler(req, res) {
     const email = normalizeEmail(body?.email);
     const name = String(body?.name ?? '').trim();
     const cedula = String(body?.cedula ?? body?.id ?? '').trim();
-    const balance = Number(body?.balance ?? body?.points ?? 0);
+    
+    // Support either adding points OR forcing an absolute balance
+    const pointsToAdd = body?.points !== undefined ? Number(body.points) : null;
+    const absoluteBalance = body?.balance !== undefined ? Number(body.balance) : null;
 
-    if (!email || !email.includes('@') || !name || !cedula || !Number.isFinite(balance)) {
-      sendJson(res, 400, { error: 'Invalid body. Expected: { email, name, cedula, balance }' });
+    if (!email || !email.includes('@') || !name || !cedula || (pointsToAdd === null && absoluteBalance === null)) {
+      sendJson(res, 400, { error: 'Invalid body. Expected: { email, name, cedula, and either points or balance }' });
       return;
     }
 
@@ -116,7 +126,8 @@ export default async function handler(req, res) {
       email,
       name,
       cedula,
-      balance
+      pointsToAdd,
+      absoluteBalance
     });
 
     const linkPath = `/card/${token}`;
@@ -139,7 +150,7 @@ export default async function handler(req, res) {
           token,
           title: 'Saldo acreditado',
           body: `Recibiste ${creditedPoints} puntos. Saldo actual: ${balanceAfter}`,
-          url: linkPath,
+          url: link,
           tag: 'wallet-credit',
           payload: {
             type: 'credit',
