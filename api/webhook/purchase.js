@@ -3,7 +3,7 @@ import crypto from 'node:crypto';
 import { getFirestoreDb } from '../_lib/firestore.js';
 import { getPublicOrigin, readJsonBody, sendJson, sendRedirect } from '../_lib/http.js';
 import { makeToken, normalizeEmail } from '../_lib/utils.js';
-import { sendActivationEmail } from '../_lib/email.js';
+
 
 
 async function dbProcessPurchase({ email, name, cedula, pointsToAdd, absoluteBalance }) {
@@ -133,15 +133,8 @@ export default async function handler(req, res) {
     const linkPath = `/card/${token}`;
     const link = origin + linkPath;
 
-    let emailResult = { sent: false };
-    if (firstActivation) {
-      try {
-        emailResult = await sendActivationEmail({ to: email, name, link });
-      } catch (err) {
-        console.log('[activation-email] failed:', err?.message ?? err);
-        emailResult = { sent: false, reason: 'send_failed' };
-      }
-    }
+    // Ya no enviamos tarjetas por correo
+    let emailResult = { sent: false, reason: 'disabled' };
 
 
 

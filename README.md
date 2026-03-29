@@ -24,9 +24,9 @@ Firestore:
 - `FIREBASE_SERVICE_ACCOUNT_JSON`: contenido JSON de la service account (recomendado en Vercel)
 - `FIREBASE_PROJECT_ID` (opcional)
 
-SMTP:
-- `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`
-- `SMTP_FROM` **o** (`SMTP_FROM_NAME` + `SMTP_FROM_EMAIL`)
+MailerSend:
+- `MAILERSEND_API_KEY`
+- `MAILERSEND_SENDER_EMAIL`
 
 Webhook:
 - `WEBHOOK_SECRET` (opcional, recomendado): se valida contra header `x-webhook-secret`
@@ -44,5 +44,5 @@ Push Notifications (Web Push):
 
 ## Notas
 
-- Para enviar correos con dominio propio normalmente necesitas SPF/DKIM y un proveedor SMTP autorizado.
+- Para enviar correos usa MailerSend. Asegúrate de que el dominio emisor esté verificado en su panel.
 - Las notificaciones push se envian por token de tarjeta cuando hay actividad de saldo (credito por compra o consumo por canje).

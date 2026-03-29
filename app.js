@@ -993,7 +993,6 @@ if (qrButton) {
   })();
 
   const confirmPopup = (() => {
-    try {
       const root = document.createElement("div");
       root.className = "scanPopup";
       root.setAttribute("aria-hidden", "true");
@@ -1073,6 +1072,7 @@ if (qrButton) {
 
       const request = ({ points, desc }) => {
         return new Promise((resolve) => {
+          console.log("[QR Scanner] Mostrando modal de confirmacion con:", points, "pts. Descripción:", desc);
           currentResolve = resolve;
           title.textContent = `Pagar ${points} pts`;
           subtitle.textContent = desc ? `Referencia: ${desc}` : "¿Confirmas el pago de puntos?";
@@ -1086,9 +1086,6 @@ if (qrButton) {
       backdrop.addEventListener("click", () => close(false));
 
       return { request };
-    } catch {
-      return { request: async () => true };
-    }
   })();
 
   const getTokenFromUrl = () => {

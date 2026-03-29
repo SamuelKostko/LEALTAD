@@ -26,7 +26,8 @@
     <header class="aQrPage__header">
       <a href="/admin" class="aQrPage__back" aria-label="Volver al Panel">
         <svg viewBox="0 0 24 24" width="18" height="18" fill="none">
-          <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+            stroke-linejoin="round" />
         </svg>
         Panel
       </a>
@@ -53,8 +54,8 @@
         <form class="aLogin__form" id="loginForm">
           <div class="aField">
             <label class="aField__label" for="adminPassword">Contraseña de Admin</label>
-            <input class="aField__input" id="adminPassword" name="password" type="password" autocomplete="current-password"
-              placeholder="••••••••" required />
+            <input class="aField__input" id="adminPassword" name="password" type="password"
+              autocomplete="current-password" placeholder="••••••••" required />
           </div>
           <button class="aBtn aBtn--primary" id="loginBtn" type="submit">Entrar</button>
           <div class="aResult" id="loginResult" aria-live="polite"></div>
@@ -86,11 +87,12 @@
           </div>
 
           <button class="aBtn aBtn--primary" id="genBtn" type="submit">
-            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" style="vertical-align: middle; margin-right: 6px;">
-              <rect x="3" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.8"/>
-              <rect x="14" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.8"/>
-              <rect x="3" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.8"/>
-              <path d="M14 14h2v2h-2zM18 14h3v3h-3zM14 18h3v3h-3zM18 19h3v2h-3z" fill="currentColor"/>
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none"
+              style="vertical-align: middle; margin-right: 6px;">
+              <rect x="3" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.8" />
+              <rect x="14" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.8" />
+              <rect x="3" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.8" />
+              <path d="M14 14h2v2h-2zM18 14h3v3h-3zM14 18h3v3h-3zM18 19h3v2h-3z" fill="currentColor" />
             </svg>
             Generar QR
           </button>
@@ -106,12 +108,11 @@
     <div class="profileMenu__backdrop"></div>
     <div class="profileMenu__frame" role="dialog" aria-modal="true" style="max-width: 400px; padding: 24px 24px 32px;">
       <header class="profileMenu__header" style="justify-content: center; border-bottom: none; position: relative;">
-        <span class="profileMenu__title" style="font-size: 20px;">Muestra este código</span>
+        <span class="profileMenu__title" style="font-size: 20px; color: #ffffff;">Muestra este código</span>
         <button class="profileMenu__close" id="qroModalCloseBtn" type="button" aria-label="Cerrar"
-          style="position: absolute; right: 0;">✕</button>
+          style="position: absolute; right: 0; color: #ffffff;">✕</button>
       </header>
-      <div
-        style="font-size: 14px; color: var(--a-text-muted); text-align: center; margin-bottom: 24px; padding: 0 16px;">
+      <div style="font-size: 14px; color: rgba(255, 255, 255, 0.9); text-align: center; margin-bottom: 24px; padding: 0 16px;">
         El cliente debe escanear el QR desde la pantalla principal de su wallet para completar el cobro.
       </div>
       <div id="qrWrap" class="aQrDisplay"
@@ -122,7 +123,7 @@
           style="display: block; width: 100%; height: 100%; border-radius: 12px; pointer-events: none;" />
       </div>
       <div style="text-align: center; margin-top: 32px;">
-        <div class="aQrLoader" id="qroLoaderText">Esperando escaneo...</div>
+        <div class="aQrLoader" id="qroLoaderText" style="color: #ffffff;">Esperando escaneo...</div>
         <button class="aBtn aBtn--ghost" id="copyBtn" type="button" style="margin-top: 16px;" disabled>Copiar Link
           Alternativo</button>
       </div>
@@ -141,8 +142,8 @@
             stroke-linejoin="round" />
         </svg>
       </div>
-      <h2 class="profileMenu__title" style="font-size: 24px; margin-bottom: 8px;">¡Cobro Exitoso!</h2>
-      <p style="font-size: 15px; color: var(--a-text-muted); margin-bottom: 32px;">El cliente ha escaneado la tarjeta y
+      <h2 class="profileMenu__title" style="font-size: 24px; margin-bottom: 8px; color: #ffffff;">¡Cobro Exitoso!</h2>
+      <p style="font-size: 15px; color: rgba(255,255,255,0.9); margin-bottom: 32px;">El cliente ha escaneado la tarjeta y
         los puntos han sido descontados correctamente de su saldo.</p>
       <button class="aBtn aBtn--primary" id="txSuccessCloseBtn" type="button" style="width: 100%;">Generar Nuevo
         Cobro</button>
@@ -151,7 +152,9 @@
 
   <style>
     /* Override global body overflow so aQrPage can scroll */
-    body.mode-admin { overflow: hidden !important; }
+    body.mode-admin {
+      overflow: hidden !important;
+    }
 
     .aQrLoader {
       font-size: 14px;
@@ -161,8 +164,15 @@
     }
 
     @keyframes pulse {
-      0%, 100% { opacity: 0.5; }
-      50% { opacity: 1; }
+
+      0%,
+      100% {
+        opacity: 0.5;
+      }
+
+      50% {
+        opacity: 1;
+      }
     }
   </style>
 
