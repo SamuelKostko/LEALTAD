@@ -19,28 +19,22 @@ export default async function handler(req, res) {
     }
 
     const db = getFirestoreDb();
-    const adminDoc = await db.collection('config').doc('admin').get();
+    const snap = await db.collection('config').where('email', '==', email).limit(1).get();
 
-    if (!adminDoc.exists) {
-      sendJson(res, 500, { error: 'Configuración de admin no encontrada.' });
+    if (snap.empty) {
+      sendJson(res, 403, { error: 'Credenciales incorrectas.' });
       return;
     }
 
+    const adminDoc = snap.docs[0];
     const data = adminDoc.data();
-    const adminEmail = String(data?.email ?? '').trim().toLowerCase();
     const adminPassword = String(data?.password ?? '').trim();
 
     // Fallback to .env if no password in Firestore
     const expectedPassword = adminPassword || String(process.env.ADMIN_PASSWORD ?? '').trim();
 
-    if (!adminEmail || !expectedPassword) {
-      sendJson(res, 500, { error: 'Admin no configurado en la base de datos.' });
-      return;
-    }
-
-    // Validate email
-    if (email !== adminEmail) {
-      sendJson(res, 403, { error: 'Credenciales incorrectas.' });
+    if (!expectedPassword) {
+      sendJson(res, 500, { error: 'Admin no configurado correctamente.' });
       return;
     }
 
@@ -50,8 +44,8 @@ export default async function handler(req, res) {
       return;
     }
 
-    // Create session in Firestore
-    const { sessionId } = await createSession();
+    // Create session in Firestore for this specific document
+    const { sessionId } = await createSession(adminDoc.id);
 
     // Set cookie
     setSessionCookie(res, sessionId, req);

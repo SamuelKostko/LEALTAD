@@ -6,24 +6,20 @@ export default async function handler(req, res) {
   }
 
   try {
-    const db = getFirestoreDb();
-    const adminRef = db.collection('config').doc('admin');
-    const adminDoc = await adminRef.get();
-
-    if (!adminDoc.exists) {
-      return sendJson(res, 500, { error: 'Settings not configured' });
-    }
-
     const body = await readJsonBody(req);
     const inputEmail = String(body?.email ?? '').trim();
 
-    const data = adminDoc.data();
-    const adminEmail = String(data.email ?? '').trim();
+    const db = getFirestoreDb();
+    const snap = await db.collection('config').where('email', '==', inputEmail).limit(1).get();
 
-    // Verificación de seguridad
-    if (!inputEmail || inputEmail.toLowerCase() !== adminEmail.toLowerCase()) {
+    if (snap.empty) {
+      // Security: same generic message even if email not found
       return sendJson(res, 400, { error: 'El correo ingresado no coincide con el registrado.' });
     }
+
+    const adminDoc = snap.docs[0];
+    const adminRef = adminDoc.ref;
+    const adminEmail = String(adminDoc.data().email ?? '').trim();
 
     // Generar Token numérico de 6 dígitos
     const resetCode = Math.floor(100000 + Math.random() * 900000).toString();

@@ -24,16 +24,16 @@ export function getAdminPassword() {
 }
 
 /**
- * Creates a new session in Firestore and returns the sessionId.
- * Stores: sessionId, sessionCreatedAt, sessionExpiresAt in config/admin.
+ * Creates a new session in Firestore for a specific admin document and returns the sessionId.
+ * Stores: sessionId, sessionCreatedAt, sessionExpiresAt in config/{docId}.
  */
-export async function createSession() {
+export async function createSession(docId = 'admin') {
   const db = getFirestoreDb();
   const sessionId = crypto.randomBytes(32).toString('hex');
   const now = Date.now();
   const expiresAt = now + SESSION_DURATION_MS;
 
-  await db.collection('config').doc('admin').update({
+  await db.collection('config').doc(docId).update({
     sessionId,
     sessionCreatedAt: now,
     sessionExpiresAt: expiresAt
@@ -43,8 +43,8 @@ export async function createSession() {
 }
 
 /**
- * Validates the sessionId from the cookie against Firestore.
- * Returns { ok: true } if the session is valid and not expired.
+ * Validates the sessionId from the cookie against any document in the config collection.
+ * Returns { ok: true } if a valid session is found.
  */
 export async function verifySession(cookieValue) {
   if (!cookieValue || typeof cookieValue !== 'string' || !cookieValue.trim()) {
@@ -53,33 +53,25 @@ export async function verifySession(cookieValue) {
 
   try {
     const db = getFirestoreDb();
-    const adminDoc = await db.collection('config').doc('admin').get();
+    const sessionId = cookieValue.trim();
+    
+    // Search across all docs in 'config' for this sessionId
+    const snap = await db.collection('config').where('sessionId', '==', sessionId).limit(1).get();
 
-    if (!adminDoc.exists) {
-      return { ok: false, reason: 'no_admin_config' };
-    }
-
-    const data = adminDoc.data();
-    const storedSessionId = String(data?.sessionId ?? '').trim();
-    const expiresAt = Number(data?.sessionExpiresAt ?? 0);
-
-    if (!storedSessionId) {
+    if (snap.empty) {
       return { ok: false, reason: 'no_session' };
     }
 
-    // Compare session IDs using constant-time comparison
-    const a = Buffer.from(cookieValue.trim());
-    const b = Buffer.from(storedSessionId);
-    if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
-      return { ok: false, reason: 'invalid_session' };
-    }
+    const adminDoc = snap.docs[0];
+    const data = adminDoc.data();
+    const expiresAt = Number(data?.sessionExpiresAt ?? 0);
 
     // Check expiration
     if (Date.now() > expiresAt) {
       return { ok: false, reason: 'expired' };
     }
 
-    return { ok: true };
+    return { ok: true, adminId: adminDoc.id, data };
   } catch (err) {
     console.error('Session verify error:', err);
     return { ok: false, reason: 'error' };
@@ -87,12 +79,18 @@ export async function verifySession(cookieValue) {
 }
 
 /**
- * Destroys the session in Firestore.
+ * Destroys the session in Firestore by clearing the sessionId fields 
+ * in whichever document currently holds it.
  */
-export async function destroySession() {
+export async function destroySession(sessionId) {
   try {
     const db = getFirestoreDb();
-    await db.collection('config').doc('admin').update({
+    if (!sessionId) return false;
+
+    const snap = await db.collection('config').where('sessionId', '==', sessionId).limit(1).get();
+    if (snap.empty) return true; // Already gone or never existed
+
+    await snap.docs[0].ref.update({
       sessionId: null,
       sessionCreatedAt: null,
       sessionExpiresAt: null

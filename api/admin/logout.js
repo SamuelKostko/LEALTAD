@@ -8,8 +8,12 @@ export default async function handler(req, res) {
     return;
   }
 
-  // Destroy session in Firestore
-  await destroySession();
+  // Destroy session in Firestore if cookie exists
+  const cookieHeader = req.headers.cookie || '';
+  const sessionId = cookieHeader.split(';').find(c => c.trim().startsWith('admin_session='))?.split('=')[1];
+  if (sessionId) {
+    await destroySession(decodeURIComponent(sessionId));
+  }
 
   // Clear cookie
   clearSessionCookie(res, req);

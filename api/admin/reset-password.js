@@ -8,13 +8,6 @@ export default async function handler(req, res) {
 
   try {
     const db = getFirestoreDb();
-    const adminRef = db.collection('config').doc('admin');
-    const adminDoc = await adminRef.get();
-
-    if (!adminDoc.exists) {
-      return sendJson(res, 500, { error: 'Settings not configured' });
-    }
-
     const body = await readJsonBody(req);
     const code = String(body?.code ?? '').trim();
     const newPassword = String(body?.newPassword ?? '').trim();
@@ -23,12 +16,16 @@ export default async function handler(req, res) {
       return sendJson(res, 400, { error: 'Código y nueva contraseña son requeridos' });
     }
 
-    const data = adminDoc.data();
-    
-    // Validate Code again as extra security before writing
-    if (!data.resetToken || data.resetToken !== code) {
+    // Search for any document in 'config' with this resetToken
+    const snap = await db.collection('config').where('resetToken', '==', code).limit(1).get();
+
+    if (snap.empty) {
       return sendJson(res, 403, { error: 'El código es inválido.' });
     }
+
+    const adminDoc = snap.docs[0];
+    const data = adminDoc.data();
+    const adminRef = adminDoc.ref;
 
     // Validate Expiration
     if (!data.resetTokenExpires || Date.now() > data.resetTokenExpires) {
