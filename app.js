@@ -992,6 +992,105 @@ if (qrButton) {
     }
   })();
 
+  const confirmPopup = (() => {
+    try {
+      const root = document.createElement("div");
+      root.className = "scanPopup";
+      root.setAttribute("aria-hidden", "true");
+
+      const backdrop = document.createElement("div");
+      backdrop.className = "scanPopup__backdrop";
+
+      const frame = document.createElement("div");
+      frame.className = "scanPopup__frame";
+      frame.setAttribute("role", "dialog");
+      frame.setAttribute("aria-modal", "true");
+      frame.setAttribute("aria-label", "Confirmar cobro");
+
+      const icon = document.createElement("div");
+      icon.className = "scanPopup__icon";
+      icon.innerHTML = `<svg viewBox="0 0 24 24" width="44" height="44" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2.6"/><path d="M12 8v4l3 3" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg>`;
+
+      const title = document.createElement("div");
+      title.className = "scanPopup__title";
+
+      const subtitle = document.createElement("div");
+      subtitle.className = "scanPopup__subtitle";
+
+      const actions = document.createElement("div");
+      actions.className = "scanPopup__actions";
+      actions.style.display = "flex";
+      actions.style.gap = "12px";
+      actions.style.marginTop = "24px";
+      actions.style.width = "100%";
+
+      const applyBtnStyles = (btn) => {
+        btn.style.flex = "1";
+        btn.style.padding = "14px";
+        btn.style.borderRadius = "14px";
+        btn.style.border = "1px solid rgba(255,255,255,0.1)";
+        btn.style.background = "rgba(255,255,255,0.05)";
+        btn.style.color = "#fff";
+        btn.style.fontWeight = "600";
+        btn.style.fontSize = "15px";
+        btn.style.cursor = "pointer";
+      };
+
+      const btnCancel = document.createElement("button");
+      btnCancel.type = "button";
+      btnCancel.textContent = "Cancelar";
+      applyBtnStyles(btnCancel);
+
+      const btnAccept = document.createElement("button");
+      btnAccept.type = "button";
+      btnAccept.textContent = "Aceptar";
+      applyBtnStyles(btnAccept);
+      btnAccept.style.background = "#a5b4fc";
+      btnAccept.style.color = "#1e1b4b";
+      btnAccept.style.borderColor = "#a5b4fc";
+
+      actions.appendChild(btnCancel);
+      actions.appendChild(btnAccept);
+
+      frame.appendChild(icon);
+      frame.appendChild(title);
+      frame.appendChild(subtitle);
+      frame.appendChild(actions);
+      root.appendChild(backdrop);
+      root.appendChild(frame);
+      document.body.appendChild(root);
+
+      let currentResolve = null;
+
+      const close = (result = false) => {
+        root.classList.remove("scanPopup--show");
+        root.setAttribute("aria-hidden", "true");
+        if (currentResolve) {
+          currentResolve(result);
+          currentResolve = null;
+        }
+      };
+
+      const request = ({ points, desc }) => {
+        return new Promise((resolve) => {
+          currentResolve = resolve;
+          title.textContent = `Pagar ${points} pts`;
+          subtitle.textContent = desc ? `Referencia: ${desc}` : "¿Confirmas el pago de puntos?";
+          root.classList.add("scanPopup--show");
+          root.setAttribute("aria-hidden", "false");
+        });
+      };
+
+      btnCancel.addEventListener("click", () => close(false));
+      btnAccept.addEventListener("click", () => close(true));
+      backdrop.addEventListener("click", () => close(false));
+
+      return { request };
+    } catch {
+      return { request: async () => true };
+    }
+  })();
+
   const getTokenFromUrl = () => {
     try {
       const url = new URL(window.location.href);
@@ -1081,6 +1180,18 @@ if (qrButton) {
   const redeemIfChargeUrl = async (raw) => {
     const params = extractRedeemParams(raw);
     if (!params) return false;
+
+    // Pedir confirmacion al cliente antes de continuar
+    const confirmed = await confirmPopup.request({
+      points: params.points,
+      desc: params.desc
+    });
+    
+    if (!confirmed) {
+      // El usuario canceló la transaccion
+      // Devolvemos true porque sí interpretamos el QR correctamente (evita que diga "QR no válido")
+      return true;
+    }
 
     // Always redeem against the current origin to avoid cross-domain/CORS issues.
     const redeemUrl = new URL("/api/pos/redeem", window.location.origin);
