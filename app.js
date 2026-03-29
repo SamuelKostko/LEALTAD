@@ -995,26 +995,62 @@ if (qrButton) {
   const confirmPopup = (() => {
       const root = document.createElement("div");
       root.className = "scanPopup";
+      root.style.position = "fixed";
+      root.style.inset = "0";
+      root.style.zIndex = "100000";
+      root.style.display = "none";
+      root.style.alignItems = "center";
+      root.style.justifyContent = "center";
+      root.style.padding = "18px";
       root.setAttribute("aria-hidden", "true");
 
       const backdrop = document.createElement("div");
       backdrop.className = "scanPopup__backdrop";
+      backdrop.style.position = "absolute";
+      backdrop.style.inset = "0";
+      backdrop.style.background = "rgba(0, 0, 0, 0.75)";
+      backdrop.style.backdropFilter = "blur(8px)";
+      backdrop.style.webkitBackdropFilter = "blur(8px)";
 
       const frame = document.createElement("div");
       frame.className = "scanPopup__frame";
+      frame.style.position = "relative";
+      frame.style.width = "min(400px, calc(100vw - 36px))";
+      frame.style.borderRadius = "26px";
+      frame.style.background = "#1e293b";
+      frame.style.border = "1px solid rgba(255,255,255,0.1)";
+      frame.style.padding = "24px";
+      frame.style.textAlign = "center";
+      frame.style.boxShadow = "0 25px 50px -12px rgba(0, 0, 0, 0.5)";
       frame.setAttribute("role", "dialog");
       frame.setAttribute("aria-modal", "true");
       frame.setAttribute("aria-label", "Confirmar cobro");
 
       const icon = document.createElement("div");
       icon.className = "scanPopup__icon";
-      icon.innerHTML = `<svg viewBox="0 0 24 24" width="44" height="44" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2.6"/><path d="M12 8v4l3 3" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg>`;
+      icon.style.width = "64px";
+      icon.style.height = "64px";
+      icon.style.margin = "0 auto 16px";
+      icon.style.borderRadius = "999px";
+      icon.style.background = "rgba(165, 180, 252, 0.1)";
+      icon.style.color = "#a5b4fc";
+      icon.style.display = "grid";
+      icon.style.placeItems = "center";
+      icon.innerHTML = `<svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>`;
 
       const title = document.createElement("div");
       title.className = "scanPopup__title";
+      title.style.fontSize = "22px";
+      title.style.fontWeight = "800";
+      title.style.color = "#ffffff";
+      title.style.marginBottom = "8px";
 
       const subtitle = document.createElement("div");
       subtitle.className = "scanPopup__subtitle";
+      subtitle.style.fontSize = "15px";
+      subtitle.style.color = "rgba(255,255,255,0.7)";
+      subtitle.style.lineHeight = "1.5";
+      subtitle.style.marginBottom = "24px";
 
       const actions = document.createElement("div");
       actions.className = "scanPopup__actions";
@@ -1062,7 +1098,7 @@ if (qrButton) {
       let currentResolve = null;
 
       const close = (result = false) => {
-        root.classList.remove("scanPopup--show");
+        root.style.display = "none";
         root.setAttribute("aria-hidden", "true");
         if (currentResolve) {
           currentResolve(result);
@@ -1076,7 +1112,7 @@ if (qrButton) {
           currentResolve = resolve;
           title.textContent = `Pagar ${points} pts`;
           subtitle.textContent = desc ? `Referencia: ${desc}` : "¿Confirmas el pago de puntos?";
-          root.classList.add("scanPopup--show");
+          root.style.display = "flex";
           root.setAttribute("aria-hidden", "false");
         });
       };
