@@ -838,45 +838,13 @@ if (qrButton) {
   });
 })();
 
-/* Profile menu modal + install recommendation */
+/* Profile menu modal */
 (() => {
   const profileButton = document.getElementById("profileButton");
   const menu = document.getElementById("profileMenu");
   const closeBtn = document.getElementById("profileClose");
-  const installBtn = document.getElementById("installPwa");
-  const hint = document.getElementById("installHint");
 
   if (!profileButton || !menu) return;
-
-  const isStandalone = () => {
-    // iOS Safari uses navigator.standalone
-    const iosStandalone = typeof navigator.standalone === "boolean" && navigator.standalone;
-    const displayModeStandalone =
-      typeof window.matchMedia === "function" &&
-      window.matchMedia("(display-mode: standalone)").matches;
-    return Boolean(iosStandalone || displayModeStandalone);
-  };
-
-  const isIOS = () => /iPad|iPhone|iPod/.test(navigator.userAgent);
-
-  const INSTALL_NUDGE_KEY = "wallet.installNudgeSeen";
-  const hasSeenInstallNudge = () => {
-    try {
-      return localStorage.getItem(INSTALL_NUDGE_KEY) === "1";
-    } catch {
-      return false;
-    }
-  };
-
-  const markInstallNudgeSeen = () => {
-    try {
-      localStorage.setItem(INSTALL_NUDGE_KEY, "1");
-    } catch {
-      // Ignore.
-    }
-  };
-
-  let lastFocus = null;
 
   const setOpen = (open) => {
     menu.classList.toggle("profileMenu--active", open);
@@ -884,12 +852,7 @@ if (qrButton) {
     profileButton.setAttribute("aria-expanded", open ? "true" : "false");
 
     if (open) {
-      lastFocus = document.activeElement;
-      if (hint) hint.textContent = "";
-      window.setTimeout(() => (closeBtn ?? installBtn ?? profileButton).focus(), 0);
-    } else {
-      const target = lastFocus instanceof HTMLElement ? lastFocus : profileButton;
-      window.setTimeout(() => target.focus(), 0);
+      window.setTimeout(() => (closeBtn ?? profileButton).focus(), 0);
     }
   };
 
@@ -914,38 +877,6 @@ if (qrButton) {
     if (menu.getAttribute("aria-hidden") === "true") return;
     if (e.key === "Escape") close();
   });
-
-  if (installBtn) {
-    installBtn.addEventListener("click", async () => {
-      if (isStandalone()) {
-        if (hint) hint.textContent = "Ya estás usando la app instalada.";
-        return;
-      }
-
-      if (window.deferredInstallPrompt) {
-        try {
-          window.deferredInstallPrompt.prompt();
-          await window.deferredInstallPrompt.userChoice;
-        } catch {
-          // Ignore.
-        } finally {
-          window.deferredInstallPrompt = null;
-          close();
-        }
-        return;
-      }
-
-      // No native prompt available (common on iOS).
-      if (!hint) return;
-      if (isIOS()) {
-        hint.textContent = "En iPhone/iPad: Compartir → “Añadir a pantalla de inicio”.";
-      } else {
-        hint.textContent = "En Chrome/Edge: menú del navegador → “Instalar app”.";
-      }
-    });
-  }
-
-  // We now use the global install banner instead of the aggressive first-visit profile popup nudge.
 })();
 
 /* QR Scanner: open camera and decode QR codes */

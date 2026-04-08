@@ -1545,6 +1545,25 @@ body {
   color: var(--muted);
 }
 
+.profileMenu__soon {
+  text-align: center;
+  font-size: 13px;
+  color: var(--text-mid);
+  opacity: 0.7;
+  padding: 24px 0;
+  font-style: italic;
+}
+
+.profileMenu__credits {
+  text-align: center;
+  font-size: 9px;
+  color: var(--muted);
+  opacity: 0.4;
+  margin-top: 24px;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+}
+
 /* Auth Modal */
 .authModal {
   position: fixed;
