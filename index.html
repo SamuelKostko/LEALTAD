@@ -352,8 +352,10 @@
                 <div class="aClientCard__meta" id="aClientMeta">—</div>
               </div>
               <div class="aClientCard__balance">
-                <div class="aClientCard__balanceVal" id="aClientBalance">0</div>
+                <div class="aClientCard__balanceVal" id="aClientBalance">0.00</div>
                 <div class="aClientCard__balanceLbl">puntos</div>
+                <div class="aClientCard__balanceCash" id="aClientBalanceCash" style="font-size: 11px; font-weight: 600; color: #a5b4fc; opacity: 0.8; margin-top: 1px;">≈ 0.00 $</div>
+                <div class="aClientCard__balanceRate" style="font-size: 9px; color: var(--muted); margin-top: 2px;">Tasa: 100 ptos / 1$</div>
               </div>
               <button class="aClientCard__clear" id="aClientClear" type="button"
                 aria-label="Limpiar selección">✕</button>
@@ -450,7 +452,15 @@
             </div>
             <div class="card__detailsRow">
               <dt>Saldo disponible</dt>
-              <dd id="clientBalance">0</dd>
+              <dd id="clientBalance">0.00</dd>
+            </div>
+            <div class="card__detailsRow">
+              <dt>Valor en $</dt>
+              <dd id="clientBalanceCash">≈ 0.00 $</dd>
+            </div>
+            <div class="card__detailsRow card__detailsRow--rate" style="margin-top: 4px; padding-top: 4px; border-top: 1px solid rgba(255,255,255,0.04); opacity: 0.5;">
+              <dt style="font-size: 9px; text-transform: uppercase;">Tasa</dt>
+              <dd style="font-size: 9px;">100 pts / 1$</dd>
             </div>
           </dl>
         </div>
@@ -473,7 +483,9 @@
 
         <div class="balance">
           <div class="balance__label">Saldo de puntos</div>
-          <div class="balance__value" id="points">0</div>
+          <div class="balance__value" id="points">0.00</div>
+          <div class="balance__cash" id="pointsCash">≈ 0.00 $</div>
+          <div class="balance__rate">Tasa: 100 ptos / 1$</div>
         </div>
 
         <div class="card__bottom">
@@ -580,6 +592,21 @@
         <div id="historyLoading" class="activity__loading" hidden>Cargando más...</div>
         <button class="activity__more" id="historyLoadMoreBtn" type="button" hidden>Cargar más</button>
       </div>
+    </div>
+  </div>
+
+  <!-- PWA Install Banner -->
+  <div class="installBanner" id="installBanner" aria-hidden="true">
+    <div class="installBanner__tutorial" id="installBannerTutorial" hidden>
+      <video class="installBanner__video" src="/images/tutorial.webm" autoplay muted loop playsinline></video>
+    </div>
+    <div class="installBanner__content">
+      <div class="installBanner__text">
+        <div class="installBanner__title">Instala nuestra App</div>
+        <div class="installBanner__desc" id="installBannerDesc">Acceso rápido y mejor experiencia.</div>
+      </div>
+      <button class="installBanner__btn" id="installBannerBtn" type="button">Instalar</button>
+      <button class="installBanner__close" id="installBannerClose" type="button" aria-label="Cerrar">✕</button>
     </div>
   </div>
 

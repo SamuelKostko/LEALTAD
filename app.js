@@ -19,12 +19,76 @@ if ("serviceWorker" in navigator) {
   window.addEventListener("orientationchange", setAppHeightVar);
 })();
 
-/* PWA install prompt capture (Chrome/Edge/Android/desktop) */
-let deferredInstallPrompt = null;
-window.addEventListener("beforeinstallprompt", (e) => {
-  e.preventDefault();
-  deferredInstallPrompt = e;
-});
+/* Global PWA Install Banner Logic */
+(() => {
+  const banner = document.getElementById("installBanner");
+  const btn = document.getElementById("installBannerBtn");
+  const closeBtn = document.getElementById("installBannerClose");
+  const desc = document.getElementById("installBannerDesc");
+  if (!banner || !btn || !closeBtn || !desc) return;
+
+  const BANNER_CLOSED_KEY = "wallet.installBannerClosed";
+  if (localStorage.getItem(BANNER_CLOSED_KEY) === "1") return;
+
+  const isStandalone = () => {
+    return (
+      (typeof navigator.standalone === "boolean" && navigator.standalone) ||
+      (typeof window.matchMedia === "function" && window.matchMedia("(display-mode: standalone)").matches)
+    );
+  };
+
+  if (isStandalone()) return;
+
+  const isIOS = () => /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+  const showBanner = () => {
+    setTimeout(() => {
+      banner.classList.add("installBanner--show");
+      banner.setAttribute("aria-hidden", "false");
+    }, 800);
+  };
+
+  const hideBanner = () => {
+    banner.classList.remove("installBanner--show");
+    banner.setAttribute("aria-hidden", "true");
+    try {
+      localStorage.setItem(BANNER_CLOSED_KEY, "1");
+    } catch {}
+  };
+
+  closeBtn.addEventListener("click", hideBanner);
+
+  // ANDROID / DESKTOP (Native prompt available)
+  window.addEventListener("beforeinstallprompt", (e) => {
+    e.preventDefault();
+    window.deferredInstallPrompt = e;
+    btn.textContent = "Instalar";
+    desc.textContent = "Acceso rápido y mejor experiencia.";
+    
+    btn.onclick = async () => {
+      hideBanner();
+      if (!window.deferredInstallPrompt) return;
+      try {
+        window.deferredInstallPrompt.prompt();
+        await window.deferredInstallPrompt.userChoice;
+      } catch {} 
+      window.deferredInstallPrompt = null;
+    };
+    
+    showBanner();
+  });
+
+  // iOS (No native prompt)
+  if (isIOS() && !isStandalone()) {
+    const tutorial = document.getElementById("installBannerTutorial");
+    if (tutorial) tutorial.hidden = false;
+
+    btn.textContent = "Entendido";
+    desc.textContent = "Toca el botón Compartir y luego 'Añadir a la pantalla de inicio'.";
+    btn.onclick = hideBanner;
+    showBanner();
+  }
+})();
 
 
 
@@ -50,7 +114,9 @@ if (qrButton) {
 
   const details = document.getElementById("cardDetails");
   const pointsEl = document.getElementById("points");
+  const pointsCashEl = document.getElementById("pointsCash");
   const balanceEl = document.getElementById("clientBalance");
+  const clientBalanceCashEl = document.getElementById("clientBalanceCash");
   const nameEl = document.getElementById("clientName");
   const idEl = document.getElementById("clientId");
   const greetingNameEl = document.getElementById("greetingName");
@@ -120,10 +186,11 @@ if (qrButton) {
     const n = Number(value);
     if (!pointsEl) return;
     if (!Number.isFinite(n)) return;
-    pointsEl.textContent = String(n);
+    pointsEl.textContent = n.toFixed(2);
+    if (pointsCashEl) pointsCashEl.textContent = `≈ ${(n / 100).toFixed(2)} $`;
   };
 
-  const loadCardData = async () => {
+  const loadCardData = window.loadCardData = async () => {
     const token = getTokenFromUrl();
     if (!token) {
       setTimeout(() => document.body.classList.add('is-ready'), 2000);
@@ -184,7 +251,12 @@ if (qrButton) {
   const syncBalance = () => {
     if (!balanceEl) return;
     const raw = pointsEl?.textContent ?? "0";
-    balanceEl.textContent = raw.replace(/\s+/g, "").trim() || "0";
+    const val = raw.replace(/\s+/g, "").trim() || "0";
+    balanceEl.textContent = val;
+    if (clientBalanceCashEl) {
+      const n = Number(val);
+      clientBalanceCashEl.textContent = `≈ ${(Number.isFinite(n) ? n / 100 : 0).toFixed(2)} $`;
+    }
   };
 
   const initialToken = getTokenFromUrl();
@@ -334,10 +406,10 @@ if (qrButton) {
         addCell('Fecha', formatTxDate(t));
         addCell('Tipo', String(t.type || '—'));
         addCell('Estado', String(t.status || '—'), 'aTxCell--strong');
-        addCell('Pts', String(pts), 'aTxCell--pts');
+        addCell('Pts', pts.toFixed(2), 'aTxCell--pts');
         if (mode === 'card') {
-          addCell('Antes', before === null ? '—' : String(before));
-          addCell('Después', after === null ? '—' : String(after));
+          addCell('Antes', before === null ? '—' : before.toFixed(2));
+          addCell('Después', after === null ? '—' : after.toFixed(2));
         } else {
           addCell('Cliente', String(t?.name || t?.token || '—'));
         }
@@ -456,7 +528,9 @@ if (qrButton) {
       if (clientAvatarEl) clientAvatarEl.textContent = getInitials(c.name);
       if (clientNameEl) clientNameEl.textContent = c.name || '—';
       if (clientMetaEl) clientMetaEl.textContent = c.cedula ? `CI: ${c.cedula}` : 'Sin cédula';
-      if (clientBalanceEl) clientBalanceEl.textContent = String(c.balance ?? 0);
+      if (clientBalanceEl) clientBalanceEl.textContent = Number(c.balance ?? 0).toFixed(2);
+      const cashEl = document.getElementById('aClientBalanceCash');
+      if (cashEl) cashEl.textContent = `≈ ${(Number(c.balance ?? 0) / 100).toFixed(2)} $`;
       if (clientCard) clientCard.hidden = false;
       if (cardTxSection) { cardTxSection.hidden = false; }
       if (cardTxHint) cardTxHint.textContent = `Transacciones · ${c.name || '—'}`;
@@ -483,7 +557,7 @@ if (qrButton) {
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'aDropdown__item';
-        btn.innerHTML = `<span class="aDropdown__name">${c.name || '—'}</span><span class="aDropdown__cedula">${c.cedula || ''}</span><span class="aDropdown__pts">${c.balance} pts</span>`;
+        btn.innerHTML = `<span class="aDropdown__name">${c.name || '—'}</span><span class="aDropdown__cedula">${c.cedula || ''}</span><span class="aDropdown__pts">${Number(c.balance).toFixed(2)} pts</span>`;
         btn.addEventListener('click', () => selectClient(c));
         dropdown.appendChild(btn);
       }
@@ -563,8 +637,8 @@ if (qrButton) {
           elUsers.textContent = String(data.newUsers || 0);
           if (elUsersSub) elUsersSub.textContent = `Registrados en el periodo (Histórico: ${data.totalUsers || 0})`;
         }
-        if (elEarned) elEarned.textContent = String(data.pointsEarned || 0);
-        if (elRedeemed) elRedeemed.textContent = String(data.pointsRedeemed || 0);
+        if (elEarned) elEarned.textContent = Number(data.pointsEarned || 0).toFixed(2);
+        if (elRedeemed) elRedeemed.textContent = Number(data.pointsRedeemed || 0).toFixed(2);
 
       } catch (err) {
         if (err?.status === 401) { doLogout(); return; }
@@ -848,14 +922,14 @@ if (qrButton) {
         return;
       }
 
-      if (deferredInstallPrompt) {
+      if (window.deferredInstallPrompt) {
         try {
-          deferredInstallPrompt.prompt();
-          await deferredInstallPrompt.userChoice;
+          window.deferredInstallPrompt.prompt();
+          await window.deferredInstallPrompt.userChoice;
         } catch {
           // Ignore.
         } finally {
-          deferredInstallPrompt = null;
+          window.deferredInstallPrompt = null;
           close();
         }
         return;
@@ -871,41 +945,7 @@ if (qrButton) {
     });
   }
 
-  // First-visit nudge: show only the native install confirmation when possible.
-  // Browsers require a user gesture to show the install prompt.
-  const onFirstUserGesture = async () => {
-    if (hasSeenInstallNudge() || isStandalone()) return;
-    markInstallNudgeSeen();
-
-    if (deferredInstallPrompt) {
-      try {
-        deferredInstallPrompt.prompt();
-        await deferredInstallPrompt.userChoice;
-      } catch {
-        // Ignore.
-      } finally {
-        deferredInstallPrompt = null;
-      }
-      return;
-    }
-
-    // No native prompt available (common on iOS): show instructions in our modal.
-    open();
-    if (hint) {
-      hint.textContent = isIOS()
-        ? "En iPhone/iPad: Compartir → “Añadir a pantalla de inicio”."
-        : "En Chrome/Edge: menú del navegador → “Instalar app”.";
-    }
-  };
-
-  // Use pointerup so it feels like a normal click/tap.
-  window.addEventListener(
-    "pointerup",
-    () => {
-      onFirstUserGesture();
-    },
-    { once: true }
-  );
+  // We now use the global install banner instead of the aggressive first-visit profile popup nudge.
 })();
 
 /* QR Scanner: open camera and decode QR codes */
@@ -1109,8 +1149,14 @@ if (qrButton) {
     const balanceEl = document.getElementById("clientBalance");
     const n = Number(balance);
     if (!Number.isFinite(n)) return;
-    if (pointsEl) pointsEl.textContent = String(n);
-    if (balanceEl) balanceEl.textContent = String(n);
+    if (pointsEl) pointsEl.textContent = n.toFixed(2);
+    const pointsCashEl = document.getElementById("pointsCash");
+    if (pointsCashEl) pointsCashEl.textContent = `≈ ${(n / 100).toFixed(2)} $`;
+    if (balanceEl) {
+      balanceEl.textContent = n.toFixed(2);
+      const detailCashEl = document.getElementById("clientBalanceCash");
+      if (detailCashEl) detailCashEl.textContent = `≈ ${(n / 100).toFixed(2)} $`;
+    }
   };
 
   const tryParseScannedUrl = (raw) => {
@@ -1232,7 +1278,7 @@ if (qrButton) {
       scanPopup.show({
         kind: "ok",
         headline: "Exitosa",
-        detail: `Nuevo saldo: ${typeof data.balance !== "undefined" ? data.balance : "—"}`
+        detail: `Nuevo saldo: ${typeof data.balance !== "undefined" ? Number(data.balance).toFixed(2) : "—"}`
       });
 
       try {
@@ -1454,7 +1500,7 @@ if (qrButton) {
     const amount = document.createElement('div');
     amount.className = `activity__amount${isNeg ? ' activity__amount--neg' : ''}`;
     const abs = Math.abs(Number(delta) || 0);
-    amount.textContent = `${isNeg ? '-' : '+'}${abs}`;
+    amount.textContent = `${isNeg ? '-' : '+'}${abs.toFixed(2)}`;
 
     li.appendChild(icon);
     li.appendChild(text);
@@ -1479,7 +1525,7 @@ if (qrButton) {
 
   let loading = false;
   let lastVisibleTx = null; // { id, date }
-  const PAGE_SIZE = 5;
+  const PAGE_SIZE = 2;
 
   const cargarMasTransacciones = async () => {
     if (loading || !lastVisibleTx) return;
@@ -1577,6 +1623,9 @@ if (qrButton) {
 
   refreshBtn.addEventListener('click', () => {
     loadActivity();
+    if (typeof window.loadCardData === 'function') {
+      window.loadCardData();
+    }
   });
 
   window.addEventListener('wallet:activity-refresh', () => {
