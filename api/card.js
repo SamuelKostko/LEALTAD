@@ -142,9 +142,9 @@ export default async function handler(req, res) {
     // Map Firestore fields to what the frontend expects
     const clientData = {
       token,
-      name: data.nombre,
-      cedula: data.idNumber,
-      balance: data.totalPoints,
+      name: data.nombre || 'Sin nombre',
+      cedula: data.idNumber || '—',
+      balance: data.totalPoints || 0,
       updatedAt: toIso(data.updatedAt)
     };
 

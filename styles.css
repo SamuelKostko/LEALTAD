@@ -6,7 +6,7 @@
   --muted: rgba(255, 255, 255, 0.62);
   --muted2: rgba(255, 255, 255, 0.45);
 
-  --card-details-bg: color-mix(in srgb, var(--bg) 86%, white 14%);
+  --card-details-bg: #242424;
 
   --label: rgba(255, 255, 255, 0.72);
   --text-strong: rgba(255, 255, 255, 0.86);
@@ -116,7 +116,7 @@
         rgba(172, 96, 255, 0.18) 35%,
         rgba(0, 0, 0, 0) 72%);
 
-    --card-details-bg: color-mix(in srgb, var(--bg) 72%, black 28%);
+    --card-details-bg: #b1b2b5;
   }
 
   .bg::before,
