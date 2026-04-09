@@ -114,6 +114,33 @@ if ("serviceWorker" in navigator) {
     btn.onclick = hideBanner;
     showBanner();
   }, 4000);
+
+  // Botón persistente en el menú de perfil
+  const profileBtn = document.getElementById("profileInstallBtn");
+  if (profileBtn) {
+    profileBtn.hidden = false;
+    profileBtn.onclick = () => {
+      // Cerrar el menú de perfil
+      const menu = document.getElementById("profileMenu");
+      if (menu) {
+        menu.classList.remove("profileMenu--active");
+        menu.setAttribute("aria-hidden", "true");
+        const profileTrigger = document.getElementById("profileButton");
+        if (profileTrigger) profileTrigger.setAttribute("aria-expanded", "false");
+      }
+
+      // Olvidar que el banner se cerró para forzar su aparición
+      localStorage.removeItem(BANNER_CLOSED_KEY);
+
+      // Si hay un prompt nativo pendiente, lo usamos
+      if (promptFired && window.deferredInstallPrompt) {
+        btn.click(); 
+      } else {
+        // Si no, mostramos el banner con instrucciones manuales
+        showBanner();
+      }
+    };
+  }
 })();
 const qrButton = document.getElementById("qrButton");
 if (qrButton) {

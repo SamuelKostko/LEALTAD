@@ -832,38 +832,43 @@ body {
   -webkit-backdrop-filter: blur(20px);
   box-shadow: 0 18px 54px rgba(0, 0, 0, 0.55);
   overflow: hidden;
+  /* Fuerza la forma de tarjeta incluso antes de cargar la imagen */
+  aspect-ratio: 1.58 / 1;
+  display: flex;
+  align-items: center;
 }
 
 .card__floatingPoints {
   position: absolute;
-  top: 52%;
-  left: 28px;
+  top: 50%;
+  left: 32px;
   transform: translateY(-50%);
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 0;
   pointer-events: none;
-  z-index: 5;
+  z-index: 20;
   transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
 .card__floatingLabel {
-  font-size: 9px;
-  font-weight: 300;
+  font-size: 8px;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.15em;
+  letter-spacing: 0.1em;
   color: #ffffff;
-  opacity: 0.45;
+  opacity: 0.6;
 }
 
 #floatingPoints {
-  font-size: 17px;
-  font-weight: 500;
+  font-size: 18px;
+  font-weight: 700;
   color: #ffffff;
-  opacity: 0.7;
+  opacity: 0.95;
   letter-spacing: 0.5px;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
   font-family: inherit;
+  line-height: 1;
 }
 
 .card.is-details .card__floatingPoints {
@@ -929,6 +934,10 @@ body {
   font-weight: 600;
   color: var(--text-strong);
   letter-spacing: 0.2px;
+}
+
+.card.is-details {
+  aspect-ratio: auto;
 }
 
 .card.is-details .card__details {
@@ -1464,6 +1473,49 @@ body {
   padding: 12px;
   display: grid;
   gap: 10px;
+}
+
+.profileMenu__item {
+  width: 100%;
+  padding: 14px 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 14px;
+  color: var(--text-strong);
+  font-size: 14px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.profileMenu__item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateX(4px);
+}
+
+.profileMenu__item--install {
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  color: #fff !important;
+  border-color: transparent;
+  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+  margin-bottom: 8px;
+}
+
+.profileMenu__item--install:hover {
+  transform: translateY(-2px);
+  opacity: 0.95;
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5);
+}
+
+.profileMenu__soon {
+  font-size: 12px;
+  color: var(--muted);
+  text-align: center;
+  padding: 10px;
+  opacity: 0.6;
 }
 
 /* Temporary scan feedback (toast) */
@@ -3271,7 +3323,7 @@ body.is-ready .bootSplash {
   display: flex;
   align-items: center;
   gap: 12px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
 }
@@ -3284,6 +3336,7 @@ body.is-ready .bootSplash {
     min-width: 360px;
     transform: translate(-50%, 150%);
   }
+
   .installBanner--show {
     transform: translate(-50%, 0);
   }
@@ -3346,8 +3399,9 @@ body.is-ready .bootSplash {
 .installBanner__content {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-top: none; /* If video is present, content looks joined */
-  border-radius: 0 0 16px 16px; 
+  border-top: none;
+  /* If video is present, content looks joined */
+  border-radius: 0 0 16px 16px;
 }
 
 .installBanner--show {
@@ -3359,4 +3413,4 @@ body.is-ready .bootSplash {
 .installBanner:not(:has(.installBanner__tutorial:not([hidden]))) .installBanner__content {
   border-top: 1px solid var(--border);
   border-radius: 16px;
-}
+}
