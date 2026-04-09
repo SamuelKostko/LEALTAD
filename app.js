@@ -23,7 +23,11 @@ if ("serviceWorker" in navigator) {
   
   const isStandalone = () => {
     return (typeof navigator.standalone === "boolean" && navigator.standalone) ||
-      (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches);
+      (window.matchMedia && (
+        window.matchMedia("(display-mode: standalone)").matches ||
+        window.matchMedia("(display-mode: minimal-ui)").matches ||
+        window.matchMedia("(display-mode: fullscreen)").matches
+      ));
   };
 
   if (isStandalone()) {
@@ -40,7 +44,7 @@ if ("serviceWorker" in navigator) {
   const showBanner = () => {
     if (localStorage.getItem(BANNER_CLOSED_KEY) === "1") {
       console.log("PWA: El banner est\xE1 bloqueado por el usuario (localStorage).");
-      // return; // Comentado para facilitar pruebas al usuario
+      return; 
     }
     setTimeout(() => {
       banner.classList.add("installBanner--show");
