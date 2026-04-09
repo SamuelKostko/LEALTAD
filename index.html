@@ -354,8 +354,11 @@
               <div class="aClientCard__balance">
                 <div class="aClientCard__balanceVal" id="aClientBalance">0.00</div>
                 <div class="aClientCard__balanceLbl">puntos</div>
-                <div class="aClientCard__balanceCash" id="aClientBalanceCash" style="font-size: 11px; font-weight: 600; color: #a5b4fc; opacity: 0.8; margin-top: 1px;">≈ 0.00 $</div>
-                <div class="aClientCard__balanceRate" style="font-size: 9px; color: var(--muted); margin-top: 2px;">Tasa: 100 ptos / 1$</div>
+                <div class="aClientCard__balanceCash" id="aClientBalanceCash"
+                  style="font-size: 11px; font-weight: 600; color: #a5b4fc; opacity: 0.8; margin-top: 1px;">≈ 0.00 $
+                </div>
+                <div class="aClientCard__balanceRate" style="font-size: 9px; color: var(--muted); margin-top: 2px;">
+                  Tasa: 100 ptos / 1$</div>
               </div>
               <button class="aClientCard__clear" id="aClientClear" type="button"
                 aria-label="Limpiar selección">✕</button>
@@ -437,6 +440,10 @@
       <section class="card card--client" aria-label="Tarjeta digital de puntos" role="button" tabindex="0"
         aria-expanded="false" aria-controls="cardDetails" id="clientCard">
         <img class="card__art" src="/images/card-cliente.png" alt="Tarjeta de puntos" draggable="false" />
+        <div class="card__floatingPoints">
+          <div class="card__floatingLabel">Ptos.</div>
+          <div id="floatingPoints">0.00</div>
+        </div>
 
         <div class="card__details" id="cardDetails" aria-hidden="true">
           <div class="card__detailsTitle">Datos del cliente</div>
@@ -451,14 +458,15 @@
               <dd id="clientId">—</dd>
             </div>
             <div class="card__detailsRow">
-              <dt>Saldo disponible</dt>
+              <dt>Puntos disponibles</dt>
               <dd id="clientBalance">0.00</dd>
             </div>
             <div class="card__detailsRow">
               <dt>Valor en $</dt>
               <dd id="clientBalanceCash">≈ 0.00 $</dd>
             </div>
-            <div class="card__detailsRow card__detailsRow--rate" style="margin-top: 4px; padding-top: 4px; border-top: 1px solid rgba(255,255,255,0.04); opacity: 0.5;">
+            <div class="card__detailsRow card__detailsRow--rate"
+              style="margin-top: 4px; padding-top: 4px; border-top: 1px solid rgba(255,255,255,0.04); opacity: 0.5;">
               <dt style="font-size: 9px; text-transform: uppercase;">Tasa</dt>
               <dd style="font-size: 9px;">100 pts / 1$</dd>
             </div>

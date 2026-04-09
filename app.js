@@ -18,31 +18,52 @@ if ("serviceWorker" in navigator) {
   const closeBtn = document.getElementById("installBannerClose");
   const desc = document.getElementById("installBannerDesc");
   if (!banner || !btn || !closeBtn || !desc) return;
+
   const BANNER_CLOSED_KEY = "wallet.installBannerClosed";
-  if (localStorage.getItem(BANNER_CLOSED_KEY) === "1") return;
+  
   const isStandalone = () => {
-    return typeof navigator.standalone === "boolean" && navigator.standalone || typeof window.matchMedia === "function" && window.matchMedia("(display-mode: standalone)").matches;
+    return (typeof navigator.standalone === "boolean" && navigator.standalone) ||
+      (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches);
   };
-  if (isStandalone()) return;
+
+  if (isStandalone()) {
+    console.log("PWA: Ya est\xE1 en modo standalone.");
+    return;
+  }
+
   const isIOS = () => /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  const isInApp = () => {
+    const ua = navigator.userAgent || "";
+    return /FBAN|FBAV|Instagram|Gmail|GSA|Outlook|Messenger|YaBrowser/i.test(ua);
+  };
+
   const showBanner = () => {
+    if (localStorage.getItem(BANNER_CLOSED_KEY) === "1") {
+      console.log("PWA: El banner est\xE1 bloqueado por el usuario (localStorage).");
+      // return; // Comentado para facilitar pruebas al usuario
+    }
     setTimeout(() => {
       banner.classList.add("installBanner--show");
       banner.setAttribute("aria-hidden", "false");
-    }, 800);
+    }, 400);
   };
+
   const hideBanner = () => {
     banner.classList.remove("installBanner--show");
     banner.setAttribute("aria-hidden", "true");
-    try {
-      localStorage.setItem(BANNER_CLOSED_KEY, "1");
-    } catch {
-    }
+    try { localStorage.setItem(BANNER_CLOSED_KEY, "1"); } catch (e) { }
   };
+
   closeBtn.addEventListener("click", hideBanner);
+
+  let promptFired = false;
+
   window.addEventListener("beforeinstallprompt", (e) => {
     e.preventDefault();
+    console.log("PWA: Evento beforeinstallprompt detectado.");
+    promptFired = true;
     window.deferredInstallPrompt = e;
+
     btn.textContent = "Instalar";
     desc.textContent = "Acceso r\xE1pido y mejor experiencia.";
     btn.onclick = async () => {
@@ -51,20 +72,44 @@ if ("serviceWorker" in navigator) {
       try {
         window.deferredInstallPrompt.prompt();
         await window.deferredInstallPrompt.userChoice;
-      } catch {
-      }
+      } catch (err) { }
       window.deferredInstallPrompt = null;
     };
     showBanner();
   });
-  if (isIOS() && !isStandalone()) {
-    const tutorial = document.getElementById("installBannerTutorial");
-    if (tutorial) tutorial.hidden = false;
+
+  // Failsafe: Si en 4s no ha saltado el prompt automático y es móvil, mostrar instrucciones
+  setTimeout(() => {
+    const ios = isIOS();
+    const inApp = isInApp();
+    const mobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    
+    console.log("PWA Debug:", { mobile, ios, inApp, promptFired });
+
+    if (promptFired || isStandalone()) return;
+    if (!mobile) return;
+
+    if (inApp) {
+      console.log("PWA: Navegador interno detectado.");
+      if (ios) {
+        desc.textContent = "Para instalar, toca el icono de br\xFAjula o compartir y elige 'Abrir en Safari'.";
+      } else {
+        desc.textContent = "Para instalar, toca los tres puntos y elige 'Abrir en Chrome' o 'Navegador'.";
+      }
+    } else if (ios) {
+      console.log("PWA: iOS detectado.");
+      const tutorial = document.getElementById("installBannerTutorial");
+      if (tutorial) tutorial.hidden = false;
+      desc.textContent = "Toca Compartir y luego 'A\xF1adir a la pantalla de inicio'.";
+    } else {
+      console.log("PWA: Android/Otro detectado (Manual).");
+      desc.textContent = "Toca el men\xFA del navegador y selecciona 'Instalar App' o 'A\xF1adir a inicio'.";
+    }
+    
     btn.textContent = "Entendido";
-    desc.textContent = "Toca el bot\xF3n Compartir y luego 'A\xF1adir a la pantalla de inicio'.";
     btn.onclick = hideBanner;
     showBanner();
-  }
+  }, 4000);
 })();
 const qrButton = document.getElementById("qrButton");
 if (qrButton) {
@@ -90,6 +135,7 @@ if (qrButton) {
   const greetingNameEl = document.getElementById("greetingName");
   const avatarInitialsEl = document.getElementById("avatarInitials");
   const updatedEl = document.getElementById("cardUpdated");
+  const floatingPointsEl = document.getElementById("floatingPoints");
   const getTokenFromUrl = () => {
     try {
       const url = new URL(window.location.href);
@@ -141,6 +187,7 @@ if (qrButton) {
     if (!pointsEl) return;
     if (!Number.isFinite(n)) return;
     pointsEl.textContent = n.toFixed(2);
+    if (floatingPointsEl) floatingPointsEl.textContent = n.toFixed(2);
     if (pointsCashEl) pointsCashEl.textContent = `\u2248 ${(n / 100).toFixed(2)} $`;
   };
   const loadCardData = window.loadCardData = async () => {

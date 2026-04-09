@@ -1,4 +1,4 @@
-const CACHE_NAME = "wallet-pwa-v38";
+const CACHE_NAME = "wallet-pwa-v39";
 
 const PRECACHE_URLS = [
   "/",
@@ -44,8 +44,10 @@ self.addEventListener("fetch", (event) => {
     event.respondWith(
       fetch(request)
         .then((response) => {
-          const responseClone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, responseClone));
+          if (response.status === 200) {
+            const responseClone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, responseClone));
+          }
           return response;
         })
         .catch(async () => {
@@ -91,8 +93,10 @@ self.addEventListener("fetch", (event) => {
       event.respondWith(
         fetch(request)
           .then((response) => {
-            const responseClone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, responseClone));
+            if (response.status === 200) {
+              const responseClone = response.clone();
+              caches.open(CACHE_NAME).then((cache) => cache.put(request, responseClone));
+            }
             return response;
           })
           .catch(() => caches.match(request))
@@ -111,8 +115,10 @@ self.addEventListener("fetch", (event) => {
       event.respondWith(
         fetch(request)
           .then((response) => {
-            const responseClone = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, responseClone));
+            if (response.status === 200) {
+              const responseClone = response.clone();
+              caches.open(CACHE_NAME).then((cache) => cache.put(request, responseClone));
+            }
             return response;
           })
           .catch(() => caches.match(request))
@@ -129,13 +135,13 @@ self.addEventListener("fetch", (event) => {
 
       return fetch(request)
         .then((response) => {
-          const responseClone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, responseClone));
+          if (response.status === 200) {
+            const responseClone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, responseClone));
+          }
           return response;
         })
         .catch(() => caches.match("./index.html"));
     })
   );
 });
-
-
