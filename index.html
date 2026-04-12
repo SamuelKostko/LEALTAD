@@ -5,11 +5,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 
-  <title>Wallet NEXUS</title>
+  <title>Wallet V+ Puntos</title>
 
   <meta name="theme-color" content="#000000" id="themeColor" />
   <meta name="color-scheme" content="light dark" />
-  <meta name="description" content="WALLET DE NEXUS." />
+  <meta name="description" content="WALLET DE V+ Puntos." />
 
   <script>
     // Dynamic manifest: when visiting /card/<token>, installing the PWA should open that same card.
@@ -39,12 +39,12 @@
 
   <!-- Android/Chrome: allow standalone (installed web app) -->
   <meta name="mobile-web-app-capable" content="yes" />
-  <meta name="application-name" content="Wallet NEXUS" />
+  <meta name="application-name" content="Wallet V+ Puntos" />
 
   <!-- iOS: standalone + status bar + icons -->
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="Wallet NEXUS" />
+  <meta name="apple-mobile-web-app-title" content="Wallet V+ Puntos" />
   <link rel="apple-touch-icon" href="/icons/icon.svg" />
 
 
@@ -117,7 +117,7 @@
   <!-- Pantalla de carga inicial (Splash Screen) -->
   <div id="bootSplash" class="bootSplash">
     <div class="bootSplash__logo">
-      <img src="/icons/icon.svg" width="64" height="64" alt="Cargando NEXUS..." style="display: block;" />
+      <img src="/icons/icon.svg" width="64" height="64" alt="Cargando V+ Puntos..." style="display: block;" />
     </div>
   </div>
   <script>
@@ -147,22 +147,16 @@
         <div class="aLogin__backdrop" aria-hidden="true"></div>
         <div class="aLogin__card">
           <div class="aLogin__logo" aria-hidden="true">
-            <svg viewBox="0 0 24 24" width="32" height="32" fill="none">
-              <path d="M12 2L2 7l10 5 10-5-10-5z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" />
-              <path d="M2 17l10 5 10-5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
-                stroke-linejoin="round" />
-              <path d="M2 12l10 5 10-5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
-                stroke-linejoin="round" />
-            </svg>
+            <img src="/icons/icon.svg" width="32" height="32" alt="Logo" style="object-fit: contain;" />
           </div>
           <h1 class="aLogin__title">Panel Admin</h1>
-          <p class="aLogin__sub">NEXUS Rewards</p>
+          <p class="aLogin__sub">V+ Puntos</p>
 
           <form class="aLogin__form" id="adminRootLoginForm">
             <div class="aField">
               <label class="aField__label" for="adminRootEmail">Correo Admin</label>
               <input class="aField__input" id="adminRootEmail" name="email" type="email" autocomplete="username"
-                placeholder="admin@nexus.com" required />
+                placeholder="admin@vpuntos.com" required />
             </div>
             <div class="aField">
               <label class="aField__label" for="adminRootPassword">Contraseña</label>
@@ -215,13 +209,7 @@
       <div class="aDash" id="adminDash" hidden>
         <aside class="aSidebar">
           <div class="aSidebar__brand">
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" aria-hidden="true">
-              <path d="M12 2L2 7l10 5 10-5-10-5z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" />
-              <path d="M2 17l10 5 10-5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
-                stroke-linejoin="round" />
-              <path d="M2 12l10 5 10-5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
-                stroke-linejoin="round" />
-            </svg>
+            <img src="/icons/icon.svg" width="20" height="20" alt="Logo" style="object-fit: contain;" />
             <span class="aSidebar__brandName">Administrador</span>
           </div>
           <nav class="aSidebar__nav">
@@ -357,7 +345,7 @@
                 <div class="aClientCard__balanceCash" id="aClientBalanceCash"
                   style="font-size: 11px; font-weight: 600; color: #a5b4fc; opacity: 0.8; margin-top: 1px;">≈ 0.00 $
                 </div>
-                <div class="aClientCard__balanceRate" style="font-size: 9px; color: var(--muted); margin-top: 2px;">
+                <div class="aClientCard__balanceRate" style="font-size: 9px; color: var(--muted); margin-top: 0px;">
                   Tasa: 100 ptos / 1$</div>
               </div>
               <button class="aClientCard__clear" id="aClientClear" type="button"
@@ -466,7 +454,7 @@
               <dd id="clientBalanceCash">≈ 0.00 $</dd>
             </div>
             <div class="card__detailsRow card__detailsRow--rate"
-              style="margin-top: 4px; padding-top: 4px; border-top: 1px solid rgba(255,255,255,0.04); opacity: 0.5;">
+              style="margin-top: 2px; padding-top: 2px; border-top: 1px solid rgba(255,255,255,0.04); opacity: 0.5;">
               <dt style="font-size: 9px; text-transform: uppercase;">Tasa</dt>
               <dd style="font-size: 9px;">100 pts / 1$</dd>
             </div>
@@ -477,8 +465,7 @@
 
         <div class="card__top">
           <div class="brand" aria-label="Marca">
-            <div class="brand__word">SAMUEL</div>
-            <div class="brand__sub">Rewards</div>
+            <img src="/icons/icon.svg" height="24" alt="Logo" style="object-fit: contain; max-width: 100px;" />
           </div>
 
           <div class="chip" aria-hidden="true">

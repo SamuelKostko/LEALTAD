@@ -43,7 +43,7 @@ export default async function handler(req, res) {
         body: JSON.stringify({
           from: {
             email: mailerSendSender,
-            name: "Admin Panel NEXUS"
+            name: "Admin Panel V+ Puntos"
           },
           to: [
             {

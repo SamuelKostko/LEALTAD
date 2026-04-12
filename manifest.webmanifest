@@ -1,7 +1,7 @@
 {
-  "name": "Wallet de Puntos",
-  "short_name": "Wallet",
-  "description": "WALLET DE PUNTOS DE NEXUS.",
+  "name": "V+ Puntos",
+  "short_name": "V+ Puntos",
+  "description": "WALLET DE V+ Puntos.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
@@ -11,10 +11,16 @@
   "theme_color": "#000000",
   "icons": [
     {
-      "src": "icons/icon.svg",
+      "src": "/icons/icon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/maskable-icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
     }
   ]
 }

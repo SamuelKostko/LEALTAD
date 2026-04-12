@@ -2,7 +2,7 @@ import { send } from '../_lib/http.js';
 
 function getTokenFromReq(req) {
   try {
-    const url = new URL(req.url, 'https://nexuscard.up.railway.app/');
+    const url = new URL(req.url, 'https://nexuslealtad.com/');
     const token = String(url.searchParams.get('token') ?? '').trim();
     return token;
   } catch {
@@ -18,9 +18,9 @@ export default function handler(req, res) {
 
   const token = getTokenFromReq(req);
 
-  const name = String(process.env.PWA_NAME ?? 'Wallet de Puntos').trim() || 'Wallet de Puntos';
-  const shortName = String(process.env.PWA_SHORT_NAME ?? 'Wallet').trim() || 'Wallet';
-  const description = String(process.env.PWA_DESCRIPTION ?? 'TARJETA DE FIDELIDAD NEXUS.').trim() || '';
+  const name = String(process.env.PWA_NAME ?? 'Wallet V+ Puntos').trim() || 'Wallet V+ Puntos';
+  const shortName = String(process.env.PWA_SHORT_NAME ?? 'V+ Puntos').trim() || 'V+ Puntos';
+  const description = String(process.env.PWA_DESCRIPTION ?? 'TARJETA DE FIDELIDAD V+ Puntos.').trim() || '';
 
   const startPath = token ? `/card/${encodeURIComponent(token)}` : '/';
 
@@ -41,7 +41,13 @@ export default function handler(req, res) {
         src: '/icons/icon.svg',
         sizes: 'any',
         type: 'image/svg+xml',
-        purpose: 'any maskable'
+        purpose: 'any'
+      },
+      {
+        src: '/icons/maskable-icon.svg',
+        sizes: 'any',
+        type: 'image/svg+xml',
+        purpose: 'maskable'
       }
     ]
   };
