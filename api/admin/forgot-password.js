@@ -24,7 +24,7 @@ export default async function handler(req, res) {
     // Generar Token numérico de 6 dígitos
     const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
     const resetTokenExpires = Date.now() + 1000 * 60 * 15; // 15 Minutos de validez
-    
+
     await adminRef.update({
       resetToken: resetCode,
       resetTokenExpires
@@ -65,15 +65,15 @@ export default async function handler(req, res) {
         });
       }
     } else {
-        const isProduction = String(process.env.NODE_ENV || '').toLowerCase() === 'production';
-        if (isProduction) {
-          return sendJson(res, 500, {
-            error: 'Faltan variables MAILERSEND_API_KEY o MAILERSEND_SENDER_EMAIL en el servidor.'
-          });
-        }
-        
-        console.warn('MailerSend variables not fully defined, simulating email send in dev mode:', resetCode);
-        return sendJson(res, 200, { ok: true, devMode: true, resetCode });
+      const isProduction = String(process.env.NODE_ENV || '').toLowerCase() === 'production';
+      if (isProduction) {
+        return sendJson(res, 500, {
+          error: 'Faltan variables MAILERSEND_API_KEY o MAILERSEND_SENDER_EMAIL en el servidor.'
+        });
+      }
+
+      console.warn('MailerSend variables not fully defined, simulating email send in dev mode:', resetCode);
+      return sendJson(res, 200, { ok: true, devMode: true, resetCode });
     }
 
     sendJson(res, 200, { ok: true });
@@ -81,4 +81,4 @@ export default async function handler(req, res) {
     console.error('Forgot Pass Error:', err);
     sendJson(res, 500, { error: 'Error interno de red.' });
   }
-}
+}
