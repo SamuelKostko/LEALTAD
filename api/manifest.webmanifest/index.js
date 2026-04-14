@@ -38,13 +38,13 @@ export default function handler(req, res) {
     theme_color: '#000000',
     icons: [
       {
-        src: '/icons/icon.svg',
+        src: '/icons/icon-v2.svg',
         sizes: 'any',
         type: 'image/svg+xml',
         purpose: 'any'
       },
       {
-        src: '/icons/maskable-icon.svg',
+        src: '/icons/maskable-icon-v2.svg',
         sizes: 'any',
         type: 'image/svg+xml',
         purpose: 'maskable'

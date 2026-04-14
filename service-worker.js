@@ -1,11 +1,11 @@
-const CACHE_NAME = "wallet-pwa-v40";
+const CACHE_NAME = "wallet-pwa-v41";
 
 const PRECACHE_URLS = [
   "/",
   "/index.html",
   "/styles.css",
   "/app.js",
-  "/icons/icon.svg"
+  "/icons/icon-v2.svg"
 ];
 
 self.addEventListener("install", (event) => {

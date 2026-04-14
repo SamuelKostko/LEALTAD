@@ -1635,6 +1635,26 @@ body {
   font-size: 14px;
   font-weight: 500;
   text-align: left;
+  display: flex;
+  align-items: center;
+}
+
+.profileMenu__item--danger {
+  margin-top: 12px;
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.15);
+  color: #f87171 !important;
+}
+
+.aSidebar__logout--reset:hover {
+  background: rgba(239, 68, 68, 0.1) !important;
+  color: #f87171 !important;
+  opacity: 1 !important;
+}
+
+.aSidebar__logout--credit:hover {
+  background: rgba(165, 180, 252, 0.1) !important;
+  opacity: 1 !important;
 }
 
 .profileMenu__item:focus-visible {

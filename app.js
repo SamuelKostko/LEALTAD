@@ -1,7 +1,17 @@
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("/service-worker.js").catch(() => {
-    });
+    navigator.serviceWorker.register("/service-worker.js").then(reg => {
+      // Standard Service Worker update logic: refresh UI if a new worker is installed
+      reg.addEventListener('updatefound', () => {
+        const newWorker = reg.installing;
+        newWorker.addEventListener('statechange', () => {
+          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+            console.log("PWA: Nueva versión detectada, recargando...");
+            window.location.reload();
+          }
+        });
+      });
+    }).catch(() => { });
   });
 }
 (() => {
@@ -319,6 +329,9 @@ if (qrButton) {
     const dash = document.getElementById("adminDash");
     const goQrBtn = document.getElementById("adminHeaderGoQr");
     const logoutBtn = document.getElementById("adminHeaderLogout");
+    const adminLogoutBtn = document.getElementById("adminLogout");
+    const adminResetTxsBtn = document.getElementById("adminResetTxsBtnSidebar");
+    const adminCreditPointsBtn = document.getElementById("adminCreditPointsBtn");
     const panelClientes = document.getElementById("aPanelClientes");
     const panelTx = document.getElementById("aPanelTx");
     const panelStats = document.getElementById("aPanelStats");
@@ -501,6 +514,106 @@ if (qrButton) {
     };
     if (logoutBtn) logoutBtn.addEventListener("click", doLogout);
     if (mobNavLogout) mobNavLogout.addEventListener("click", (e) => doLogout(e));
+    if (adminLogoutBtn) adminLogoutBtn.addEventListener("click", doLogout);
+
+    const doResetTransactions = async () => {
+      const password = window.prompt("\xBFEst\xE1s seguro de que deseas reiniciar todas las transacciones?\n\nEsta acci\xF3n eliminar\xE1 el historial completo y dejar\xE1 los saldos en 0.\n\nPOR FAVOR, INGRESA TU CLAVE PARA CONFIRMAR:");
+      
+      if (password === null) return; // Cancelled
+      if (!password.trim()) {
+        alert("Se requiere la clave para proceder.");
+        return;
+      }
+
+      try {
+        const res = await fetch("/api/admin/reset-transactions", { 
+          method: "POST", 
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ password: password.trim() }),
+          credentials: "include" 
+        });
+        const data = await res.json().catch(() => null);
+        
+        if (!res.ok || !(data == null ? void 0 : data.ok)) {
+          alert("Error al reiniciar: " + ((data == null ? void 0 : data.error) || "Desconocido"));
+          return;
+        }
+        
+        alert("Reinicio completado con \xE9xito. Todos los balances est\xE1n en 0.");
+        
+        // Recargar el panel actual para reflejar los cambios
+        if (panelClientes && !panelClientes.hidden) loadClients();
+        if (panelTx && !panelTx.hidden) loadAllTransactions();
+        if (panelStats && !panelStats.hidden) loadAdminStats();
+        
+        // Cerrar el menú de perfil si está abierto
+        const menu = document.getElementById("profileMenu");
+        if (menu) {
+          menu.classList.remove("profileMenu--active");
+          menu.setAttribute("aria-hidden", "true");
+        }
+      } catch (err) {
+        alert("Error de red al intentar reiniciar transacciones.");
+      }
+    };
+
+    if (adminResetTxsBtn) {
+      adminResetTxsBtn.addEventListener("click", doResetTransactions);
+    }
+
+    const doManualCredit = async () => {
+      if (!selectedToken) {
+        alert("Por favor, selecciona un cliente primero buscando por nombre o c\xE9dula.");
+        return;
+      }
+
+      const pointsStr = window.prompt(`Ingresa la cantidad de puntos a ABONAR a ${clientNameEl ? clientNameEl.textContent : 'este cliente'}:`);
+      if (pointsStr === null) return;
+      const points = Number(pointsStr);
+      if (isNaN(points) || points <= 0) {
+        alert("Cantidad de puntos inv\xE1lida.");
+        return;
+      }
+
+      const password = window.prompt("Introduce tu CLAVE DE ADMINISTRADOR para confirmar el abono manual:");
+      if (password === null) return;
+      if (!password.trim()) {
+        alert("Se requiere la clave para continuar.");
+        return;
+      }
+
+      try {
+        const res = await fetch("/api/admin/manual-credit", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            token: selectedToken,
+            points: points,
+            password: password.trim()
+          }),
+          credentials: "include"
+        });
+        const data = await res.json().catch(() => null);
+
+        if (!res.ok || !(data == null ? void 0 : data.ok)) {
+          alert("Error: " + ((data == null ? void 0 : data.error) || "Desconocido"));
+          return;
+        }
+
+        alert(data.message || "Puntos acreditados correctamente.");
+        
+        // Recargar datos para ver el nuevo balance
+        loadClients();
+        if (selectedToken) loadCardTransactions(selectedToken);
+        loadAdminStats();
+      } catch (err) {
+        alert("Error de red al intentar acreditar puntos.");
+      }
+    };
+
+    if (adminCreditPointsBtn) {
+      adminCreditPointsBtn.addEventListener("click", doManualCredit);
+    }
     const getInitials = (name) => {
       const parts = String(name || "").trim().split(/\s+/).filter(Boolean);
       return parts.slice(0, 2).map((p) => p[0]).join("").toUpperCase() || "?";
@@ -675,6 +788,12 @@ if (qrButton) {
       showDash();
       switchPanel("clientes");
       loadClients();
+      
+      // Mostrar botones de admin en el sidebar (ya visibles por HTML, pero nos aseguramos)
+      if (adminResetTxsBtn) adminResetTxsBtn.hidden = false;
+      
+      // Ocultar botón de perfil en admin mode si así se requiere
+      if (profileButton) profileButton.hidden = true;
     };
     if (loginForm) {
       loginForm.addEventListener("submit", async (e) => {

@@ -136,7 +136,13 @@ await registerApiRoutes(apiDir);
 
 // Static files (CSS, JS, Images, etc)
 app.use(express.static(__dirname, {
-    index: false // We will handle index manually for PWA routing
+    index: false,
+    setHeaders: (res, path) => {
+        // Force no-cache for manifest and service worker so browser always checks for updates
+        if (path.endsWith('manifest.webmanifest') || path.endsWith('service-worker.js')) {
+            res.setHeader('Cache-Control', 'no-cache');
+        }
+    }
 }));
 
 // Dedicated page for QR admin flow (matches vercel.json rewrite).
