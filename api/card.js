@@ -142,12 +142,20 @@ export default async function handler(req, res) {
     const doc = snap.docs[0];
     const data = doc.data();
     
-    const isFirstOpen = !data.lastOpenedAt;
+    const isFirstOpen = !data.firstOpenedAt && !data.lastOpenedAt;
     
-    // Update lastOpenedAt anonymously in the background
-    doc.ref.update({
+    // Preparar campos a actualizar
+    const updateData = {
       lastOpenedAt: new Date()
-    }).catch(err => console.error("Error updating lastOpenedAt", err));
+    };
+    if (isFirstOpen) {
+      updateData.firstOpenedAt = new Date();
+    }
+    
+    // Al estar en un entorno continuo (Railway) y no Serverless,
+    // podemos enviar la actualización en segundo plano sin el 'await' 
+    // para no demorar la respuesta de la tarjeta al usuario.
+    doc.ref.update(updateData).catch(err => console.error("Error updating opened stats", err));
 
     // Map Firestore fields to what the frontend expects
     const clientData = {
