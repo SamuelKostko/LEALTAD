@@ -6,6 +6,14 @@ if ("serviceWorker" in navigator) {
         const newWorker = reg.installing;
         newWorker.addEventListener('statechange', () => {
           if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+            // Guard against reload loops if the browser keeps detecting an update.
+            try {
+              const key = 'wallet.swAutoReloaded';
+              if (sessionStorage.getItem(key) === '1') return;
+              sessionStorage.setItem(key, '1');
+            } catch {
+              // Ignore storage errors.
+            }
             console.log("PWA: Nueva versión detectada, recargando...");
             window.location.reload();
           }
