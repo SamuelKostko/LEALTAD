@@ -3517,6 +3517,12 @@ body.is-ready .bootSplash {
   margin: 0 0 28px;
 }
 
+.firstOpenModal__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
 .firstOpenModal__btn {
   width: 100%;
   background: var(--focus);
@@ -3528,6 +3534,12 @@ body.is-ready .bootSplash {
   font-weight: 600;
   cursor: pointer;
   transition: transform 0.2s, opacity 0.2s;
+}
+
+.firstOpenModal__btn--ghost {
+  background: var(--surface);
+  color: var(--text-strong);
+  border: 1px solid var(--border);
 }
 
 .firstOpenModal__btn:hover {

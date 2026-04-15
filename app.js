@@ -270,12 +270,43 @@ if (qrButton) {
           if (firstModal) {
             firstModal.classList.add("firstOpenModal--active");
             firstModal.setAttribute("aria-hidden", "false");
+
+            const hideFirstModal = () => {
+              firstModal.classList.remove("firstOpenModal--active");
+              firstModal.setAttribute("aria-hidden", "true");
+            };
+
+            const installBtn = document.getElementById("firstOpenInstallBtn");
+            if (installBtn) {
+              installBtn.onclick = async () => {
+                try {
+                  const prompt = window.deferredInstallPrompt;
+                  if (prompt && typeof prompt.prompt === "function") {
+                    prompt.prompt();
+                    try {
+                      await prompt.userChoice;
+                    } catch {
+                    }
+                    window.deferredInstallPrompt = null;
+                    hideFirstModal();
+                    return;
+                  }
+
+                  // Fallback: mostrar el banner de instalación (con instrucciones según el navegador)
+                  const banner = document.getElementById("installBanner");
+                  if (banner) {
+                    banner.classList.add("installBanner--show");
+                    banner.setAttribute("aria-hidden", "false");
+                  }
+                } catch {
+                }
+              };
+            }
             
             const btnClose = document.getElementById("firstOpenCloseBtn");
             if (btnClose) {
               btnClose.onclick = () => {
-                firstModal.classList.remove("firstOpenModal--active");
-                firstModal.setAttribute("aria-hidden", "true");
+                hideFirstModal();
               };
             }
           }
