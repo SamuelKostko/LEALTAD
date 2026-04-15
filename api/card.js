@@ -142,7 +142,8 @@ export default async function handler(req, res) {
     const doc = snap.docs[0];
     const data = doc.data();
     
-    const isFirstOpen = !data.firstOpenedAt && !data.lastOpenedAt;
+    // Evalúa exactamente que no existan esos campos en la base de datos
+    const isFirstOpen = (data.firstOpenedAt === undefined) && (data.lastOpenedAt === undefined);
     
     // Preparar campos a actualizar
     const updateData = {
