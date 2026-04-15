@@ -63,6 +63,7 @@ export default async function handler(req, res) {
         type: 'pos_charge',
         status: 'pending',
         points,
+        ref: '',
         description: desc,
         ts,
         nonce,
