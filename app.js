@@ -263,6 +263,23 @@ if (qrButton) {
           if (initials) avatarInitialsEl.textContent = initials;
         }
         if (typeof data.updatedAt === "string") setUpdatedText(data.updatedAt);
+        
+        // Control del Modal de Primera Vez
+        if (data.isFirstOpen) {
+          const firstModal = document.getElementById("firstOpenModal");
+          if (firstModal) {
+            firstModal.classList.add("firstOpenModal--active");
+            firstModal.setAttribute("aria-hidden", "false");
+            
+            const btnClose = document.getElementById("firstOpenCloseBtn");
+            if (btnClose) {
+              btnClose.onclick = () => {
+                firstModal.classList.remove("firstOpenModal--active");
+                firstModal.setAttribute("aria-hidden", "true");
+              };
+            }
+          }
+        }
       }
     } catch {
     } finally {

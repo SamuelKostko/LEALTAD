@@ -632,6 +632,24 @@
     </div>
   </div>
 
+  <!-- Modal de Primera Vez -->
+  <div class="firstOpenModal" id="firstOpenModal" aria-hidden="true" role="dialog" aria-modal="true" aria-label="Bienvenido a V+ Puntos">
+    <div class="firstOpenModal__frame">
+      <div class="firstOpenModal__icon">
+        <svg viewBox="0 0 24 24" width="32" height="32" fill="none">
+          <path d="M12 2L2 7l10 5 10-5-10-5zm0 15v5l10-5V7L12 17z" fill="currentColor"/>
+          <path d="M2 17l10 5v-5L2 12v5z" fill="currentColor" opacity="0.6"/>
+        </svg>
+      </div>
+      <h2 class="firstOpenModal__title" id="firstOpenTitle">¡Bienvenido!</h2>
+      <p class="firstOpenModal__text">
+        Te recomendamos <strong>instalar la aplicación</strong> para tener un acceso rápido y una mejor experiencia.<br><br>
+        <strong style="color: #f87171;">⚠️ Por tu seguridad:</strong> No debes, bajo ninguna circunstancia, compartir el link de tu tarjeta con nadie.
+      </p>
+      <button class="firstOpenModal__btn" id="firstOpenCloseBtn" type="button">Entendido</button>
+    </div>
+  </div>
+
   <!-- Librería ligera de decodificación QR -->
   <script src="https://unpkg.com/jsqr@1.4.0/dist/jsQR.js" crossorigin="anonymous"></script>
   <script src="/app.js" defer></script>

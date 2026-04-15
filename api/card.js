@@ -132,20 +132,32 @@ export default async function handler(req, res) {
   }
 
   try {
-    const snap = await getFirestoreDb().collection('clientes').where('token', '==', token).limit(1).get();
+    const firestoreDb = getFirestoreDb();
+    const snap = await firestoreDb.collection('clientes').where('token', '==', token).limit(1).get();
     if (snap.empty) {
       sendJson(res, 404, { error: 'Not Found' });
       return;
     }
 
-    const data = snap.docs[0].data();
+    const doc = snap.docs[0];
+    const data = doc.data();
+    
+    const isFirstOpen = !data.lastOpenedAt;
+    
+    // Update lastOpenedAt anonymously in the background
+    doc.ref.update({
+      lastOpenedAt: new Date()
+    }).catch(err => console.error("Error updating lastOpenedAt", err));
+
     // Map Firestore fields to what the frontend expects
     const clientData = {
       token,
       name: data.nombre || 'Sin nombre',
       cedula: data.idNumber || '—',
       balance: data.totalPoints || 0,
-      updatedAt: toIso(data.updatedAt)
+      updatedAt: toIso(data.updatedAt),
+      isFirstOpen,
+      lastOpenedAt: toIso(data.lastOpenedAt) || null
     };
 
     sendJson(res, 200, clientData);
