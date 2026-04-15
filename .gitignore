@@ -25,3 +25,6 @@ Thumbs.db
 
 # Secrets (Firebase service accounts, etc.)
 secrets/
+
+# Local data (do not commit)
+data/
