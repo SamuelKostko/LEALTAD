@@ -162,7 +162,7 @@ export default async function handler(req, res) {
     const clientData = {
       token,
       name: data.nombre || 'Sin nombre',
-      cedula: data.idNumber || '—',
+      cedula: data.idNumber || data.cedula || '—',
       balance: data.totalPoints || 0,
       updatedAt: toIso(data.updatedAt),
       isFirstOpen,

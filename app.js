@@ -402,6 +402,8 @@ if (qrButton) {
     const clientMetaEl = document.getElementById("aClientMeta");
     const clientBalanceEl = document.getElementById("aClientBalance");
     const clientClearBtn = document.getElementById("aClientClear");
+    const clientEditBtn = document.getElementById("adminClientEditBtn");
+    const clientDeleteBtn = document.getElementById("adminClientDeleteBtn");
     const clientsResult = document.getElementById("adminClientsResult");
     const cardTxSection = document.getElementById("adminRootCardTx");
     const cardTxHint = document.getElementById("adminCardTxHint");
@@ -670,6 +672,100 @@ if (qrButton) {
     if (adminCreditPointsBtn) {
       adminCreditPointsBtn.addEventListener("click", doManualCredit);
     }
+
+    const doEditClient = async () => {
+      if (!selectedToken) {
+        alert("Por favor, selecciona un cliente primero.");
+        return;
+      }
+
+      const current = allCards.find((c) => c.token === selectedToken) || { name: "", cedula: "" };
+      const name = String(window.prompt("Nombre del cliente:", current.name || "") ?? "").trim();
+      if (!name) return;
+
+      const cedula = String(window.prompt("Cédula del cliente:", current.cedula || "") ?? "").trim();
+      if (!cedula) return;
+
+      setResult(clientsResult, "info", "Actualizando cliente…");
+      try {
+        const res = await fetch("/api/admin/cards", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ token: selectedToken, name, cedula })
+        });
+        const data = await res.json().catch(() => null);
+
+        if (!res.ok) {
+          if (res.status === 401) {
+            doLogout();
+            return;
+          }
+          setResult(clientsResult, "err", (data == null ? void 0 : data.error) || `Error (${res.status})`);
+          return;
+        }
+
+        await loadClients();
+        const updated = allCards.find((c) => c.token === selectedToken);
+        if (updated) selectClient(updated);
+        setResult(clientsResult, "ok", "Datos actualizados.");
+      } catch {
+        setResult(clientsResult, "err", "Error de red al actualizar.");
+      }
+    };
+
+    const doDeleteClient = async () => {
+      if (!selectedToken) {
+        alert("Por favor, selecciona un cliente primero.");
+        return;
+      }
+
+      const current = allCards.find((c) => c.token === selectedToken) || { name: "", cedula: "" };
+      const ok = window.confirm(
+        `¿Eliminar al cliente${current.name ? ` "${current.name}"` : ""}${current.cedula ? ` (CI: ${current.cedula})` : ""}?
+
+Esto eliminará también sus transacciones.`
+      );
+      if (!ok) return;
+
+      const password = String(window.prompt("Introduce tu CLAVE DE ADMINISTRADOR para confirmar la eliminación:") ?? "").trim();
+      if (!password) {
+        alert("Se requiere la clave para continuar.");
+        return;
+      }
+
+      setResult(clientsResult, "info", "Eliminando cliente…");
+      try {
+        const res = await fetch("/api/admin/cards", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ token: selectedToken, password, deleteTransactions: true })
+        });
+        const data = await res.json().catch(() => null);
+
+        if (!res.ok) {
+          if (res.status === 401) {
+            doLogout();
+            return;
+          }
+          setResult(clientsResult, "err", (data == null ? void 0 : data.error) || `Error (${res.status})`);
+          return;
+        }
+
+        clearClient();
+        await loadClients();
+        if (panelTx && !panelTx.hidden) loadAllTransactions();
+        if (panelStats && !panelStats.hidden) loadAdminStats();
+        setResult(clientsResult, "ok", "Cliente eliminado.");
+      } catch {
+        setResult(clientsResult, "err", "Error de red al eliminar.");
+      }
+    };
+
+    if (clientEditBtn) clientEditBtn.addEventListener("click", doEditClient);
+    if (clientDeleteBtn) clientDeleteBtn.addEventListener("click", doDeleteClient);
+
     const getInitials = (name) => {
       const parts = String(name || "").trim().split(/\s+/).filter(Boolean);
       return parts.slice(0, 2).map((p) => p[0]).join("").toUpperCase() || "?";
@@ -678,6 +774,8 @@ if (qrButton) {
       selectedToken = "";
       if (clientCard) clientCard.hidden = true;
       if (cardTxSection) cardTxSection.hidden = true;
+      if (clientEditBtn) clientEditBtn.disabled = true;
+      if (clientDeleteBtn) clientDeleteBtn.disabled = true;
       if (searchInput) searchInput.value = "";
       if (dropdown) {
         dropdown.hidden = true;
@@ -687,6 +785,8 @@ if (qrButton) {
     const selectClient = (c) => {
       var _a, _b;
       selectedToken = c.token;
+      if (clientEditBtn) clientEditBtn.disabled = false;
+      if (clientDeleteBtn) clientDeleteBtn.disabled = false;
       if (searchInput) searchInput.value = "";
       if (dropdown) {
         dropdown.hidden = true;

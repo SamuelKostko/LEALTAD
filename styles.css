@@ -2373,6 +2373,16 @@ body {
   background: rgba(255, 255, 255, 0.11);
 }
 
+.aBtn--danger {
+  background: rgba(239, 68, 68, 0.12);
+  color: #fecaca;
+  border: 1px solid rgba(239, 68, 68, 0.22);
+}
+
+.aBtn--danger:hover {
+  background: rgba(239, 68, 68, 0.18);
+}
+
 .aBtn--link {
   background: none;
   color: rgba(255, 255, 255, 0.42);
@@ -2736,6 +2746,35 @@ body {
   font-size: 11px;
   color: rgba(255, 255, 255, 0.38);
   margin-top: 2px;
+}
+
+.aClientCard__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.aClientCard__actions .aBtn {
+  padding: 9px 12px;
+  font-size: 12px;
+  border-radius: 10px;
+  white-space: nowrap;
+}
+
+@media (max-width: 520px) {
+  .aClientCard {
+    flex-wrap: wrap;
+  }
+
+  .aClientCard__actions {
+    width: 100%;
+    flex-direction: row;
+  }
+
+  .aClientCard__actions .aBtn {
+    flex: 1;
+  }
 }
 
 .aClientCard__clear {
