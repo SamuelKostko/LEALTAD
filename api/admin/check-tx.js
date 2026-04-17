@@ -1,5 +1,5 @@
 import { sendJson } from '../_lib/http.js';
-import { requireAdmin } from '../_lib/adminAuth.js';
+import { requireStaff } from '../_lib/adminAuth.js';
 import { getFirestoreDb } from '../_lib/firestore.js';
 
 export default async function handler(req, res) {
@@ -8,7 +8,7 @@ export default async function handler(req, res) {
     return;
   }
 
-  if (!(await requireAdmin(req, res))) return;
+  if (!(await requireStaff(req, res))) return;
 
   const id = String(req.query.id ?? '').trim();
   if (!id) {

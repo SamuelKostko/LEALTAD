@@ -2,7 +2,7 @@ import crypto from 'node:crypto';
 import { FieldValue } from 'firebase-admin/firestore';
 import QRCode from 'qrcode';
 import { getPublicOrigin, readJsonBody, sendJson } from '../_lib/http.js';
-import { requireAdmin } from '../_lib/adminAuth.js';
+import { requireStaff } from '../_lib/adminAuth.js';
 import { getFirestoreDb } from '../_lib/firestore.js';
 
 function getQrSecret() {
@@ -19,7 +19,7 @@ export default async function handler(req, res) {
     return;
   }
 
-  if (!(await requireAdmin(req, res))) return;
+  if (!(await requireStaff(req, res))) return;
 
   const secret = getQrSecret();
   if (!secret) {

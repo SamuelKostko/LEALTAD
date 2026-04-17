@@ -388,6 +388,7 @@ if (qrButton) {
     const adminLogoutBtn = document.getElementById("adminLogout");
     const adminResetTxsBtn = document.getElementById("adminResetTxsBtnSidebar");
     const adminCreditPointsBtn = document.getElementById("adminCreditPointsBtn");
+    const adminCreateCashierBtn = document.getElementById("adminCreateCashierBtn");
     const panelClientes = document.getElementById("aPanelClientes");
     const panelTx = document.getElementById("aPanelTx");
     const panelStats = document.getElementById("aPanelStats");
@@ -671,6 +672,48 @@ if (qrButton) {
 
     if (adminCreditPointsBtn) {
       adminCreditPointsBtn.addEventListener("click", doManualCredit);
+    }
+
+    const doCreateCashier = async () => {
+      const email = String(window.prompt("Correo del cajero:") ?? "").trim().toLowerCase();
+      if (!email) return;
+
+      const password = String(window.prompt("Contraseña del cajero (mínimo 6 caracteres):") ?? "").trim();
+      if (!password) return;
+
+      if (password.length < 6) {
+        alert("La contraseña es muy corta.");
+        return;
+      }
+
+      const name = String(window.prompt("Nombre del cajero (opcional):") ?? "").trim();
+
+      try {
+        const res = await fetch("/api/admin/cashiers", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ email, password, name })
+        });
+        const data = await res.json().catch(() => null);
+
+        if (!res.ok) {
+          if (res.status === 401) {
+            doLogout();
+            return;
+          }
+          alert(String((data == null ? void 0 : data.error) || (data == null ? void 0 : data.message) || `Error (${res.status})`));
+          return;
+        }
+
+        alert("Cajero creado correctamente.");
+      } catch {
+        alert("Error de red al crear el cajero.");
+      }
+    };
+
+    if (adminCreateCashierBtn) {
+      adminCreateCashierBtn.addEventListener("click", doCreateCashier);
     }
 
     const doEditClient = async () => {
@@ -977,6 +1020,15 @@ Esto eliminará también sus transacciones.`
           setResult(loginResultEl, "ok", "Acceso concedido.");
           if (emailEl) emailEl.value = "";
           if (passwordEl) passwordEl.value = "";
+          try {
+            const me = await apiGet("/api/admin/me");
+            const role = String((me == null ? void 0 : me.role) || "admin").toLowerCase();
+            if (role === "cashier") {
+              window.location.href = "/admin/qr";
+              return;
+            }
+          } catch {
+          }
           initAuthed();
         } catch (err) {
           setResult(loginResultEl, "err", "Fallo de red.");
@@ -1093,7 +1145,14 @@ Esto eliminará también sus transacciones.`
     const checkAuth = async () => {
       try {
         const data = await apiGet("/api/admin/me");
-        if (Boolean(data == null ? void 0 : data.authenticated)) initAuthed();
+        if (Boolean(data == null ? void 0 : data.authenticated)) {
+          const role = String((data == null ? void 0 : data.role) || "admin").toLowerCase();
+          if (role === "cashier") {
+            window.location.href = "/admin/qr";
+            return;
+          }
+          initAuthed();
+        }
         else showLogin();
       } catch (err) {
         showLogin();

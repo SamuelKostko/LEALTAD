@@ -53,7 +53,12 @@
 
         <form class="aLogin__form" id="loginForm">
           <div class="aField">
-            <label class="aField__label" for="adminPassword">Contraseña de Admin</label>
+            <label class="aField__label" for="adminEmail">Correo</label>
+            <input class="aField__input" id="adminEmail" name="email" type="email" autocomplete="username"
+              placeholder="correo@ejemplo.com" required />
+          </div>
+          <div class="aField">
+            <label class="aField__label" for="adminPassword">Contraseña</label>
             <input class="aField__input" id="adminPassword" name="password" type="password"
               autocomplete="current-password" placeholder="••••••••" required />
           </div>

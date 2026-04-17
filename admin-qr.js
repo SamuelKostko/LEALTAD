@@ -1,4 +1,5 @@
 const loginForm = document.getElementById("loginForm");
+const adminEmailEl = document.getElementById("adminEmail");
 const adminPasswordEl = document.getElementById("adminPassword");
 const loginResultEl = document.getElementById("loginResult");
 const qrSection = document.getElementById("qrSection");
@@ -125,9 +126,10 @@ if (loginForm) {
   loginForm.addEventListener("submit", async (e) => {
     var _a;
     e.preventDefault();
+    const email = String((adminEmailEl == null ? void 0 : adminEmailEl.value) || "").trim();
     const password = (((_a = document.getElementById("adminPassword")) == null ? void 0 : _a.value) || "").trim();
-    if (!password) {
-      setLoginResult("adminResult--err", "Password requerido.");
+    if (!email || !password) {
+      setLoginResult("adminResult--err", "Correo y contraseña requeridos.");
       return;
     }
     setLoginResult("adminResult--info", "Entrando...");
@@ -136,7 +138,7 @@ if (loginForm) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ password })
+        body: JSON.stringify({ email, password })
       });
       const data = await res.json().catch(() => null);
       if (!res.ok) {
@@ -147,6 +149,7 @@ if (loginForm) {
       }
       setLoginResult("adminResult--ok", "Listo.");
       setAuthenticated(true);
+      if (adminEmailEl) adminEmailEl.value = "";
       if (adminPasswordEl) adminPasswordEl.value = "";
     } catch {
       setLoginResult("adminResult--err", "Fallo de red.");

@@ -103,9 +103,9 @@ export async function destroySession(sessionId) {
 }
 
 /**
- * Checks if the current request has a valid admin session.
+ * Checks if the current request has a valid staff session.
  */
-export async function isAdminRequest(req) {
+export async function isStaffRequest(req) {
   const cookies = parseCookies(req.headers.cookie);
   const sessionId = cookies[COOKIE_NAME];
   const result = await verifySession(sessionId);
@@ -113,10 +113,39 @@ export async function isAdminRequest(req) {
 }
 
 /**
+ * Checks if the current request has a valid admin session.
+ * Cashiers are considered non-admin.
+ */
+export async function isAdminRequest(req) {
+  const cookies = parseCookies(req.headers.cookie);
+  const sessionId = cookies[COOKIE_NAME];
+  const result = await verifySession(sessionId);
+  if (!result.ok) return false;
+
+  const role = String(result.data?.role ?? '').trim().toLowerCase();
+  if (role === 'cashier') return false;
+  return true;
+}
+
+/**
  * Middleware: returns true if authorized, sends 401 and returns false otherwise.
  */
 export async function requireAdmin(req, res) {
   const authorized = await isAdminRequest(req);
+  if (authorized) return true;
+
+  res.statusCode = 401;
+  res.setHeader('Content-Type', 'application/json; charset=utf-8');
+  res.setHeader('Cache-Control', 'no-store');
+  res.end(JSON.stringify({ error: 'Unauthorized' }));
+  return false;
+}
+
+/**
+ * Middleware: returns true if staff-authorized, sends 401 and returns false otherwise.
+ */
+export async function requireStaff(req, res) {
+  const authorized = await isStaffRequest(req);
   if (authorized) return true;
 
   res.statusCode = 401;

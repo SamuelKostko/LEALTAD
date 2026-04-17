@@ -22,6 +22,12 @@ export default async function handler(req, res) {
     return;
   }
 
+  const role = String(auth.data?.role ?? '').trim().toLowerCase();
+  if (role === 'cashier') {
+    sendJson(res, 403, { error: 'No autorizado.' });
+    return;
+  }
+
   const firestore = getFirestoreDb();
 
   try {
