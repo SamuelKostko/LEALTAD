@@ -142,6 +142,17 @@ app.use(express.static(__dirname, {
         if (path.endsWith('manifest.webmanifest') || path.endsWith('service-worker.js')) {
             res.setHeader('Cache-Control', 'no-cache');
         }
+
+      // Avoid stale UI after deploys (admin buttons/handlers live here)
+      if (
+         path.endsWith('index.html') ||
+         path.endsWith('app.js') ||
+         path.endsWith('styles.css') ||
+         path.endsWith('admin-qr.html') ||
+         path.endsWith('admin-qr.js')
+      ) {
+         res.setHeader('Cache-Control', 'no-cache');
+      }
     }
 }));
 
