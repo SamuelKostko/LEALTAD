@@ -24,16 +24,16 @@ export function getAdminPassword() {
 }
 
 /**
- * Creates a new session in Firestore for a specific admin document and returns the sessionId.
- * Stores: sessionId, sessionCreatedAt, sessionExpiresAt in config/{docId}.
+ * Creates a new session in Firestore for a specific document in a specific collection.
+ * Stores: sessionId, sessionCreatedAt, sessionExpiresAt.
  */
-export async function createSession(docId = 'admin') {
+export async function createSession(docId, collection = 'config') {
   const db = getFirestoreDb();
   const sessionId = crypto.randomBytes(32).toString('hex');
   const now = Date.now();
   const expiresAt = now + SESSION_DURATION_MS;
 
-  await db.collection('config').doc(docId).update({
+  await db.collection(collection).doc(docId).update({
     sessionId,
     sessionCreatedAt: now,
     sessionExpiresAt: expiresAt
@@ -43,7 +43,7 @@ export async function createSession(docId = 'admin') {
 }
 
 /**
- * Validates the sessionId from the cookie against any document in the config collection.
+ * Validates the sessionId from the cookie against 'config' or 'cashiers' collections.
  * Returns { ok: true } if a valid session is found.
  */
 export async function verifySession(cookieValue) {
@@ -55,8 +55,13 @@ export async function verifySession(cookieValue) {
     const db = getFirestoreDb();
     const sessionId = cookieValue.trim();
     
-    // Search across all docs in 'config' for this sessionId
-    const snap = await db.collection('config').where('sessionId', '==', sessionId).limit(1).get();
+    // Search across all docs in 'config'
+    let snap = await db.collection('config').where('sessionId', '==', sessionId).limit(1).get();
+    
+    // If not found, search in 'cashiers'
+    if (snap.empty) {
+      snap = await db.collection('cashiers').where('sessionId', '==', sessionId).limit(1).get();
+    }
 
     if (snap.empty) {
       return { ok: false, reason: 'no_session' };
@@ -87,7 +92,14 @@ export async function destroySession(sessionId) {
     const db = getFirestoreDb();
     if (!sessionId) return false;
 
-    const snap = await db.collection('config').where('sessionId', '==', sessionId).limit(1).get();
+    // Try config
+    let snap = await db.collection('config').where('sessionId', '==', sessionId).limit(1).get();
+    
+    // Try cashiers
+    if (snap.empty) {
+      snap = await db.collection('cashiers').where('sessionId', '==', sessionId).limit(1).get();
+    }
+
     if (snap.empty) return true; // Already gone or never existed
 
     await snap.docs[0].ref.update({

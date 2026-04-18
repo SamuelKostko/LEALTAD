@@ -154,9 +154,9 @@
 
           <form class="aLogin__form" id="adminRootLoginForm">
             <div class="aField">
-              <label class="aField__label" for="adminRootEmail">Correo Admin</label>
-              <input class="aField__input" id="adminRootEmail" name="email" type="email" autocomplete="username"
-                placeholder="admin@vpuntos.com" required />
+              <label class="aField__label" for="adminRootEmail">Usuario / Correo</label>
+              <input class="aField__input" id="adminRootEmail" name="email" type="text" autocomplete="username"
+                placeholder="admin o admin@vpuntos.com" required />
             </div>
             <div class="aField">
               <label class="aField__label" for="adminRootPassword">Contraseña</label>
@@ -171,8 +171,8 @@
           <form class="aLogin__form" id="adminRootForgotForm" hidden>
             <p class="aLogin__hint">Ingresa el correo configurado para recuperar tu acceso.</p>
             <div class="aField">
-              <label class="aField__label" for="adminRootForgotEmail">Correo Admin</label>
-              <input class="aField__input" id="adminRootForgotEmail" type="email" placeholder="tucorreo@ejemplo.com"
+              <label class="aField__label" for="adminRootForgotEmail">Usuario / Correo</label>
+              <input class="aField__input" id="adminRootForgotEmail" type="text" placeholder="tucorreo@ejemplo.com"
                 required />
             </div>
             <button class="aBtn aBtn--primary" id="adminRootSendForgotBtn" type="submit">Enviar código</button>
@@ -233,6 +233,13 @@
                   stroke-linejoin="round" />
               </svg>
               Información
+            </button>
+            <button class="aSidebar__navItem" id="aNavCajeros" type="button" data-panel="cajeros">
+              <svg viewBox="0 0 24 24" width="17" height="17" fill="none">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                <circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="1.6" />
+              </svg>
+              Cajeros
             </button>
           </nav>
           <div class="aSidebar__bottom">
@@ -413,6 +420,26 @@
             <div id="adminTxList"></div>
             <div class="aResult" id="adminTxResult" aria-live="polite"></div>
           </section>
+
+          <!-- Panel Cajeros -->
+          <section class="aPanel" id="aPanelCajeros" aria-label="Cajeros" hidden>
+            <div class="aPanel__header">
+              <div>
+                <h2 class="aPanel__title">Cajeros / POS</h2>
+                <p class="aPanel__sub">Lista de cajeros y terminales POS creados</p>
+              </div>
+              <button class="aIconBtn" id="adminCajerosRefresh" type="button" aria-label="Recargar">
+                <svg viewBox="0 0 24 24" width="17" height="17" fill="none">
+                  <path d="M20 12a8 8 0 0 1-14.3 4.9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+                  <path d="M4 12a8 8 0 0 1 14.3-4.9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" opacity=".55" />
+                  <path d="M17.8 3.8V7.6h-3.8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" opacity=".55" />
+                  <path d="M6.2 20.2V16.4H10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+                </svg>
+              </button>
+            </div>
+            <div id="adminCajerosList"></div>
+            <div class="aResult" id="adminCajerosResult" aria-live="polite"></div>
+          </section>
         </div>
 
         <!-- Mobile bottom navigation bar (visible only on ≤640px) -->
@@ -435,6 +462,13 @@
               <path d="M18 20V10M12 20V4M6 20v-6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
             </svg>
             Métricas
+          </button>
+          <button class="aMobileNav__item" id="aMobNavCajeros" type="button" aria-label="Cajeros">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+              <circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="1.7" />
+            </svg>
+            Cajeros
           </button>
           <a class="aMobileNav__qr" href="/admin/qr" aria-label="Crear QR">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none">

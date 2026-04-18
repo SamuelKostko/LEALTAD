@@ -10,31 +10,43 @@ export default async function handler(req, res) {
 
   try {
     const body = await readJsonBody(req);
-    const email = String(body?.email ?? '').trim().toLowerCase();
+    const identifier = String(body?.username || body?.email || '').trim().toLowerCase();
     const password = String(body?.password ?? '').trim();
 
-    if (!email || !password) {
-      sendJson(res, 400, { error: 'Correo y contraseña son requeridos.' });
+    if (!identifier || !password) {
+      sendJson(res, 400, { error: 'Usuario y contraseña son requeridos.' });
       return;
     }
 
     const db = getFirestoreDb();
-    const snap = await db.collection('config').where('email', '==', email).limit(1).get();
+
+    // First try email in 'config'
+    let snap = await db.collection('config').where('email', '==', identifier).limit(1).get();
+    let collection = 'config';
+
+    // If not found, try username in 'cashiers'
+    if (snap.empty) {
+      snap = await db.collection('cashiers').where('username', '==', identifier).limit(1).get();
+      collection = 'cashiers';
+    }
 
     if (snap.empty) {
       sendJson(res, 403, { error: 'Credenciales incorrectas.' });
       return;
     }
 
-    const adminDoc = snap.docs[0];
-    const data = adminDoc.data();
-    const adminPassword = String(data?.password ?? '').trim();
+    const userDoc = snap.docs[0];
+    const data = userDoc.data();
+    const userPassword = String(data?.password ?? '').trim();
 
-    // Fallback to .env if no password in Firestore
-    const expectedPassword = adminPassword || String(process.env.ADMIN_PASSWORD ?? '').trim();
+    // Fallback to .env only for the main 'config' collection (admins)
+    let expectedPassword = userPassword;
+    if (collection === 'config' && !expectedPassword) {
+      expectedPassword = String(process.env.ADMIN_PASSWORD ?? '').trim();
+    }
 
     if (!expectedPassword) {
-      sendJson(res, 500, { error: 'Admin no configurado correctamente.' });
+      sendJson(res, 500, { error: 'Usuario no configurado correctamente.' });
       return;
     }
 
@@ -44,8 +56,8 @@ export default async function handler(req, res) {
       return;
     }
 
-    // Create session in Firestore for this specific document
-    const { sessionId } = await createSession(adminDoc.id);
+    // Create session in Firestore for this specific document in the correct collection
+    const { sessionId } = await createSession(userDoc.id, collection);
 
     // Set cookie
     setSessionCookie(res, sessionId, req);

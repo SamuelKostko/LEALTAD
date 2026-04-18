@@ -18,22 +18,15 @@ function parseCookies(header) {
   return out;
 }
 
-function normalizeEmail(value) {
-  return String(value ?? '').trim().toLowerCase();
+function normalizeUsername(value) {
+  return String(value ?? '').trim().toLowerCase().replace(/[^a-z0-9_]/g, '');
 }
 
-function isValidEmail(email) {
-  // Simple sanity check (not RFC exhaustive)
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+function isValidUsername(username) {
+  return /^[a-z0-9_]{3,30}$/.test(username);
 }
 
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    sendJson(res, 405, { error: 'Method Not Allowed' });
-    return;
-  }
-
-  // Verify session
   const cookies = parseCookies(req.headers.cookie);
   const auth = await verifySession(cookies['admin_session']);
   if (!auth.ok) {
@@ -41,10 +34,39 @@ export default async function handler(req, res) {
     return;
   }
 
-  // Only admins can create cashier users
+  // Only admins can manage cashier users
   const requesterRole = String(auth.data?.role ?? '').trim().toLowerCase();
   if (requesterRole === 'cashier') {
     sendJson(res, 403, { error: 'No autorizado.' });
+    return;
+  }
+
+  const firestore = getFirestoreDb();
+
+  if (req.method === 'GET') {
+    try {
+      const snapshot = await firestore.collection('cashiers').get();
+      const cashiers = snapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          username: data.username,
+          name: data.name,
+          createdAt: data.createdAt?.toDate?.() || data.createdAt,
+          lastLogin: data.sessionCreatedAt?.toDate?.() || data.sessionCreatedAt
+        };
+      });
+      sendJson(res, 200, { ok: true, cashiers });
+      return;
+    } catch (err) {
+      console.error('Error listing cashiers:', err);
+      sendJson(res, 500, { error: 'Error al obtener cajeros.' });
+      return;
+    }
+  }
+
+  if (req.method !== 'POST') {
+    sendJson(res, 405, { error: 'Method Not Allowed' });
     return;
   }
 
@@ -56,17 +78,17 @@ export default async function handler(req, res) {
     return;
   }
 
-  const email = normalizeEmail(body?.email);
+  const username = normalizeUsername(body?.username);
   const password = String(body?.password ?? '').trim();
   const name = String(body?.name ?? '').trim();
 
-  if (!email || !password) {
-    sendJson(res, 400, { error: 'Correo y contraseña son requeridos.' });
+  if (!username || !password) {
+    sendJson(res, 400, { error: 'Usuario y contraseña son requeridos.' });
     return;
   }
 
-  if (!isValidEmail(email)) {
-    sendJson(res, 400, { error: 'Correo inválido.' });
+  if (!isValidUsername(username)) {
+    sendJson(res, 400, { error: 'Usuario inválido (3-30 caracteres, minúsculas, números o guion bajo).' });
     return;
   }
 
@@ -80,18 +102,16 @@ export default async function handler(req, res) {
     return;
   }
 
-  const firestore = getFirestoreDb();
-
   try {
-    const existing = await firestore.collection('config').where('email', '==', email).limit(1).get();
+    const existing = await firestore.collection('cashiers').where('username', '==', username).limit(1).get();
     if (!existing.empty) {
-      sendJson(res, 409, { error: 'Ya existe un usuario con ese correo.' });
+      sendJson(res, 409, { error: 'Ya existe un usuario con ese nombre de usuario.' });
       return;
     }
 
-    const ref = firestore.collection('config').doc();
+    const ref = firestore.collection('cashiers').doc();
     await ref.set({
-      email,
+      username,
       password,
       role: 'cashier',
       name: name || null,

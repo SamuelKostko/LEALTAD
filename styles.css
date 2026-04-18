@@ -2853,6 +2853,11 @@ body {
   min-width: 740px;
 }
 
+.aTxRow--cajeros {
+  grid-template-columns: 180px 220px 120px 1fr;
+  min-width: 650px;
+}
+
 .aTxRow--head {
   background: transparent;
   border: none;

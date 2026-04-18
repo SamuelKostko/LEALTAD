@@ -413,6 +413,12 @@ if (qrButton) {
     const txRefresh = document.getElementById("adminTxRefresh");
     const txList = document.getElementById("adminTxList");
     const txResult = document.getElementById("adminTxResult");
+    const panelCajeros = document.getElementById("aPanelCajeros");
+    const navCajeros = document.getElementById("aNavCajeros");
+    const cajerosList = document.getElementById("adminCajerosList");
+    const cajerosResult = document.getElementById("adminCajerosResult");
+    const cajerosRefresh = document.getElementById("adminCajerosRefresh");
+    const mobNavCajeros = document.getElementById("aMobNavCajeros");
     let allCards = [];
     let selectedToken = "";
     let currentValidCode = null;
@@ -516,15 +522,19 @@ if (qrButton) {
       if (panelClientes) panelClientes.hidden = panel !== "clientes";
       if (panelTx) panelTx.hidden = panel !== "transacciones";
       if (panelStats) panelStats.hidden = panel !== "metricas";
+      if (panelCajeros) panelCajeros.hidden = panel !== "cajeros";
       if (navClientes) navClientes.classList.toggle("is-active", panel === "clientes");
       if (navTx) navTx.classList.toggle("is-active", panel === "transacciones");
       if (navStats) navStats.classList.toggle("is-active", panel === "metricas");
+      if (navCajeros) navCajeros.classList.toggle("is-active", panel === "cajeros");
       const mobClientes = document.getElementById("aMobNavClientes");
       const mobTx = document.getElementById("aMobNavTx");
       const mobStats = document.getElementById("aMobNavStats");
+      const mobCajeros = document.getElementById("aMobNavCajeros");
       if (mobClientes) mobClientes.classList.toggle("is-active", panel === "clientes");
       if (mobTx) mobTx.classList.toggle("is-active", panel === "transacciones");
       if (mobStats) mobStats.classList.toggle("is-active", panel === "metricas");
+      if (mobCajeros) mobCajeros.classList.toggle("is-active", panel === "cajeros");
       const main = document.querySelector(".aDash__main");
       if (main) main.scrollTop = 0;
     };
@@ -537,9 +547,14 @@ if (qrButton) {
       switchPanel("metricas");
       loadAdminStats();
     });
+    if (navCajeros) navCajeros.addEventListener("click", () => {
+      switchPanel("cajeros");
+      loadCashiers();
+    });
     const mobNavClientes = document.getElementById("aMobNavClientes");
     const mobNavTx = document.getElementById("aMobNavTx");
     const mobNavStats = document.getElementById("aMobNavStats");
+    const mobNavCajerosLocal = document.getElementById("aMobNavCajeros");
     const mobNavLogout = document.getElementById("aMobNavLogout");
     if (mobNavClientes) mobNavClientes.addEventListener("click", () => switchPanel("clientes"));
     if (mobNavTx) mobNavTx.addEventListener("click", () => {
@@ -549,6 +564,10 @@ if (qrButton) {
     if (mobNavStats) mobNavStats.addEventListener("click", () => {
       switchPanel("metricas");
       loadAdminStats();
+    });
+    if (mobNavCajerosLocal) mobNavCajerosLocal.addEventListener("click", () => {
+      switchPanel("cajeros");
+      loadCashiers();
     });
     const mobileNav = document.getElementById("aMobileNav");
     if (mobileNav) {
@@ -675,8 +694,8 @@ if (qrButton) {
     }
 
     const doCreateCashier = async () => {
-      const email = String(window.prompt("Correo del cajero:") ?? "").trim().toLowerCase();
-      if (!email) return;
+      const username = String(window.prompt("Nombre de usuario del cajero:") ?? "").trim().toLowerCase();
+      if (!username) return;
 
       const password = String(window.prompt("Contraseña del cajero (mínimo 6 caracteres):") ?? "").trim();
       if (!password) return;
@@ -693,7 +712,7 @@ if (qrButton) {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
-          body: JSON.stringify({ email, password, name })
+          body: JSON.stringify({ username, password, name })
         });
         const data = await res.json().catch(() => null);
 
@@ -707,6 +726,7 @@ if (qrButton) {
         }
 
         alert("Cajero creado correctamente.");
+        if (panelCajeros && !panelCajeros.hidden) loadCashiers();
       } catch {
         alert("Error de red al crear el cajero.");
       }
@@ -948,6 +968,65 @@ Esto eliminará también sus transacciones.`
       }
     };
     if (txRefresh) txRefresh.addEventListener("click", loadAllTransactions);
+
+    const loadCashiers = async () => {
+      if (!cajerosList) return;
+      setResult(cajerosResult, "info", "Cargando cajeros\u2026");
+      try {
+        const data = await apiGet("/api/admin/cashiers");
+        const list = Array.isArray(data == null ? void 0 : data.cashiers) ? data.cashiers : [];
+        renderCashiers(cajerosList, list);
+        setResult(cajerosResult, "", "");
+      } catch (err) {
+        if ((err == null ? void 0 : err.status) === 401) {
+          doLogout();
+          return;
+        }
+        setResult(cajerosResult, "err", (err == null ? void 0 : err.message) || "Error al cargar cajeros");
+      }
+    };
+
+    const renderCashiers = (container, list) => {
+      if (!container) return;
+      container.innerHTML = "";
+      if (!list.length) {
+        const empty = document.createElement("div");
+        empty.className = "aTxEmpty";
+        empty.textContent = "No hay cajeros creados";
+        container.appendChild(empty);
+        return;
+      }
+      const wrap = document.createElement("div");
+      wrap.className = "aTxTable";
+      const head = document.createElement("div");
+      head.className = "aTxRow aTxRow--cajeros aTxRow--head";
+      ["Nombre", "Usuario", "Creado", "Último Acceso"].forEach(lbl => {
+        const c = document.createElement("div");
+        c.className = "aTxCell";
+        c.textContent = lbl;
+        head.appendChild(c);
+      });
+      wrap.appendChild(head);
+      for (const c of list) {
+        const row = document.createElement("div");
+        row.className = "aTxRow aTxRow--cajeros";
+        const addCell = (label, text, cls) => {
+          const div = document.createElement("div");
+          div.className = "aTxCell" + (cls ? ` ${cls}` : "");
+          div.setAttribute("data-label", label);
+          div.textContent = text || "\u2014";
+          row.appendChild(div);
+        };
+        addCell("Nombre", c.name, "aTxCell--strong");
+        addCell("Usuario", c.username);
+        addCell("Creado", c.createdAt ? new Date(c.createdAt).toLocaleDateString("es-VE") : "\u2014");
+        addCell("Último Acceso", c.lastLogin ? new Date(c.lastLogin).toLocaleString("es-VE", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit" }) : "Nunca");
+        wrap.appendChild(row);
+      }
+      container.appendChild(wrap);
+    };
+
+    if (cajerosRefresh) cajerosRefresh.addEventListener("click", loadCashiers);
     let currentStatsRange = "day";
     const loadAdminStats = async (range = currentStatsRange) => {
       const loader = document.getElementById("adminStatsLoader");
