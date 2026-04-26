@@ -327,7 +327,7 @@
                 <div class="aStatCard__sub" id="stUsersSub">Registrados en el periodo</div>
               </div>
 
-              <div class="aStatCard">
+              <div class="aStatCard" id="statCardEarned" style="cursor: pointer;">
                 <div class="aStatCard__icon" style="color: #34d399; background: rgba(52, 211, 153, 0.1);">
                   <svg viewBox="0 0 24 24" width="20" height="20" fill="none">
                     <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" stroke="currentColor"
@@ -337,9 +337,10 @@
                 <div class="aStatCard__val" id="stPtsEarned" style="color: #34d399;">--</div>
                 <div class="aStatCard__lbl">Puntos Acreditados</div>
                 <div class="aStatCard__sub">Total ganado por clientes</div>
+                <div id="stPtsEarnedBreakdown" style="display: none; margin-top: 16px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 12px; font-size: 13px;"></div>
               </div>
 
-              <div class="aStatCard">
+              <div class="aStatCard" id="statCardRedeemed" style="cursor: pointer;">
                 <div class="aStatCard__icon" style="color: #f87171; background: rgba(248, 113, 113, 0.1);">
                   <svg viewBox="0 0 24 24" width="20" height="20" fill="none">
                     <path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
@@ -348,6 +349,7 @@
                 <div class="aStatCard__val" id="stPtsRedeemed" style="color: #f87171;">--</div>
                 <div class="aStatCard__lbl">Puntos Canjeados</div>
                 <div class="aStatCard__sub">Total consumido / descontado</div>
+                <div id="stPtsRedeemedBreakdown" style="display: none; margin-top: 16px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 12px; font-size: 13px;"></div>
               </div>
             </div>
 
@@ -395,6 +397,7 @@
             <div id="adminRootCardTx" hidden>
               <div class="aSection__label" id="adminCardTxHint">Transacciones del cliente</div>
               <div id="adminCardTxList"></div>
+              <button class="aBtn aBtn--ghost" id="adminCardTxLoadMore" style="margin-top: 16px; width: 100%;" hidden>Cargar más</button>
               <div class="aResult" id="adminCardTxResult" aria-live="polite"></div>
             </div>
           </section>
@@ -418,6 +421,7 @@
               </button>
             </div>
             <div id="adminTxList"></div>
+            <button class="aBtn aBtn--ghost" id="adminTxLoadMore" style="margin-top: 16px; width: 100%;" hidden>Cargar más</button>
             <div class="aResult" id="adminTxResult" aria-live="polite"></div>
           </section>
 

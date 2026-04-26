@@ -2838,7 +2838,7 @@ body {
 
 .aTxRow {
   display: grid;
-  grid-template-columns: 140px 80px 80px 70px 150px 1fr;
+  grid-template-columns: 140px 80px 80px 70px 150px 120px 1fr;
   gap: 10px;
   padding: 12px 14px;
   border-radius: 12px;
@@ -2849,8 +2849,8 @@ body {
 }
 
 .aTxRow--card {
-  grid-template-columns: 140px 80px 80px 70px 70px 70px 1fr;
-  min-width: 740px;
+  grid-template-columns: 140px 80px 80px 70px 70px 70px 120px 1fr;
+  min-width: 860px;
 }
 
 .aTxRow--cajeros {

@@ -410,9 +410,11 @@ if (qrButton) {
     const cardTxHint = document.getElementById("adminCardTxHint");
     const cardTxList = document.getElementById("adminCardTxList");
     const cardTxResult = document.getElementById("adminCardTxResult");
+    const adminCardTxLoadMore = document.getElementById("adminCardTxLoadMore");
     const txRefresh = document.getElementById("adminTxRefresh");
     const txList = document.getElementById("adminTxList");
     const txResult = document.getElementById("adminTxResult");
+    const adminTxLoadMore = document.getElementById("adminTxLoadMore");
     const panelCajeros = document.getElementById("aPanelCajeros");
     const navCajeros = document.getElementById("aNavCajeros");
     const cajerosList = document.getElementById("adminCajerosList");
@@ -422,6 +424,8 @@ if (qrButton) {
     let allCards = [];
     let selectedToken = "";
     let currentValidCode = null;
+    let currentTxLimit = 10;
+    let currentCardTxLimit = 10;
     const setText = (el, text) => {
       if (el) el.textContent = String(text != null ? text : "");
     };
@@ -459,7 +463,7 @@ if (qrButton) {
       }
       const wrap = document.createElement("div");
       wrap.className = "aTxTable";
-      const headLabels = mode === "card" ? ["Fecha", "Tipo", "Estado", "Pts", "Antes", "Despu\xE9s", "Descripci\xF3n"] : ["Fecha", "Tipo", "Estado", "Pts", "Cliente", "Descripci\xF3n"];
+      const headLabels = mode === "card" ? ["Fecha", "Tipo", "Estado", "Pts", "Antes", "Despu\xE9s", "Sede", "Descripci\xF3n"] : ["Fecha", "Tipo", "Estado", "Pts", "Cliente", "Sede", "Descripci\xF3n"];
       const head = document.createElement("div");
       head.className = mode === "card" ? "aTxRow aTxRow--card aTxRow--head" : "aTxRow aTxRow--head";
       for (const lbl of headLabels) {
@@ -492,6 +496,7 @@ if (qrButton) {
         } else {
           addCell("Cliente", String((t == null ? void 0 : t.name) || (t == null ? void 0 : t.token) || "\u2014"));
         }
+        addCell("Sede", String(t.branchName || "\u2014"));
         addCell("Descripci\xF3n", String(t.description || "\u2014"));
         wrap.appendChild(row);
       }
@@ -541,6 +546,7 @@ if (qrButton) {
     if (navClientes) navClientes.addEventListener("click", () => switchPanel("clientes"));
     if (navTx) navTx.addEventListener("click", () => {
       switchPanel("transacciones");
+      currentTxLimit = 10;
       loadAllTransactions();
     });
     if (navStats) navStats.addEventListener("click", () => {
@@ -559,6 +565,7 @@ if (qrButton) {
     if (mobNavClientes) mobNavClientes.addEventListener("click", () => switchPanel("clientes"));
     if (mobNavTx) mobNavTx.addEventListener("click", () => {
       switchPanel("transacciones");
+      currentTxLimit = 10;
       loadAllTransactions();
     });
     if (mobNavStats) mobNavStats.addEventListener("click", () => {
@@ -866,6 +873,7 @@ Esto eliminará también sus transacciones.`
         cardTxSection.hidden = false;
       }
       if (cardTxHint) cardTxHint.textContent = `Transacciones \xB7 ${c.name || "\u2014"}`;
+      currentCardTxLimit = 10;
       loadCardTransactions(c.token);
     };
     if (clientClearBtn) clientClearBtn.addEventListener("click", clearClient);
@@ -936,38 +944,67 @@ Esto eliminará también sus transacciones.`
     const loadAllTransactions = async () => {
       var _a;
       if (!txList) return;
+      if (adminTxLoadMore) adminTxLoadMore.disabled = true;
       setResult(txResult, "info", "Cargando\u2026");
       try {
-        const data = await apiGet("/api/admin/transactions?limit=80");
+        const data = await apiGet(`/api/admin/transactions?limit=${currentTxLimit}`);
         const txs = Array.isArray(data == null ? void 0 : data.transactions) ? data.transactions : [];
         renderTxTable(txList, txs, "all");
         setResult(txResult, "", "");
+        if (adminTxLoadMore) {
+          adminTxLoadMore.hidden = txs.length < currentTxLimit;
+          adminTxLoadMore.disabled = false;
+        }
       } catch (err) {
         if ((err == null ? void 0 : err.status) === 401) {
           doLogout();
           return;
         }
+        if (adminTxLoadMore) adminTxLoadMore.disabled = false;
         setResult(txResult, "err", (_a = err == null ? void 0 : err.message) != null ? _a : "Error");
       }
     };
     const loadCardTransactions = async (token) => {
       var _a;
       if (!cardTxList) return;
+      if (adminCardTxLoadMore) adminCardTxLoadMore.disabled = true;
       setResult(cardTxResult, "info", "Cargando\u2026");
       try {
-        const data = await apiGet(`/api/admin/transactions?token=${encodeURIComponent(token)}&limit=80`);
+        const data = await apiGet(`/api/admin/transactions?token=${encodeURIComponent(token)}&limit=${currentCardTxLimit}`);
         const txs = Array.isArray(data == null ? void 0 : data.transactions) ? data.transactions : [];
         renderTxTable(cardTxList, txs, "card");
         setResult(cardTxResult, "", "");
+        if (adminCardTxLoadMore) {
+          adminCardTxLoadMore.hidden = txs.length < currentCardTxLimit;
+          adminCardTxLoadMore.disabled = false;
+        }
       } catch (err) {
         if ((err == null ? void 0 : err.status) === 401) {
           doLogout();
           return;
         }
+        if (adminCardTxLoadMore) adminCardTxLoadMore.disabled = false;
         setResult(cardTxResult, "err", (_a = err == null ? void 0 : err.message) != null ? _a : "Error");
       }
     };
-    if (txRefresh) txRefresh.addEventListener("click", loadAllTransactions);
+    if (adminTxLoadMore) {
+      adminTxLoadMore.addEventListener("click", () => {
+        currentTxLimit += 10;
+        loadAllTransactions();
+      });
+    }
+    if (adminCardTxLoadMore) {
+      adminCardTxLoadMore.addEventListener("click", () => {
+        currentCardTxLimit += 10;
+        loadCardTransactions(selectedToken);
+      });
+    }
+    if (txRefresh) {
+      txRefresh.addEventListener("click", () => {
+        currentTxLimit = 10;
+        loadAllTransactions();
+      });
+    }
 
     const loadCashiers = async () => {
       if (!cajerosList) return;
@@ -1043,6 +1080,26 @@ Esto eliminará también sus transacciones.`
         }
         if (elEarned) elEarned.textContent = Number(data.pointsEarned || 0).toFixed(2);
         if (elRedeemed) elRedeemed.textContent = Number(data.pointsRedeemed || 0).toFixed(2);
+        
+        const renderBreakdown = (containerId, obj) => {
+          const container = document.getElementById(containerId);
+          if (!container) return;
+          if (!obj || Object.keys(obj).length === 0) {
+            container.innerHTML = "<div style='color: rgba(255,255,255,0.4); text-align: center; font-style: italic;'>Sin datos por sede</div>";
+            return;
+          }
+          let html = "";
+          for (const [branch, pts] of Object.entries(obj)) {
+            html += `<div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+              <span style="color: rgba(255,255,255,0.7);">${branch}</span>
+              <span style="font-weight: 600; color: #fff;">${Number(pts).toFixed(2)} pts</span>
+            </div>`;
+          }
+          container.innerHTML = html;
+        };
+
+        renderBreakdown("stPtsEarnedBreakdown", data.earnedByBranch);
+        renderBreakdown("stPtsRedeemedBreakdown", data.redeemedByBranch);
       } catch (err) {
         if ((err == null ? void 0 : err.status) === 401) {
           doLogout();
@@ -1052,6 +1109,21 @@ Esto eliminará también sus transacciones.`
         if (loader) loader.hidden = true;
       }
     };
+    const statCardEarned = document.getElementById("statCardEarned");
+    if (statCardEarned) {
+      statCardEarned.addEventListener("click", () => {
+        const bd = document.getElementById("stPtsEarnedBreakdown");
+        if (bd) bd.style.display = bd.style.display === "none" ? "block" : "none";
+      });
+    }
+    const statCardRedeemed = document.getElementById("statCardRedeemed");
+    if (statCardRedeemed) {
+      statCardRedeemed.addEventListener("click", () => {
+        const bd = document.getElementById("stPtsRedeemedBreakdown");
+        if (bd) bd.style.display = bd.style.display === "none" ? "block" : "none";
+      });
+    }
+
     const filterBtns = document.querySelectorAll(".aFilterBtn");
     filterBtns.forEach((btn) => {
       btn.addEventListener("click", (e) => {

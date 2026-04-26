@@ -29,7 +29,8 @@ export default async function handler(req, res) {
     sendJson(res, 200, { 
       status: data.status,
       points: data.points,
-      amount: data.amount
+      amount: data.amount,
+      branchName: data.branchName
     });
   } catch (err) {
     sendJson(res, 500, { error: 'Internal server error' });

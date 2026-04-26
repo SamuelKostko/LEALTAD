@@ -83,6 +83,14 @@ const startPolling = (txId) => {
       if (res.ok && (data == null ? void 0 : data.status) === "success") {
         stopPolling();
         closeQroModal();
+        const txBranchWrapper = document.getElementById("txBranchWrapper");
+        const txBranchName = document.getElementById("txBranchName");
+        if (data.branchName && txBranchWrapper && txBranchName) {
+            txBranchName.textContent = data.branchName;
+            txBranchWrapper.hidden = false;
+        } else if (txBranchWrapper) {
+            txBranchWrapper.hidden = true;
+        }
         openSuccessModal();
       }
     } catch {

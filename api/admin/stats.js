@@ -63,11 +63,14 @@ export default async function handler(req, res) {
 
     let pointsEarned = 0;
     let pointsRedeemed = 0;
+    const earnedByBranch = {};
+    const redeemedByBranch = {};
 
     txSnap.forEach(doc => {
       const data = doc.data() || {};
       const pts = Number(data.points) || 0;
       const status = data.status;
+      const branchName = typeof data.branchName === 'string' && data.branchName.trim() !== '' ? data.branchName.trim() : 'Sin sede';
       
       // Filter: If status is present, it must be success. If missing, we assume success for legacy credits.
       if (status !== undefined && status !== 'success') return;
@@ -75,8 +78,10 @@ export default async function handler(req, res) {
       // Mappings based on database types
       if (data.type === 'credit' || data.type === 'purchase_credit' || (!data.type && pts > 0)) {
         pointsEarned += pts;
+        earnedByBranch[branchName] = (earnedByBranch[branchName] || 0) + pts;
       } else if (data.type === 'pos_charge' || data.type === 'redeem') {
         pointsRedeemed += pts;
+        redeemedByBranch[branchName] = (redeemedByBranch[branchName] || 0) + pts;
       }
     });
 
@@ -85,6 +90,8 @@ export default async function handler(req, res) {
       newUsers,
       pointsEarned,
       pointsRedeemed,
+      earnedByBranch,
+      redeemedByBranch,
       range
     });
 
