@@ -6,7 +6,7 @@ import { makeToken, normalizeEmail } from '../_lib/utils.js';
 
 
 
-async function dbProcessPurchase({ email, name, cedula, pointsToAdd, absoluteBalance }) {
+async function dbProcessPurchase({ email, name, cedula, pointsToAdd, absoluteBalance, sede }) {
   const now = new Date(); // Using Date object for Firestore Timestamp compatibility
   const firestore = getFirestoreDb();
   const customerRef = firestore.collection('clientes').doc(email);
@@ -39,6 +39,7 @@ async function dbProcessPurchase({ email, name, cedula, pointsToAdd, absoluteBal
           idNumber: cedula,
           email,
           totalPoints: finalBalance,
+          sedes: sede || '',
           createdAt: now,
           updatedAt: now
         },
@@ -66,6 +67,7 @@ async function dbProcessPurchase({ email, name, cedula, pointsToAdd, absoluteBal
           nombre: name,
           idNumber: cedula,
           totalPoints: finalBalance,
+          sedes: sede || '',
           updatedAt: now
         },
         { merge: true }
@@ -79,6 +81,7 @@ async function dbProcessPurchase({ email, name, cedula, pointsToAdd, absoluteBal
         status: 'success',
         token,
         points: creditedPoints,
+        branchName: sede || '',
         description: firstActivation ? 'Activación' : 'Crédito',
         balanceBefore: balanceBefore,
         balanceAfter: finalBalance,
@@ -115,6 +118,7 @@ export default async function handler(req, res) {
     // Support either adding points OR forcing an absolute balance
     const pointsToAdd = body?.points !== undefined ? Number(body.points) : null;
     const absoluteBalance = body?.balance !== undefined ? Number(body.balance) : null;
+    const sede = String(body?.sede || body?.sedes || body?.branch || '').trim();
 
     if (!email || !email.includes('@') || !name || !cedula || (pointsToAdd === null && absoluteBalance === null)) {
       sendJson(res, 400, { error: 'Invalid body. Expected: { email, name, cedula, and either points or balance }' });
@@ -127,7 +131,8 @@ export default async function handler(req, res) {
       name,
       cedula,
       pointsToAdd,
-      absoluteBalance
+      absoluteBalance,
+      sede
     });
 
     const linkPath = `/card/${token}`;

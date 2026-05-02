@@ -52,11 +52,22 @@ export default async function handler(req, res) {
     const totalUsersSnap = await firestore.collection('clientes').get();
     const totalUsers = totalUsersSnap.size;
 
-    // Group clients by branch
+    // Group clients by branch (only those registered in the period)
     const clientsByBranch = {};
+    const start = since ? new Date(since) : null;
+    
     totalUsersSnap.forEach(doc => {
-      const data = doc.data() || {};
-      const branch = typeof data.sedes === 'string' && data.sedes.trim() !== '' ? data.sedes.trim() : 'Sin sede';
+      const c = doc.data() || {};
+      const createdAt = c.createdAt ? (c.createdAt.toDate ? c.createdAt.toDate() : new Date(c.createdAt)) : null;
+      
+      // Filter by date if 'since' is provided
+      if (start && (!createdAt || createdAt < start)) return;
+
+      const branch = (typeof c.sedes === 'string' && c.sedes.trim() !== '') 
+        ? c.sedes.trim() 
+        : (typeof c.sede === 'string' && c.sede.trim() !== '') 
+          ? c.sede.trim() 
+          : 'Sin sede';
       clientsByBranch[branch] = (clientsByBranch[branch] || 0) + 1;
     });
 

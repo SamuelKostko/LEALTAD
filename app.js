@@ -757,12 +757,14 @@ if (qrButton) {
         return;
       }
 
-      const current = allCards.find((c) => c.token === selectedToken) || { name: "", cedula: "" };
+      const current = allCards.find((c) => c.token === selectedToken) || { name: "", cedula: "", sedes: "" };
       const name = String(window.prompt("Nombre del cliente:", current.name || "") ?? "").trim();
       if (!name) return;
 
       const cedula = String(window.prompt("Cédula del cliente:", current.cedula || "") ?? "").trim();
       if (!cedula) return;
+
+      const sede = String(window.prompt("Sede del cliente:", current.sedes || "") ?? "").trim();
 
       setResult(clientsResult, "info", "Actualizando cliente…");
       try {
@@ -770,7 +772,7 @@ if (qrButton) {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
-          body: JSON.stringify({ token: selectedToken, name, cedula })
+          body: JSON.stringify({ token: selectedToken, name, cedula, sede })
         });
         const data = await res.json().catch(() => null);
 
@@ -939,7 +941,7 @@ Esto eliminará también sus transacciones.`
             token: String((_a2 = c == null ? void 0 : c.token) != null ? _a2 : "").trim(),
             name: String((_b = c == null ? void 0 : c.name) != null ? _b : "").trim(),
             cedula: String((_c = c == null ? void 0 : c.cedula) != null ? _c : "").trim(),
-            sedes: String((c == null ? void 0 : c.sedes) || "Sin sede").trim(),
+            sedes: String((c == null ? void 0 : c.sedes) || (c == null ? void 0 : c.sede) || "Sin sede").trim(),
             balance: Number.isFinite(Number(c == null ? void 0 : c.balance)) ? Number(c.balance) : 0
           };
         }).filter((c) => c.token);
@@ -952,6 +954,7 @@ Esto eliminará también sus transacciones.`
         setResult(clientsResult, "err", (_a = err == null ? void 0 : err.message) != null ? _a : "Error al cargar clientes");
       }
     };
+
     const loadAllTransactions = async () => {
       var _a;
       if (!txList) return;

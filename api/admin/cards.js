@@ -88,6 +88,7 @@ export default async function handler(req, res) {
     const token = String(body?.token ?? '').trim();
     const name = String(body?.name ?? '').trim();
     const cedula = String(body?.cedula ?? '').trim();
+    const sede = String(body?.sede ?? '').trim();
 
     if (!token) {
       sendJson(res, 400, { error: 'Token requerido.' });
@@ -114,6 +115,7 @@ export default async function handler(req, res) {
           nombre: name,
           idNumber: cedula,
           cedula,
+          sedes: sede,
           updatedAt: FieldValue.serverTimestamp()
         },
         { merge: true }
