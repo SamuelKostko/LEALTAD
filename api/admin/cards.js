@@ -207,6 +207,7 @@ export default async function handler(req, res) {
             ? data.idNumber
             : (typeof data.cedula === 'string' ? data.cedula : ''),
         balance: Number.isFinite(Number(data.totalPoints)) ? Number(data.totalPoints) : 0,
+        sedes: typeof data.sedes === 'string' ? data.sedes : 'Sin sede',
         updatedAt: toIso(data.updatedAt)
       };
     });

@@ -14,26 +14,51 @@ export default async function handler(req, res) {
   const range = String(url.searchParams.get('range') ?? 'all').trim();
 
   let since = null;
-  const now = Date.now();
+  const now = new Date();
+
+  // Helper to get the start of the day in Venezuela time (GMT-4)
+  const getVzlaToday = () => {
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'America/Caracas',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    });
+    const parts = formatter.formatToParts(now);
+    const d = {};
+    parts.forEach(p => d[p.type] = p.value);
+    // Construct ISO string for 00:00:00 in Caracas
+    return new Date(`${d.year}-${d.month}-${d.day}T00:00:00-04:00`);
+  };
+
+  const vzlaToday = getVzlaToday().getTime();
 
   if (range === 'day') {
-    since = now - 24 * 3600 * 1000;
+    since = vzlaToday;
   } else if (range === 'week') {
-    since = now - 7 * 24 * 3600 * 1000;
+    since = vzlaToday - 6 * 24 * 3600 * 1000;
   } else if (range === 'month') {
-    since = now - 30 * 24 * 3600 * 1000;
+    since = vzlaToday - 29 * 24 * 3600 * 1000;
   } else if (range === 'semester') {
-    since = now - 182 * 24 * 3600 * 1000;
+    since = vzlaToday - 181 * 24 * 3600 * 1000;
   } else if (range === 'year') {
-    since = now - 365 * 24 * 3600 * 1000;
+    since = vzlaToday - 364 * 24 * 3600 * 1000;
   }
 
   try {
     const firestore = getFirestoreDb();
 
-    // 1. Total users (entire collection count - this is fast for standard collections)
+    // 1. Total users (entire collection count)
     const totalUsersSnap = await firestore.collection('clientes').get();
     const totalUsers = totalUsersSnap.size;
+
+    // Group clients by branch
+    const clientsByBranch = {};
+    totalUsersSnap.forEach(doc => {
+      const data = doc.data() || {};
+      const branch = typeof data.sedes === 'string' && data.sedes.trim() !== '' ? data.sedes.trim() : 'Sin sede';
+      clientsByBranch[branch] = (clientsByBranch[branch] || 0) + 1;
+    });
 
     // 2. New users (filtered by createdAt)
     let newUsers = 0;
@@ -41,7 +66,6 @@ export default async function handler(req, res) {
       newUsers = totalUsers;
     } else {
       const sinceDate = new Date(since);
-      // We use a separate query to allow Firestore to use indexes
       const newUsersSnap = await firestore.collection('clientes')
         .where('createdAt', '>=', sinceDate)
         .get();
@@ -49,13 +73,10 @@ export default async function handler(req, res) {
     }
 
     // 3. Transactions (filtered by date)
-    // We remove the strict 'status == success' from the query because legacy credit transactions
-    // might not have the status field yet. We filter in-memory for accuracy.
     let txQuery = firestore.collection('transactions');
 
     if (since) {
       const sinceDate = new Date(since);
-      // We use createdAt for the query as it's the more consistent field across all versions
       txQuery = txQuery.where('createdAt', '>=', sinceDate);
     }
 
@@ -72,10 +93,8 @@ export default async function handler(req, res) {
       const status = data.status;
       const branchName = typeof data.branchName === 'string' && data.branchName.trim() !== '' ? data.branchName.trim() : 'Sin sede';
       
-      // Filter: If status is present, it must be success. If missing, we assume success for legacy credits.
       if (status !== undefined && status !== 'success') return;
 
-      // Mappings based on database types
       if (data.type === 'credit' || data.type === 'purchase_credit' || (!data.type && pts > 0)) {
         pointsEarned += pts;
         earnedByBranch[branchName] = (earnedByBranch[branchName] || 0) + pts;
@@ -92,6 +111,7 @@ export default async function handler(req, res) {
       pointsRedeemed,
       earnedByBranch,
       redeemedByBranch,
+      clientsByBranch,
       range
     });
 

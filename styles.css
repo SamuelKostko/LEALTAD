@@ -2858,6 +2858,11 @@ body {
   min-width: 650px;
 }
 
+.aTxRow--sedes {
+  grid-template-columns: 140px 100px 100px 100px 1fr;
+  min-width: 580px;
+}
+
 .aTxRow--head {
   background: transparent;
   border: none;
@@ -3068,21 +3073,17 @@ body {
   .aDash__main {
     flex: 1;
     overflow-y: auto;
+    overflow-x: hidden;
     -webkit-overflow-scrolling: touch;
-    padding-bottom: calc(72px + env(safe-area-inset-bottom));
+    overscroll-behavior-y: contain;
+    padding-bottom: calc(68px + env(safe-area-inset-bottom));
   }
 
   .aPanel {
-    padding: 20px 16px 24px;
+    padding: 16px 14px 20px;
   }
 
-  /* Bottom navigation bar */
-  .aDash::after {
-    content: '';
-    display: none;
-  }
-
-  /* A fixed bottom bar injected via CSS on the aDash element */
+  /* ── Bottom navigation bar ── */
   .aMobileNav {
     display: flex;
     position: fixed;
@@ -3090,104 +3091,134 @@ body {
     left: 0;
     right: 0;
     z-index: 200;
-    background: rgba(17, 17, 19, 0.92);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(13, 13, 15, 0.96);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border-top: 1px solid rgba(255, 255, 255, 0.09);
     padding-bottom: env(safe-area-inset-bottom);
+    /* Allow horizontal scroll when many items */
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
   }
 
-  .aMobileNav__item {
-    flex: 1;
+  .aMobileNav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .aMobileNav__item,
+  .aMobileNav__qr,
+  .aMobileNav__logout {
+    flex: 0 0 auto;
+    min-width: 64px;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 4px;
-    padding: 10px 0 8px;
+    gap: 3px;
+    padding: 9px 8px 7px;
     background: none;
     border: none;
-    color: rgba(255, 255, 255, 0.38);
-    font-size: 10px;
+    font-size: 9px;
     font-weight: 600;
     letter-spacing: 0.04em;
     cursor: pointer;
     font-family: inherit;
     transition: color 120ms;
     text-transform: uppercase;
+    white-space: nowrap;
+    text-decoration: none;
   }
 
-  .aMobileNav__item svg {
+  .aMobileNav__item svg,
+  .aMobileNav__qr svg,
+  .aMobileNav__logout svg {
     flex-shrink: 0;
+    width: 19px;
+    height: 19px;
+  }
+
+  .aMobileNav__item {
+    color: rgba(255, 255, 255, 0.38);
   }
 
   .aMobileNav__item.is-active {
     color: #a5b4fc;
   }
 
-  /* Action buttons in bottom bar */
+  .aMobileNav__item.is-active svg {
+    filter: drop-shadow(0 0 6px rgba(165, 180, 252, 0.5));
+  }
+
   .aMobileNav__qr {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 4px;
-    padding: 10px 0 8px;
-    background: none;
-    border: none;
     color: #a5b4fc;
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 0.04em;
-    cursor: pointer;
-    font-family: inherit;
-    text-transform: uppercase;
   }
 
   .aMobileNav__logout {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 4px;
-    padding: 10px 0 8px;
-    background: none;
-    border: none;
-    color: rgba(255, 255, 255, 0.32);
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 0.04em;
-    cursor: pointer;
-    font-family: inherit;
-    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.28);
   }
 
-  /* Panel title adjustments */
+  /* ── Panel header ── */
   .aPanel__title {
-    font-size: 18px;
+    font-size: 17px;
+  }
+
+  .aPanel__sub {
+    font-size: 12px;
   }
 
   .aPanel__header {
-    margin-bottom: 16px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+    gap: 10px;
   }
 
-  /* Stats cards: single column */
+  /* ── Filter buttons: wrap in mobile ── */
+  .aFilterGroups {
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 3px;
+  }
+
+  .aFilterBtn {
+    font-size: 11px;
+    padding: 5px 9px;
+  }
+
+  /* ── Stats cards: two-column grid on mobile ── */
   .aStatCards {
-    grid-template-columns: 1fr;
-    gap: 12px;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 14px;
   }
 
   .aStatCard {
-    padding: 18px 16px;
+    padding: 14px 12px;
+    border-radius: 16px;
+  }
+
+  .aStatCard__icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    margin-bottom: 10px;
   }
 
   .aStatCard__val {
-    font-size: 28px;
+    font-size: 24px;
+    margin-bottom: 4px;
   }
 
-  /* Transactions: labeled-card layout on mobile */
+  .aStatCard__lbl {
+    font-size: 11px;
+  }
+
+  .aStatCard__sub {
+    font-size: 10px;
+  }
+
+  /* ── Transaction tables: card layout on mobile ── */
   .aTxTable {
     overflow-x: visible;
     gap: 8px;
@@ -3198,7 +3229,8 @@ body {
     grid-template-columns: 1fr 1fr;
     min-width: 0;
     gap: 10px 8px;
-    padding: 14px 12px;
+    padding: 12px 12px;
+    border-radius: 12px;
   }
 
   /* Date cell: full width at top */
@@ -3226,16 +3258,16 @@ body {
   .aTxCell[data-label]::before {
     content: attr(data-label);
     display: block;
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 0.06em;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.07em;
     text-transform: uppercase;
-    color: rgba(255, 255, 255, 0.28);
-    margin-bottom: 3px;
+    color: rgba(255, 255, 255, 0.25);
+    margin-bottom: 2px;
   }
 
   .aTxCell--pts {
-    font-size: 18px;
+    font-size: 17px;
     font-weight: 800;
     text-align: right;
   }
@@ -3249,17 +3281,63 @@ body {
     min-width: 0;
   }
 
-  .aDash__main {
-    overflow-x: hidden;
+  /* Sedes table: stack vertically on mobile */
+  .aTxRow--sedes {
+    grid-template-columns: 1fr 1fr;
+    min-width: 0;
   }
 
-  /* Client card tweaks */
+  .aTxRow--sedes .aTxCell:nth-child(1) {
+    grid-column: 1 / -1;
+    font-size: 13px;
+    font-weight: 700;
+    color: #fff;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    padding-bottom: 8px;
+    margin-bottom: 2px;
+  }
+
+  /* ── Client card ── */
   .aClientCard {
     padding: 12px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .aClientCard__info {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .aClientCard__balance {
+    text-align: left;
   }
 
   .aClientCard__balanceVal {
-    font-size: 18px;
+    font-size: 20px;
+  }
+
+  .aClientCard__actions {
+    width: 100%;
+    flex-direction: row;
+    gap: 8px;
+  }
+
+  .aClientCard__actions .aBtn {
+    flex: 1;
+    font-size: 12px;
+    padding: 9px 8px;
+  }
+
+  /* ── Search input ── */
+  .aSearch__input {
+    font-size: 16px; /* prevents iOS zoom on focus */
+  }
+
+  /* ── Icon button ── */
+  .aIconBtn {
+    width: 34px;
+    height: 34px;
   }
 }
 

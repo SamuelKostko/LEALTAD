@@ -421,6 +421,12 @@ if (qrButton) {
     const cajerosResult = document.getElementById("adminCajerosResult");
     const cajerosRefresh = document.getElementById("adminCajerosRefresh");
     const mobNavCajeros = document.getElementById("aMobNavCajeros");
+    const panelSedes = document.getElementById("aPanelSedes");
+    const navSedes = document.getElementById("aNavSedes");
+    const mobNavSedes = document.getElementById("aMobNavSedes");
+    const sedesList = document.getElementById("adminSedesList");
+    const sedesResult = document.getElementById("adminSedesResult");
+    const sedesRefresh = document.getElementById("adminSedesRefresh");
     let allCards = [];
     let selectedToken = "";
     let currentValidCode = null;
@@ -520,26 +526,28 @@ if (qrButton) {
     const showDash = () => {
       if (loginModal) loginModal.hidden = true;
       if (dash) dash.hidden = false;
-      const mobileNav2 = document.getElementById("aMobileNav");
-      if (mobileNav2 && window.innerWidth <= 640) mobileNav2.style.display = "flex";
     };
     const switchPanel = (panel) => {
       if (panelClientes) panelClientes.hidden = panel !== "clientes";
       if (panelTx) panelTx.hidden = panel !== "transacciones";
       if (panelStats) panelStats.hidden = panel !== "metricas";
       if (panelCajeros) panelCajeros.hidden = panel !== "cajeros";
+      if (panelSedes) panelSedes.hidden = panel !== "sedes";
       if (navClientes) navClientes.classList.toggle("is-active", panel === "clientes");
       if (navTx) navTx.classList.toggle("is-active", panel === "transacciones");
       if (navStats) navStats.classList.toggle("is-active", panel === "metricas");
       if (navCajeros) navCajeros.classList.toggle("is-active", panel === "cajeros");
+      if (navSedes) navSedes.classList.toggle("is-active", panel === "sedes");
       const mobClientes = document.getElementById("aMobNavClientes");
       const mobTx = document.getElementById("aMobNavTx");
       const mobStats = document.getElementById("aMobNavStats");
       const mobCajeros = document.getElementById("aMobNavCajeros");
+      const mobSedes = document.getElementById("aMobNavSedes");
       if (mobClientes) mobClientes.classList.toggle("is-active", panel === "clientes");
       if (mobTx) mobTx.classList.toggle("is-active", panel === "transacciones");
       if (mobStats) mobStats.classList.toggle("is-active", panel === "metricas");
       if (mobCajeros) mobCajeros.classList.toggle("is-active", panel === "cajeros");
+      if (mobSedes) mobSedes.classList.toggle("is-active", panel === "sedes");
       const main = document.querySelector(".aDash__main");
       if (main) main.scrollTop = 0;
     };
@@ -556,6 +564,10 @@ if (qrButton) {
     if (navCajeros) navCajeros.addEventListener("click", () => {
       switchPanel("cajeros");
       loadCashiers();
+    });
+    if (navSedes) navSedes.addEventListener("click", () => {
+      switchPanel("sedes");
+      loadSedesStats();
     });
     const mobNavClientes = document.getElementById("aMobNavClientes");
     const mobNavTx = document.getElementById("aMobNavTx");
@@ -576,15 +588,11 @@ if (qrButton) {
       switchPanel("cajeros");
       loadCashiers();
     });
-    const mobileNav = document.getElementById("aMobileNav");
-    if (mobileNav) {
-      const updateNavVisibility = () => {
-        if (!dash.hidden) {
-          mobileNav.style.display = window.innerWidth <= 640 ? "flex" : "none";
-        }
-      };
-      window.addEventListener("resize", updateNavVisibility);
-    }
+    if (mobNavSedes) mobNavSedes.addEventListener("click", () => {
+      switchPanel("sedes");
+      loadSedesStats();
+    });
+
     if (goQrBtn) goQrBtn.addEventListener("click", () => {
       window.location.href = "/admin/qr";
     });
@@ -865,6 +873,8 @@ Esto eliminará también sus transacciones.`
       if (clientAvatarEl) clientAvatarEl.textContent = getInitials(c.name);
       if (clientNameEl) clientNameEl.textContent = c.name || "\u2014";
       if (clientMetaEl) clientMetaEl.textContent = c.cedula ? `CI: ${c.cedula}` : "Sin c\xE9dula";
+      const sedesEl = document.getElementById("aClientSedes");
+      if (sedesEl) sedesEl.textContent = `Sede: ${c.sedes || "Sin sede"}`;
       if (clientBalanceEl) clientBalanceEl.textContent = Number((_a = c.balance) != null ? _a : 0).toFixed(2);
       const cashEl = document.getElementById("aClientBalanceCash");
       if (cashEl) cashEl.textContent = `\u2248 ${(Number((_b = c.balance) != null ? _b : 0) / 100).toFixed(2)} $`;
@@ -929,6 +939,7 @@ Esto eliminará también sus transacciones.`
             token: String((_a2 = c == null ? void 0 : c.token) != null ? _a2 : "").trim(),
             name: String((_b = c == null ? void 0 : c.name) != null ? _b : "").trim(),
             cedula: String((_c = c == null ? void 0 : c.cedula) != null ? _c : "").trim(),
+            sedes: String((c == null ? void 0 : c.sedes) || "Sin sede").trim(),
             balance: Number.isFinite(Number(c == null ? void 0 : c.balance)) ? Number(c.balance) : 0
           };
         }).filter((c) => c.token);
@@ -1005,6 +1016,109 @@ Esto eliminará también sus transacciones.`
         loadAllTransactions();
       });
     }
+
+    let currentSedesRange = "all";
+    const loadSedesStats = async (range = currentSedesRange) => {
+      if (!sedesList) return;
+      currentSedesRange = range;
+      
+      const filterGroup = document.getElementById("sedesFilterGroups");
+      if (filterGroup) {
+        filterGroup.querySelectorAll(".aFilterBtn").forEach(btn => {
+          btn.classList.toggle("is-active", btn.getAttribute("data-range") === range);
+        });
+      }
+
+      setResult(sedesResult, "info", "Cargando desglose de sedes\u2026");
+      try {
+        const data = await apiGet(`/api/admin/stats?range=${encodeURIComponent(range)}`);
+        renderSedesTable(sedesList, data);
+        setResult(sedesResult, "", "");
+      } catch (err) {
+        if ((err == null ? void 0 : err.status) === 401) {
+          doLogout();
+          return;
+        }
+        setResult(sedesResult, "err", (err == null ? void 0 : err.message) || "Error al cargar sedes");
+      }
+    };
+
+    const sedesFilterGroup = document.getElementById("sedesFilterGroups");
+    if (sedesFilterGroup) {
+      sedesFilterGroup.addEventListener("click", (e) => {
+        const btn = e.target.closest(".aFilterBtn");
+        if (btn) {
+          const range = btn.getAttribute("data-range");
+          if (range) loadSedesStats(range);
+        }
+      });
+    }
+
+    const renderSedesTable = (container, data) => {
+      if (!container) return;
+      container.innerHTML = "";
+      
+      const earned = data.earnedByBranch || {};
+      const redeemed = data.redeemedByBranch || {};
+      const clients = data.clientsByBranch || {};
+      
+      // Get unique list of all branches mentioned
+      const branches = [...new Set([
+        ...Object.keys(earned),
+        ...Object.keys(redeemed),
+        ...Object.keys(clients)
+      ])].sort();
+
+      if (!branches.length) {
+        const empty = document.createElement("div");
+        empty.className = "aTxEmpty";
+        empty.textContent = "No hay datos de sedes registrados";
+        container.appendChild(empty);
+        return;
+      }
+
+      const wrap = document.createElement("div");
+      wrap.className = "aTxTable";
+      
+      const head = document.createElement("div");
+      head.className = "aTxRow aTxRow--sedes aTxRow--head";
+      ["Sede", "Clientes", "Acreditados", "Canjeados", "Balance"].forEach(lbl => {
+        const c = document.createElement("div");
+        c.className = "aTxCell";
+        c.textContent = lbl;
+        head.appendChild(c);
+      });
+      wrap.appendChild(head);
+
+      for (const b of branches) {
+        const row = document.createElement("div");
+        row.className = "aTxRow aTxRow--sedes";
+        
+        const bEarned = earned[b] || 0;
+        const bRedeemed = redeemed[b] || 0;
+        const bClients = clients[b] || 0;
+        const bBalance = bEarned - bRedeemed;
+
+        const addCell = (label, text, cls) => {
+          const div = document.createElement("div");
+          div.className = "aTxCell" + (cls ? ` ${cls}` : "");
+          div.setAttribute("data-label", label);
+          div.textContent = text;
+          row.appendChild(div);
+        };
+
+        addCell("Sede", b, "aTxCell--strong");
+        addCell("Clientes", String(bClients));
+        addCell("Acreditados", bEarned.toFixed(2));
+        addCell("Canjeados", bRedeemed.toFixed(2));
+        addCell("Balance", bBalance.toFixed(2), bBalance >= 0 ? "aTxCell--pts" : "aTxCell--danger");
+        
+        wrap.appendChild(row);
+      }
+      container.appendChild(wrap);
+    };
+
+    if (sedesRefresh) sedesRefresh.addEventListener("click", loadSedesStats);
 
     const loadCashiers = async () => {
       if (!cajerosList) return;

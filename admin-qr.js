@@ -97,7 +97,32 @@ const startPolling = (txId) => {
     }
   }, 2e3);
 };
-if (qroModalCloseBtn) qroModalCloseBtn.addEventListener("click", closeQroModal);
+if (qroModalCloseBtn) {
+  qroModalCloseBtn.addEventListener("click", async () => {
+    if (currentTxId) {
+      // Update UI immediately so the admin sees feedback
+      const loaderText = document.getElementById("qroLoaderText");
+      if (loaderText) loaderText.textContent = "Cancelando cobro...";
+      qroModalCloseBtn.disabled = true;
+
+      try {
+        await fetch("/api/admin/cancel-tx", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ transactionId: currentTxId })
+        });
+      } catch {
+        // Even if the request fails, close the modal
+      }
+
+      qroModalCloseBtn.disabled = false;
+      if (loaderText) loaderText.textContent = "Esperando escaneo...";
+    }
+    closeQroModal();
+  });
+}
+
 if (txSuccessCloseBtn) txSuccessCloseBtn.addEventListener("click", closeSuccessModal);
 const copyText = async (text) => {
   try {
