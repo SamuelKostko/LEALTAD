@@ -65,6 +65,77 @@ export default async function handler(req, res) {
     }
   }
 
+  if (req.method === 'DELETE') {
+    let body;
+    try {
+      body = await readJsonBody(req);
+    } catch {
+      sendJson(res, 400, { error: 'Invalid JSON body' });
+      return;
+    }
+
+    const id = String(body?.id ?? '').trim();
+    if (!id) {
+      sendJson(res, 400, { error: 'ID de cajero requerido.' });
+      return;
+    }
+
+    try {
+      await firestore.collection('cashiers').doc(id).delete();
+      sendJson(res, 200, { ok: true, message: 'Cajero eliminado.' });
+    } catch (err) {
+      console.error('Error deleting cashier:', err);
+      sendJson(res, 500, { error: 'Error interno al eliminar.' });
+    }
+    return;
+  }
+
+  if (req.method === 'PATCH') {
+    let body;
+    try {
+      body = await readJsonBody(req);
+    } catch {
+      sendJson(res, 400, { error: 'Invalid JSON body' });
+      return;
+    }
+
+    const id = String(body?.id ?? '').trim();
+    if (!id) {
+      sendJson(res, 400, { error: 'ID de cajero requerido.' });
+      return;
+    }
+
+    const updates = { updatedAt: FieldValue.serverTimestamp() };
+    if (body.name !== undefined) {
+      const name = String(body.name).trim();
+      if (name.length > 120) {
+        sendJson(res, 400, { error: 'Nombre demasiado largo.' });
+        return;
+      }
+      updates.name = name || null;
+    }
+
+    if (body.password !== undefined) {
+      const pwd = String(body.password).trim();
+      if (pwd.length > 0) {
+        if (pwd.length < 6) {
+          sendJson(res, 400, { error: 'La contraseña debe tener al menos 6 caracteres.' });
+          return;
+        }
+        updates.password = pwd;
+      }
+    }
+
+    try {
+      await firestore.collection('cashiers').doc(id).update(updates);
+      sendJson(res, 200, { ok: true, message: 'Cajero actualizado.' });
+    } catch (err) {
+      console.error('Error updating cashier:', err);
+      sendJson(res, 500, { error: 'Error interno al actualizar.' });
+    }
+    return;
+  }
+
   if (req.method !== 'POST') {
     sendJson(res, 405, { error: 'Method Not Allowed' });
     return;

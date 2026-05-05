@@ -195,26 +195,44 @@ export default async function handler(req, res) {
   }
 
   const url = new URL(req.url, 'http://localhost');
-  const limit = clampInt(url.searchParams.get('limit'), { min: 1, max: 200, fallback: 50 });
+  const limit = clampInt(url.searchParams.get('limit'), { min: 1, max: 5000, fallback: 50 });
+  const search = String(url.searchParams.get('q') ?? '').trim().toLowerCase();
 
   try {
-    const snap = await firestore.collection('clientes').orderBy('updatedAt', 'desc').limit(limit).get();
-    const cards = snap.docs.map((d) => {
+    const url = new URL(req.url, 'http://localhost');
+    const limit = clampInt(url.searchParams.get('limit'), { min: 1, max: 5000, fallback: 1000 });
+    const search = String(url.searchParams.get('q') ?? '').trim().toLowerCase();
+
+    let query = firestore.collection('clientes');
+    
+    // Fetch a large enough set without complex ordering to avoid index requirements
+    const snap = await query.limit(2000).get();
+    let cards = snap.docs.map((d) => {
       const data = d.data() || {};
       return {
-        token: typeof data.token === 'string' ? data.token : d.id, // Fallback to doc ID if token field is missing
-        name: typeof data.nombre === 'string' ? data.nombre : '',
-        cedula:
-          typeof data.idNumber === 'string'
-            ? data.idNumber
-            : (typeof data.cedula === 'string' ? data.cedula : ''),
+        token: String(data.token || d.id),
+        name: String(data.nombre || data.name || ''),
+        email: String(data.email || d.id),
+        cedula: String(data.idNumber || data.cedula || ''),
         balance: Number.isFinite(Number(data.totalPoints)) ? Number(data.totalPoints) : 0,
-        sedes: typeof data.sedes === 'string' ? data.sedes : 'Sin sede',
+        sedes: String(data.sedes || data.sede || 'Sin sede'),
         updatedAt: toIso(data.updatedAt)
       };
     });
 
-    sendJson(res, 200, { ok: true, cards });
+    if (search) {
+      cards = cards.filter(c => 
+        c.name.toLowerCase().includes(search) || 
+        c.cedula.toLowerCase().includes(search) || 
+        c.token.toLowerCase().includes(search) ||
+        c.email.toLowerCase().includes(search)
+      );
+    } else {
+      // Sort by updatedAt in memory if not searching
+      cards.sort((a, b) => (b.updatedAt > a.updatedAt ? 1 : -1));
+    }
+
+    sendJson(res, 200, { ok: true, cards: cards.slice(0, limit) });
   } catch (err) {
     sendJson(res, 500, { ok: false, error: err?.message ?? String(err) });
   }

@@ -30,5 +30,10 @@ export default async function handler(req, res) {
   }
 
   const role = String(auth.data?.role ?? '').trim().toLowerCase() || 'admin';
-  sendJson(res, 200, { ok: true, authenticated: true, role });
+  const payload = { ok: true, authenticated: true, role };
+  
+  if (auth.data?.name) payload.name = String(auth.data.name).trim();
+  if (auth.data?.username) payload.username = String(auth.data.username).trim();
+
+  sendJson(res, 200, payload);
 }

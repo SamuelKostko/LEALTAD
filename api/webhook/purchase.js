@@ -118,7 +118,7 @@ export default async function handler(req, res) {
     // Support either adding points OR forcing an absolute balance
     const pointsToAdd = body?.points !== undefined ? Number(body.points) : null;
     const absoluteBalance = body?.balance !== undefined ? Number(body.balance) : null;
-    const sede = String(body?.sede || body?.sedes || body?.branch || '').trim();
+    const sede = String(body?.BranchName || body?.branchName || body?.sede || body?.sedes || body?.branch || '').trim();
 
     if (!email || !email.includes('@') || !name || !cedula || (pointsToAdd === null && absoluteBalance === null)) {
       sendJson(res, 400, { error: 'Invalid body. Expected: { email, name, cedula, and either points or balance }' });

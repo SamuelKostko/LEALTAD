@@ -2838,23 +2838,23 @@ body {
 
 .aTxRow {
   display: grid;
-  grid-template-columns: 140px 80px 80px 70px 150px 120px 1fr;
-  gap: 10px;
-  padding: 12px 14px;
+  grid-template-columns: 120px 60px 65px 50px minmax(100px, 1fr) 90px minmax(120px, 1.5fr) 70px;
+  gap: 8px;
+  padding: 10px 12px;
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.06);
   align-items: center;
-  min-width: 620px;
+  min-width: 720px;
 }
 
 .aTxRow--card {
-  grid-template-columns: 140px 80px 80px 70px 70px 70px 120px 1fr;
-  min-width: 860px;
+  grid-template-columns: 120px 60px 65px 50px 60px 60px 90px minmax(120px, 1fr) 70px;
+  min-width: 740px;
 }
 
 .aTxRow--cajeros {
-  grid-template-columns: 180px 220px 120px 1fr;
+  grid-template-columns: minmax(120px, 1.5fr) minmax(100px, 1fr) 80px 120px 130px;
   min-width: 650px;
 }
 
@@ -2866,16 +2866,16 @@ body {
 .aTxRow--head {
   background: transparent;
   border: none;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: rgba(255, 255, 255, 0.3);
   padding-bottom: 6px;
 }
 
 .aTxCell {
-  font-size: 13px;
+  font-size: 12px;
   color: rgba(255, 255, 255, 0.55);
   word-break: break-word;
 }
@@ -2895,6 +2895,30 @@ body {
   text-align: center;
   font-size: 13px;
   color: rgba(255, 255, 255, 0.3);
+}
+
+.aTxCell--actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.aTxDelBtn {
+  background: rgba(239, 68, 68, 0.1);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  padding: 4px 6px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  width: 100%;
+}
+
+.aTxDelBtn:hover {
+  background: #ef4444;
+  color: #fff;
+  border-color: #ef4444;
 }
 
 /* -- mode-admin overrides: hide old header items, host aDash full height -- */

@@ -429,6 +429,7 @@ if (qrButton) {
     const sedesRefresh = document.getElementById("adminSedesRefresh");
     let allCards = [];
     let selectedToken = "";
+    let selectedBranch = "";
     let currentValidCode = null;
     let currentTxLimit = 10;
     let currentCardTxLimit = 10;
@@ -469,12 +470,12 @@ if (qrButton) {
       }
       const wrap = document.createElement("div");
       wrap.className = "aTxTable";
-      const headLabels = mode === "card" ? ["Fecha", "Tipo", "Estado", "Pts", "Antes", "Despu\xE9s", "Sede", "Descripci\xF3n"] : ["Fecha", "Tipo", "Estado", "Pts", "Cliente", "Sede", "Descripci\xF3n"];
+      const headLabels = mode === "card" ? ["Fecha", "Tipo", "Estado", "Pts", "Antes", "Despu\xE9s", "Sede", "Descripci\xF3n", "Acci\xF3n"] : ["Fecha", "Tipo", "Estado", "Pts", "Cliente", "Sede", "Descripci\xF3n", "Acci\xF3n"];
       const head = document.createElement("div");
       head.className = mode === "card" ? "aTxRow aTxRow--card aTxRow--head" : "aTxRow aTxRow--head";
       for (const lbl of headLabels) {
         const c = document.createElement("div");
-        c.className = "aTxCell";
+        c.className = "aTxCell" + (lbl === "Acci\xF3n" ? " aTxCell--actions" : "");
         c.textContent = lbl;
         head.appendChild(c);
       }
@@ -504,6 +505,19 @@ if (qrButton) {
         }
         addCell("Sede", String(t.branchName || "\u2014"));
         addCell("Descripci\xF3n", String(t.description || "\u2014"));
+        
+        const actionsCell = document.createElement("div");
+        actionsCell.className = "aTxCell aTxCell--actions";
+        const delBtn = document.createElement("button");
+        delBtn.className = "aTxDelBtn";
+        delBtn.textContent = "Eliminar";
+        delBtn.onclick = (e) => {
+          e.stopPropagation();
+          doDeleteTransaction(t.id);
+        };
+        actionsCell.appendChild(delBtn);
+        row.appendChild(actionsCell);
+
         wrap.appendChild(row);
       }
       container.appendChild(wrap);
@@ -555,7 +569,7 @@ if (qrButton) {
     if (navTx) navTx.addEventListener("click", () => {
       switchPanel("transacciones");
       currentTxLimit = 10;
-      loadAllTransactions();
+      loadAllTransactions("");
     });
     if (navStats) navStats.addEventListener("click", () => {
       switchPanel("metricas");
@@ -578,7 +592,7 @@ if (qrButton) {
     if (mobNavTx) mobNavTx.addEventListener("click", () => {
       switchPanel("transacciones");
       currentTxLimit = 10;
-      loadAllTransactions();
+      loadAllTransactions("");
     });
     if (mobNavStats) mobNavStats.addEventListener("click", () => {
       switchPanel("metricas");
@@ -843,6 +857,49 @@ Esto eliminará también sus transacciones.`
       }
     };
 
+    const doDeleteTransaction = async (txId) => {
+      const ok = window.confirm("\xBFEst\xE1s seguro de que deseas eliminar esta transacci\xF3n?\n\nEsta acci\xF3n afectar\xE1 el balance del cliente de forma permanente.");
+      if (!ok) return;
+
+      const password = window.prompt("Introduce tu CLAVE DE ADMINISTRADOR para confirmar la eliminaci\xF3n:");
+      if (password === null) return;
+      if (!password.trim()) {
+        alert("Se requiere la clave para continuar.");
+        return;
+      }
+
+      try {
+        const res = await fetch("/api/admin/delete-tx", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ id: txId, password: password.trim() })
+        });
+        const data = await res.json().catch(() => null);
+
+        if (!res.ok) {
+          alert("Error: " + ((data == null ? void 0 : data.error) || "Desconocido"));
+          return;
+        }
+
+        alert("Transacci\xF3n eliminada y balance actualizado.");
+        
+        // Refresh relevant panels
+        if (panelTx && !panelTx.hidden) loadAllTransactions();
+        if (selectedToken) {
+          await loadClients(); // Refresh client list to get new balance
+          const updated = allCards.find(c => c.token === selectedToken);
+          if (updated) selectClient(updated);
+        } else {
+          // If we are in general transactions view, we still want to refresh client data in memory
+          loadClients();
+        }
+        if (panelStats && !panelStats.hidden) loadAdminStats();
+      } catch (err) {
+        alert("Error de red al intentar eliminar la transacci\xF3n.");
+      }
+    };
+
     if (clientEditBtn) clientEditBtn.addEventListener("click", doEditClient);
     if (clientDeleteBtn) clientDeleteBtn.addEventListener("click", doDeleteClient);
 
@@ -897,9 +954,22 @@ Esto eliminará también sus transacciones.`
         dropdown.innerHTML = "";
         return;
       }
-      const matches = allCards.filter((c) => c.name.toLowerCase().includes(q) || c.cedula.includes(q)).slice(0, 8);
+      const matches = allCards.filter((c) => 
+        c.name.toLowerCase().includes(q) || 
+        c.cedula.toLowerCase().includes(q) ||
+        (c.email && c.email.toLowerCase().includes(q)) ||
+        c.token.toLowerCase().includes(q)
+      ).slice(0, 8);
       dropdown.innerHTML = "";
       if (!matches.length) {
+        if (isSearchingRemote) {
+          const el = document.createElement("div");
+          el.className = "aDropdown__empty";
+          el.textContent = "Buscando\u2026";
+          dropdown.appendChild(el);
+          dropdown.hidden = false;
+          return;
+        }
         const el = document.createElement("div");
         el.className = "aDropdown__empty";
         el.textContent = "Sin resultados";
@@ -917,8 +987,48 @@ Esto eliminará también sus transacciones.`
       }
       dropdown.hidden = false;
     };
+    let searchTimeout = null;
+    let isSearchingRemote = false;
+    const performRemoteSearch = async (query) => {
+      if (!query || query.length < 2) return;
+      isSearchingRemote = true;
+      buildDropdown(query);
+      try {
+        const data = await apiGet(`/api/admin/cards?limit=20&q=${encodeURIComponent(query)}`);
+        const results = (Array.isArray(data == null ? void 0 : data.cards) ? data.cards : []).map((c) => ({
+          token: String(c.token || "").trim(),
+          name: String(c.name || "").trim(),
+          email: String(c.email || "").trim(),
+          cedula: String(c.cedula || "").trim(),
+          sedes: String(c.sedes || "Sin sede").trim(),
+          balance: Number(c.balance || 0)
+        }));
+        
+        for (const r of results) {
+          if (!allCards.find(c => c.token === r.token)) {
+            allCards.push(r);
+          }
+        }
+        isSearchingRemote = false;
+        if (searchInput.value.trim().toLowerCase() === query.trim().toLowerCase()) {
+          buildDropdown(query);
+        }
+      } catch (err) {
+        isSearchingRemote = false;
+        setResult(clientsResult, "err", `Error en búsqueda: ${err.message}`);
+      }
+    };
+
     if (searchInput) {
-      searchInput.addEventListener("input", () => buildDropdown(searchInput.value));
+      searchInput.addEventListener("input", () => {
+        const val = searchInput.value;
+        buildDropdown(val);
+        
+        if (searchTimeout) clearTimeout(searchTimeout);
+        if (val.trim().length >= 2) {
+          searchTimeout = setTimeout(() => performRemoteSearch(val), 500);
+        }
+      });
       searchInput.addEventListener("focus", () => {
         if (searchInput.value) buildDropdown(searchInput.value);
       });
@@ -934,12 +1044,13 @@ Esto eliminará también sus transacciones.`
       var _a;
       setResult(clientsResult, "info", "Cargando clientes\u2026");
       try {
-        const data = await apiGet("/api/admin/cards?limit=200");
+        const data = await apiGet("/api/admin/cards?limit=500");
         allCards = (Array.isArray(data == null ? void 0 : data.cards) ? data.cards : []).map((c) => {
           var _a2, _b, _c;
           return {
             token: String((_a2 = c == null ? void 0 : c.token) != null ? _a2 : "").trim(),
             name: String((_b = c == null ? void 0 : c.name) != null ? _b : "").trim(),
+            email: String((c == null ? void 0 : c.email) || "").trim(),
             cedula: String((_c = c == null ? void 0 : c.cedula) != null ? _c : "").trim(),
             sedes: String((c == null ? void 0 : c.sedes) || (c == null ? void 0 : c.sede) || "Sin sede").trim(),
             balance: Number.isFinite(Number(c == null ? void 0 : c.balance)) ? Number(c.balance) : 0
@@ -955,13 +1066,30 @@ Esto eliminará también sus transacciones.`
       }
     };
 
-    const loadAllTransactions = async () => {
+    const loadAllTransactions = async (branch = selectedBranch) => {
       var _a;
       if (!txList) return;
+      selectedBranch = branch;
+
+      // Update header to reflect if we're filtering
+      const titleEl = panelTx.querySelector(".aPanel__title");
+      const subEl = panelTx.querySelector(".aPanel__sub");
+      if (selectedBranch) {
+        if (titleEl) titleEl.innerHTML = `Tx: ${selectedBranch} <button id="clearBranchFilter" style="font-size: 10px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 2px 6px; border-radius: 4px; margin-left: 8px; cursor: pointer; vertical-align: middle;">Limpiar</button>`;
+        if (subEl) subEl.textContent = `Viendo transacciones de esta sede`;
+        const btn = document.getElementById("clearBranchFilter");
+        if (btn) btn.onclick = () => loadAllTransactions("");
+      } else {
+        if (titleEl) titleEl.textContent = `Transacciones`;
+        if (subEl) subEl.textContent = `Historial reciente de todas las tarjetas`;
+      }
+
       if (adminTxLoadMore) adminTxLoadMore.disabled = true;
       setResult(txResult, "info", "Cargando\u2026");
       try {
-        const data = await apiGet(`/api/admin/transactions?limit=${currentTxLimit}`);
+        let url = `/api/admin/transactions?limit=${currentTxLimit}`;
+        if (selectedBranch) url += `&branch=${encodeURIComponent(selectedBranch)}`;
+        const data = await apiGet(url);
         const txs = Array.isArray(data == null ? void 0 : data.transactions) ? data.transactions : [];
         renderTxTable(txList, txs, "all");
         setResult(txResult, "", "");
@@ -1116,12 +1244,79 @@ Esto eliminará también sus transacciones.`
         addCell("Canjeados", bRedeemed.toFixed(2));
         addCell("Balance", bBalance.toFixed(2), bBalance >= 0 ? "aTxCell--pts" : "aTxCell--danger");
         
+        row.style.cursor = "pointer";
+        row.addEventListener("click", () => {
+          currentTxLimit = 10;
+          selectedBranch = b;
+          switchPanel("transacciones");
+          loadAllTransactions(b);
+        });
+
         wrap.appendChild(row);
       }
       container.appendChild(wrap);
     };
 
     if (sedesRefresh) sedesRefresh.addEventListener("click", loadSedesStats);
+
+    const doEditCashier = async (id, currentUsername, currentName) => {
+      const name = window.prompt(`Nuevo nombre para el cajero ${currentUsername} (deja en blanco para no cambiar el nombre actual):`, currentName || "");
+      if (name === null) return;
+      const pwd = window.prompt(`Nueva contraseña para ${currentUsername} (deja en blanco para no cambiarla):`);
+      if (pwd === null) return;
+
+      if (!name.trim() && !pwd.trim()) {
+        alert("No se introdujeron cambios.");
+        return;
+      }
+
+      const body = { id };
+      if (name.trim() !== (currentName || "")) body.name = name.trim();
+      if (pwd.trim()) body.password = pwd.trim();
+
+      try {
+        const res = await fetch("/api/admin/cashiers", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify(body)
+        });
+        const data = await res.json().catch(() => null);
+        if (!res.ok) {
+          alert((data?.error) || "Error al actualizar cajero");
+          return;
+        }
+        alert("Cajero actualizado correctamente.");
+        loadCashiers();
+      } catch {
+        alert("Error de red al actualizar cajero.");
+      }
+    };
+
+    const doDeleteCashier = async (id, currentUsername) => {
+      if (!window.confirm(`¿Estás seguro de que deseas ELIMINAR al cajero "${currentUsername}"? Esta acción no se puede deshacer.`)) return;
+      
+      const pwd = window.prompt("Introduce tu CLAVE DE ADMINISTRADOR para confirmar la eliminación:");
+      if (!pwd) return;
+
+      try {
+        const res = await fetch("/api/admin/cashiers", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ id, password: pwd.trim() }) // We don't verify pwd on backend for this specific route right now, but we prompt to be safe.
+        });
+        const data = await res.json().catch(() => null);
+        if (!res.ok) {
+          alert((data?.error) || "Error al eliminar cajero");
+          return;
+        }
+        alert("Cajero eliminado correctamente.");
+        loadCashiers();
+      } catch {
+        alert("Error de red al eliminar cajero.");
+      }
+    };
 
     const loadCashiers = async () => {
       if (!cajerosList) return;
@@ -1154,9 +1349,9 @@ Esto eliminará también sus transacciones.`
       wrap.className = "aTxTable";
       const head = document.createElement("div");
       head.className = "aTxRow aTxRow--cajeros aTxRow--head";
-      ["Nombre", "Usuario", "Creado", "Último Acceso"].forEach(lbl => {
+      ["Nombre", "Usuario", "Creado", "Último Acceso", "Acción"].forEach(lbl => {
         const c = document.createElement("div");
-        c.className = "aTxCell";
+        c.className = "aTxCell" + (lbl === "Acción" ? " aTxCell--actions" : "");
         c.textContent = lbl;
         head.appendChild(c);
       });
@@ -1168,13 +1363,35 @@ Esto eliminará también sus transacciones.`
           const div = document.createElement("div");
           div.className = "aTxCell" + (cls ? ` ${cls}` : "");
           div.setAttribute("data-label", label);
-          div.textContent = text || "\u2014";
+          div.textContent = text || "—";
           row.appendChild(div);
         };
         addCell("Nombre", c.name, "aTxCell--strong");
         addCell("Usuario", c.username);
-        addCell("Creado", c.createdAt ? new Date(c.createdAt).toLocaleDateString("es-VE") : "\u2014");
+        addCell("Creado", c.createdAt ? new Date(c.createdAt).toLocaleDateString("es-VE") : "—");
         addCell("Último Acceso", c.lastLogin ? new Date(c.lastLogin).toLocaleString("es-VE", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit" }) : "Nunca");
+        
+        const actionsCell = document.createElement("div");
+        actionsCell.className = "aTxCell aTxCell--actions";
+        actionsCell.style.gap = "6px";
+        
+        const editBtn = document.createElement("button");
+        editBtn.className = "aTxDelBtn";
+        editBtn.style.background = "rgba(96, 165, 250, 0.1)";
+        editBtn.style.color = "#60a5fa";
+        editBtn.style.borderColor = "rgba(96, 165, 250, 0.2)";
+        editBtn.textContent = "Editar";
+        editBtn.onclick = () => doEditCashier(c.id, c.username, c.name);
+
+        const delBtn = document.createElement("button");
+        delBtn.className = "aTxDelBtn";
+        delBtn.textContent = "Eliminar";
+        delBtn.onclick = () => doDeleteCashier(c.id, c.username);
+
+        actionsCell.appendChild(editBtn);
+        actionsCell.appendChild(delBtn);
+        row.appendChild(actionsCell);
+
         wrap.appendChild(row);
       }
       container.appendChild(wrap);

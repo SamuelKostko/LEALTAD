@@ -37,6 +37,7 @@ export default async function handler(req, res) {
 
   const points = Number(body?.points ?? 0);
   const description = String(body?.description ?? '').trim();
+  const branchName = String(body?.BranchName ?? body?.branchName ?? '').trim();
 
   if (!Number.isFinite(points) || points <= 0 || points > 50000) {
     sendJson(res, 400, { error: 'Puntos inválidos. Máximo permitido: 50000.' });
@@ -65,6 +66,7 @@ export default async function handler(req, res) {
         points,
         ref: '',
         description: desc,
+        branchName: branchName,
         ts,
         nonce,
         sig,

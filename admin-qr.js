@@ -6,6 +6,7 @@ const qrSection = document.getElementById("qrSection");
 const qrForm = document.getElementById("qrForm");
 const pointsEl = document.getElementById("points");
 const descriptionEl = document.getElementById("description");
+const branchNameEl = document.getElementById("branchName");
 const resultEl = document.getElementById("result");
 const copyBtn = document.getElementById("copyBtn");
 const qrCanvas = document.getElementById("qrCanvas");
@@ -211,6 +212,7 @@ if (qrForm) {
     }
     const points = Number(String((_a = pointsEl == null ? void 0 : pointsEl.value) != null ? _a : "").trim());
     const description = String((_b = descriptionEl == null ? void 0 : descriptionEl.value) != null ? _b : "").trim();
+    const branchName = String(branchNameEl == null ? void 0 : branchNameEl.value || "").trim();
     if (!Number.isFinite(points) || points <= 0) {
       setResult("adminResult--err", "Puntos inv\xE1lidos.");
       return;
@@ -221,7 +223,7 @@ if (qrForm) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ points, description })
+        body: JSON.stringify({ points, description, branchName })
       });
       const data = await res.json().catch(() => null);
       if (!res.ok) {

@@ -80,6 +80,7 @@ export default async function handler(req, res) {
   const url = new URL(req.url, 'http://localhost');
   const limit = clampInt(url.searchParams.get('limit'), { min: 1, max: 200, fallback: 50 });
   const token = String(url.searchParams.get('token') ?? '').trim();
+  const branch = String(url.searchParams.get('branch') ?? '').trim();
 
   const firestore = getFirestoreDb();
 
@@ -104,7 +105,31 @@ export default async function handler(req, res) {
 
     let transactions = [];
 
-    if (!token) {
+    if (branch) {
+      try {
+        const snap = await firestore
+          .collection('transactions')
+          .where('branchName', '==', branch)
+          .orderBy('createdAt', 'desc')
+          .limit(limit)
+          .get();
+        transactions = mapSnap(snap);
+      } catch (err) {
+        if (!isMissingIndexError(err)) throw err;
+        const snap = await firestore
+          .collection('transactions')
+          .where('branchName', '==', branch)
+          .limit(Math.max(limit, 200))
+          .get();
+        transactions = mapSnap(snap);
+        transactions.sort((a, b) => {
+          const aMs = Math.max(toMs(a.processedAt), toMs(a.createdAt));
+          const bMs = Math.max(toMs(b.processedAt), toMs(b.createdAt));
+          return bMs - aMs;
+        });
+        if (transactions.length > limit) transactions = transactions.slice(0, limit);
+      }
+    } else if (!token) {
       const snap = await firestore
         .collection('transactions')
         .orderBy('createdAt', 'desc')
