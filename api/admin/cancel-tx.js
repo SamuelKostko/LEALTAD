@@ -1,7 +1,22 @@
 import { FieldValue } from 'firebase-admin/firestore';
 import { getFirestoreDb } from '../_lib/firestore.js';
 import { readJsonBody, sendJson } from '../_lib/http.js';
-import { requireAdmin } from '../_lib/adminAuth.js';
+import { verifySession } from '../_lib/adminAuth.js';
+
+function parseCookies(header) {
+  const raw = String(header ?? '');
+  if (!raw) return {};
+  const out = {};
+  for (const part of raw.split(';')) {
+    const idx = part.indexOf('=');
+    if (idx === -1) continue;
+    const key = part.slice(0, idx).trim();
+    const val = part.slice(idx + 1).trim();
+    if (!key) continue;
+    out[key] = decodeURIComponent(val);
+  }
+  return out;
+}
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -9,7 +24,14 @@ export default async function handler(req, res) {
     return;
   }
 
-  if (!(await requireAdmin(req, res))) return;
+  const cookies = parseCookies(req.headers.cookie);
+  const auth = await verifySession(cookies['admin_session']);
+  if (!auth.ok) {
+    sendJson(res, 401, { error: 'Unauthorized' });
+    return;
+  }
+
+  const requesterRole = String(auth.data?.role ?? '').trim().toLowerCase() || 'admin';
 
   let body;
   try {
@@ -39,6 +61,8 @@ export default async function handler(req, res) {
       const status = String(data.status ?? '').trim();
       const type = String(data.type ?? '').trim();
       const token = String(data.token ?? '').trim();
+      const mintedById = String(data.mintedById ?? '').trim();
+      const mintedByRole = String(data.mintedByRole ?? '').trim();
 
       // Safety: this endpoint is for cancelling minted QR charges before redemption.
       // Only allow deleting/cancelling pending POS charges that haven't been applied to a card.
@@ -52,6 +76,14 @@ export default async function handler(req, res) {
 
       if (token) {
         return { ok: false, status: 409, error: 'Transaction already tied to a card token' };
+      }
+
+      // Merchants can only cancel their own minted transactions.
+      if (requesterRole === 'merchant') {
+        const requesterId = String(auth.adminId ?? '').trim();
+        if (!requesterId || !mintedById || requesterId !== mintedById || mintedByRole !== 'merchant') {
+          return { ok: false, status: 403, error: 'No autorizado.' };
+        }
       }
 
       // If it is truly unused, delete it from Firestore.

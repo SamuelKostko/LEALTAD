@@ -23,7 +23,7 @@ export default async function handler(req, res) {
   }
 
   const role = String(auth.data?.role ?? '').trim().toLowerCase();
-  if (role === 'cashier') {
+  if (role === 'cashier' || role === 'merchant') {
     sendJson(res, 403, { error: 'No autorizado.' });
     return;
   }

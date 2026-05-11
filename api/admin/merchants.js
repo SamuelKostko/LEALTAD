@@ -1,7 +1,7 @@
 import { FieldValue } from 'firebase-admin/firestore';
-import { getFirestoreDb } from '../_lib/firestore.js';
 import { readJsonBody, sendJson } from '../_lib/http.js';
 import { verifySession } from '../_lib/adminAuth.js';
+import { getFirestoreDb } from '../_lib/firestore.js';
 
 function parseCookies(header) {
   const raw = String(header ?? '');
@@ -26,6 +26,19 @@ function isValidUsername(username) {
   return /^[a-z0-9_]{3,30}$/.test(username);
 }
 
+function toDateValue(value) {
+  if (!value) return null;
+  if (value instanceof Date) return value;
+  if (typeof value?.toDate === 'function') {
+    try {
+      return value.toDate();
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
 export default async function handler(req, res) {
   const cookies = parseCookies(req.headers.cookie);
   const auth = await verifySession(cookies['admin_session']);
@@ -34,7 +47,6 @@ export default async function handler(req, res) {
     return;
   }
 
-  // Only admins can manage cashier users
   const requesterRole = String(auth.data?.role ?? '').trim().toLowerCase();
   if (requesterRole === 'cashier' || requesterRole === 'merchant') {
     sendJson(res, 403, { error: 'No autorizado.' });
@@ -45,22 +57,24 @@ export default async function handler(req, res) {
 
   if (req.method === 'GET') {
     try {
-      const snapshot = await firestore.collection('cashiers').get();
-      const cashiers = snapshot.docs.map(doc => {
-        const data = doc.data();
+      const snapshot = await firestore.collection('merchants').get();
+      const merchants = snapshot.docs.map((doc) => {
+        const data = doc.data() || {};
         return {
           id: doc.id,
           username: data.username,
           name: data.name,
-          createdAt: data.createdAt?.toDate?.() || data.createdAt,
-          lastLogin: data.sessionCreatedAt?.toDate?.() || data.sessionCreatedAt
+          branchName: data.branchName,
+          createdAt: toDateValue(data.createdAt),
+          lastLogin: toDateValue(data.sessionCreatedAt)
         };
       });
-      sendJson(res, 200, { ok: true, cashiers });
+
+      sendJson(res, 200, { ok: true, merchants });
       return;
     } catch (err) {
-      console.error('Error listing cashiers:', err);
-      sendJson(res, 500, { error: 'Error al obtener cajeros.' });
+      console.error('Error listing merchants:', err);
+      sendJson(res, 500, { error: 'Error al obtener comercios.' });
       return;
     }
   }
@@ -76,15 +90,15 @@ export default async function handler(req, res) {
 
     const id = String(body?.id ?? '').trim();
     if (!id) {
-      sendJson(res, 400, { error: 'ID de cajero requerido.' });
+      sendJson(res, 400, { error: 'ID de comercio requerido.' });
       return;
     }
 
     try {
-      await firestore.collection('cashiers').doc(id).delete();
-      sendJson(res, 200, { ok: true, message: 'Cajero eliminado.' });
+      await firestore.collection('merchants').doc(id).delete();
+      sendJson(res, 200, { ok: true, message: 'Comercio eliminado.' });
     } catch (err) {
-      console.error('Error deleting cashier:', err);
+      console.error('Error deleting merchant:', err);
       sendJson(res, 500, { error: 'Error interno al eliminar.' });
     }
     return;
@@ -101,18 +115,28 @@ export default async function handler(req, res) {
 
     const id = String(body?.id ?? '').trim();
     if (!id) {
-      sendJson(res, 400, { error: 'ID de cajero requerido.' });
+      sendJson(res, 400, { error: 'ID de comercio requerido.' });
       return;
     }
 
     const updates = { updatedAt: FieldValue.serverTimestamp() };
+
     if (body.name !== undefined) {
       const name = String(body.name).trim();
-      if (name.length > 120) {
-        sendJson(res, 400, { error: 'Nombre demasiado largo.' });
+      if (!name || name.length > 120) {
+        sendJson(res, 400, { error: 'Nombre inválido.' });
         return;
       }
-      updates.name = name || null;
+      updates.name = name;
+    }
+
+    if (body.branchName !== undefined) {
+      const branchName = String(body.branchName).trim();
+      if (!branchName || branchName.length > 120) {
+        sendJson(res, 400, { error: 'Sede inválida.' });
+        return;
+      }
+      updates.branchName = branchName;
     }
 
     if (body.password !== undefined) {
@@ -127,10 +151,10 @@ export default async function handler(req, res) {
     }
 
     try {
-      await firestore.collection('cashiers').doc(id).update(updates);
-      sendJson(res, 200, { ok: true, message: 'Cajero actualizado.' });
+      await firestore.collection('merchants').doc(id).update(updates);
+      sendJson(res, 200, { ok: true, message: 'Comercio actualizado.' });
     } catch (err) {
-      console.error('Error updating cashier:', err);
+      console.error('Error updating merchant:', err);
       sendJson(res, 500, { error: 'Error interno al actualizar.' });
     }
     return;
@@ -152,9 +176,10 @@ export default async function handler(req, res) {
   const username = normalizeUsername(body?.username);
   const password = String(body?.password ?? '').trim();
   const name = String(body?.name ?? '').trim();
+  const branchName = String(body?.branchName ?? '').trim();
 
-  if (!username || !password) {
-    sendJson(res, 400, { error: 'Usuario y contraseña son requeridos.' });
+  if (!username || !password || !name || !branchName) {
+    sendJson(res, 400, { error: 'Usuario, contraseña, nombre y sede son requeridos.' });
     return;
   }
 
@@ -173,19 +198,31 @@ export default async function handler(req, res) {
     return;
   }
 
+  if (branchName.length > 120) {
+    sendJson(res, 400, { error: 'Sede inválida.' });
+    return;
+  }
+
   try {
-    const existing = await firestore.collection('cashiers').where('username', '==', username).limit(1).get();
-    if (!existing.empty) {
+    const existingCashier = await firestore.collection('cashiers').where('username', '==', username).limit(1).get();
+    if (!existingCashier.empty) {
       sendJson(res, 409, { error: 'Ya existe un usuario con ese nombre de usuario.' });
       return;
     }
 
-    const ref = firestore.collection('cashiers').doc();
+    const existingMerchant = await firestore.collection('merchants').where('username', '==', username).limit(1).get();
+    if (!existingMerchant.empty) {
+      sendJson(res, 409, { error: 'Ya existe un usuario con ese nombre de usuario.' });
+      return;
+    }
+
+    const ref = firestore.collection('merchants').doc();
     await ref.set({
       username,
       password,
-      role: 'cashier',
-      name: name || null,
+      role: 'merchant',
+      name,
+      branchName,
       sessionId: null,
       sessionCreatedAt: null,
       sessionExpiresAt: null,
@@ -196,7 +233,7 @@ export default async function handler(req, res) {
 
     sendJson(res, 200, { ok: true, id: ref.id });
   } catch (err) {
-    console.error('Error creating cashier:', err);
+    console.error('Error creating merchant:', err);
     sendJson(res, 500, { error: err?.message || 'Error interno del servidor.' });
   }
 }

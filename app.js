@@ -368,20 +368,7 @@ if (qrButton) {
     if (cta) cta.hidden = true;
     const profileButton = document.getElementById("profileButton");
     if (profileButton) profileButton.hidden = true;
-    const loginModal = document.getElementById("adminRootLogin");
-    const loginForm = document.getElementById("adminRootLoginForm");
-    const forgotForm = document.getElementById("adminRootForgotForm");
-    const verifyForm = document.getElementById("adminRootVerifyForm");
-    const resetForm = document.getElementById("adminRootResetForm");
-    const emailEl = document.getElementById("adminRootEmail");
-    const passwordEl = document.getElementById("adminRootPassword");
-    const forgotEmailEl = document.getElementById("adminRootForgotEmail");
-    const verifyCodeEl = document.getElementById("adminRootVerifyCode");
-    const newPasswordEl = document.getElementById("adminRootNewPassword");
-    const loginResultEl = document.getElementById("adminRootLoginResult");
-    const forgotBtn = document.getElementById("adminRootForgotBtn");
-    const cancelForgotBtn = document.getElementById("adminRootCancelForgotBtn");
-    const cancelVerifyBtn = document.getElementById("adminRootCancelVerifyBtn");
+
     const dash = document.getElementById("adminDash");
     const goQrBtn = document.getElementById("adminHeaderGoQr");
     const logoutBtn = document.getElementById("adminHeaderLogout");
@@ -389,6 +376,7 @@ if (qrButton) {
     const adminResetTxsBtn = document.getElementById("adminResetTxsBtnSidebar");
     const adminCreditPointsBtn = document.getElementById("adminCreditPointsBtn");
     const adminCreateCashierBtn = document.getElementById("adminCreateCashierBtn");
+    const adminCreateMerchantBtn = document.getElementById("adminCreateMerchantBtn");
     const panelClientes = document.getElementById("aPanelClientes");
     const panelTx = document.getElementById("aPanelTx");
     const panelStats = document.getElementById("aPanelStats");
@@ -421,6 +409,12 @@ if (qrButton) {
     const cajerosResult = document.getElementById("adminCajerosResult");
     const cajerosRefresh = document.getElementById("adminCajerosRefresh");
     const mobNavCajeros = document.getElementById("aMobNavCajeros");
+    const panelComercios = document.getElementById("aPanelComercios");
+    const navComercios = document.getElementById("aNavComercios");
+    const merchantsList = document.getElementById("adminMerchantsList");
+    const merchantsResult = document.getElementById("adminMerchantsResult");
+    const merchantsRefresh = document.getElementById("adminMerchantsRefresh");
+    const mobNavComercios = document.getElementById("aMobNavComercios");
     const panelSedes = document.getElementById("aPanelSedes");
     const navSedes = document.getElementById("aNavSedes");
     const mobNavSedes = document.getElementById("aMobNavSedes");
@@ -522,23 +516,7 @@ if (qrButton) {
       }
       container.appendChild(wrap);
     };
-    const showLoginStep = (step) => {
-      if (loginForm) loginForm.hidden = step !== "login";
-      if (forgotForm) forgotForm.hidden = step !== "forgot";
-      if (verifyForm) verifyForm.hidden = step !== "verify";
-      if (resetForm) resetForm.hidden = step !== "reset";
-    };
-    const clearRecoveryResults = () => {
-      setResult(document.getElementById("adminRootForgotResult"), "", "");
-      setResult(document.getElementById("adminRootVerifyResult"), "", "");
-      setResult(document.getElementById("adminRootResetResult"), "", "");
-    };
-    const showLogin = () => {
-      if (loginModal) loginModal.hidden = false;
-      if (dash) dash.hidden = true;
-    };
     const showDash = () => {
-      if (loginModal) loginModal.hidden = true;
       if (dash) dash.hidden = false;
     };
     const switchPanel = (panel) => {
@@ -546,21 +524,25 @@ if (qrButton) {
       if (panelTx) panelTx.hidden = panel !== "transacciones";
       if (panelStats) panelStats.hidden = panel !== "metricas";
       if (panelCajeros) panelCajeros.hidden = panel !== "cajeros";
+      if (panelComercios) panelComercios.hidden = panel !== "comercios";
       if (panelSedes) panelSedes.hidden = panel !== "sedes";
       if (navClientes) navClientes.classList.toggle("is-active", panel === "clientes");
       if (navTx) navTx.classList.toggle("is-active", panel === "transacciones");
       if (navStats) navStats.classList.toggle("is-active", panel === "metricas");
       if (navCajeros) navCajeros.classList.toggle("is-active", panel === "cajeros");
+      if (navComercios) navComercios.classList.toggle("is-active", panel === "comercios");
       if (navSedes) navSedes.classList.toggle("is-active", panel === "sedes");
       const mobClientes = document.getElementById("aMobNavClientes");
       const mobTx = document.getElementById("aMobNavTx");
       const mobStats = document.getElementById("aMobNavStats");
       const mobCajeros = document.getElementById("aMobNavCajeros");
+      const mobComercios2 = document.getElementById("aMobNavComercios");
       const mobSedes = document.getElementById("aMobNavSedes");
       if (mobClientes) mobClientes.classList.toggle("is-active", panel === "clientes");
       if (mobTx) mobTx.classList.toggle("is-active", panel === "transacciones");
       if (mobStats) mobStats.classList.toggle("is-active", panel === "metricas");
       if (mobCajeros) mobCajeros.classList.toggle("is-active", panel === "cajeros");
+      if (mobComercios2) mobComercios2.classList.toggle("is-active", panel === "comercios");
       if (mobSedes) mobSedes.classList.toggle("is-active", panel === "sedes");
       const main = document.querySelector(".aDash__main");
       if (main) main.scrollTop = 0;
@@ -578,6 +560,10 @@ if (qrButton) {
     if (navCajeros) navCajeros.addEventListener("click", () => {
       switchPanel("cajeros");
       loadCashiers();
+    });
+    if (navComercios) navComercios.addEventListener("click", () => {
+      switchPanel("comercios");
+      loadMerchants();
     });
     if (navSedes) navSedes.addEventListener("click", () => {
       switchPanel("sedes");
@@ -602,6 +588,11 @@ if (qrButton) {
       switchPanel("cajeros");
       loadCashiers();
     });
+    const mobNavComerciosLocal = document.getElementById("aMobNavComercios");
+    if (mobNavComerciosLocal) mobNavComerciosLocal.addEventListener("click", () => {
+      switchPanel("comercios");
+      loadMerchants();
+    });
     if (mobNavSedes) mobNavSedes.addEventListener("click", () => {
       switchPanel("sedes");
       loadSedesStats();
@@ -614,9 +605,9 @@ if (qrButton) {
       if (e && typeof e.preventDefault === "function") e.preventDefault();
       try {
         await fetch("/api/admin/logout", { method: "POST", credentials: "include" });
-        window.location.href = "/admin";
+        window.location.replace("/login");
       } catch (err) {
-        window.location.reload();
+        window.location.replace("/login");
       }
     };
     if (logoutBtn) logoutBtn.addEventListener("click", doLogout);
@@ -763,6 +754,52 @@ if (qrButton) {
 
     if (adminCreateCashierBtn) {
       adminCreateCashierBtn.addEventListener("click", doCreateCashier);
+    }
+
+    const doCreateMerchant = async () => {
+      const username = String(window.prompt("Usuario del comercio:") ?? "").trim().toLowerCase();
+      if (!username) return;
+
+      const password = String(window.prompt("Contraseña del comercio (mínimo 6 caracteres):") ?? "").trim();
+      if (!password) return;
+      if (password.length < 6) {
+        alert("La contraseña es muy corta.");
+        return;
+      }
+
+      const name = String(window.prompt("Nombre del comercio:") ?? "").trim();
+      if (!name) return;
+
+      const branchName = String(window.prompt("Sede fija del comercio:") ?? "").trim();
+      if (!branchName) return;
+
+      try {
+        const res = await fetch("/api/admin/merchants", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ username, password, name, branchName })
+        });
+        const data = await res.json().catch(() => null);
+
+        if (!res.ok) {
+          if (res.status === 401) {
+            doLogout();
+            return;
+          }
+          alert(String(data?.error || data?.message || `Error (${res.status})`));
+          return;
+        }
+
+        alert("Comercio creado correctamente.");
+        if (panelComercios && !panelComercios.hidden) loadMerchants();
+      } catch {
+        alert("Error de red al crear el comercio.");
+      }
+    };
+
+    if (adminCreateMerchantBtn) {
+      adminCreateMerchantBtn.addEventListener("click", doCreateMerchant);
     }
 
     const doEditClient = async () => {
@@ -1398,6 +1435,153 @@ Esto eliminará también sus transacciones.`
     };
 
     if (cajerosRefresh) cajerosRefresh.addEventListener("click", loadCashiers);
+
+    const doEditMerchant = async (id, currentUsername, currentName, currentBranchName) => {
+      const name = window.prompt(`Nuevo nombre para el comercio ${currentUsername}:`, currentName || "");
+      if (name === null) return;
+      const branchName = window.prompt(`Nueva sede fija para ${currentUsername}:`, currentBranchName || "");
+      if (branchName === null) return;
+      const pwd = window.prompt(`Nueva contraseña para ${currentUsername} (deja en blanco para no cambiarla):`);
+      if (pwd === null) return;
+
+      if (!name.trim() && !branchName.trim() && !pwd.trim()) {
+        alert("No se introdujeron cambios.");
+        return;
+      }
+
+      const body = { id };
+      if (name.trim() && name.trim() !== (currentName || "")) body.name = name.trim();
+      if (branchName.trim() && branchName.trim() !== (currentBranchName || "")) body.branchName = branchName.trim();
+      if (pwd.trim()) body.password = pwd.trim();
+
+      try {
+        const res = await fetch("/api/admin/merchants", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify(body)
+        });
+        const data = await res.json().catch(() => null);
+        if (!res.ok) {
+          alert(data?.error || "Error al actualizar comercio");
+          return;
+        }
+        alert("Comercio actualizado correctamente.");
+        loadMerchants();
+      } catch {
+        alert("Error de red al actualizar comercio.");
+      }
+    };
+
+    const doDeleteMerchant = async (id, currentUsername) => {
+      if (!window.confirm(`¿Estás seguro de que deseas ELIMINAR el comercio "${currentUsername}"? Esta acción no se puede deshacer.`)) return;
+
+      try {
+        const res = await fetch("/api/admin/merchants", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ id })
+        });
+        const data = await res.json().catch(() => null);
+        if (!res.ok) {
+          alert(data?.error || "Error al eliminar comercio");
+          return;
+        }
+        alert("Comercio eliminado correctamente.");
+        loadMerchants();
+      } catch {
+        alert("Error de red al eliminar comercio.");
+      }
+    };
+
+    const loadMerchants = async () => {
+      if (!merchantsList) return;
+      setResult(merchantsResult, "info", "Cargando comercios...");
+      try {
+        const data = await apiGet("/api/admin/merchants");
+        const list = Array.isArray(data?.merchants) ? data.merchants : [];
+        renderMerchants(merchantsList, list);
+        setResult(merchantsResult, "", "");
+      } catch (err) {
+        if (err?.status === 401) {
+          doLogout();
+          return;
+        }
+        setResult(merchantsResult, "err", err?.message || "Error al cargar comercios");
+      }
+    };
+
+    const renderMerchants = (container, list) => {
+      if (!container) return;
+      container.innerHTML = "";
+      if (!list.length) {
+        const empty = document.createElement("div");
+        empty.className = "aTxEmpty";
+        empty.textContent = "No hay comercios creados";
+        container.appendChild(empty);
+        return;
+      }
+
+      const wrap = document.createElement("div");
+      wrap.className = "aTxTable";
+
+      const head = document.createElement("div");
+      head.className = "aTxRow aTxRow--comercios aTxRow--head";
+      ["Comercio", "Usuario", "Sede", "Creado", "Último Acceso", "Acción"].forEach((lbl) => {
+        const c = document.createElement("div");
+        c.className = "aTxCell" + (lbl === "Acción" ? " aTxCell--actions" : "");
+        c.textContent = lbl;
+        head.appendChild(c);
+      });
+      wrap.appendChild(head);
+
+      for (const m of list) {
+        const row = document.createElement("div");
+        row.className = "aTxRow aTxRow--comercios";
+
+        const addCell = (label, text, cls) => {
+          const div = document.createElement("div");
+          div.className = "aTxCell" + (cls ? ` ${cls}` : "");
+          div.setAttribute("data-label", label);
+          div.textContent = text || "—";
+          row.appendChild(div);
+        };
+
+        addCell("Comercio", m.name, "aTxCell--strong");
+        addCell("Usuario", m.username);
+        addCell("Sede", m.branchName);
+        addCell("Creado", m.createdAt ? new Date(m.createdAt).toLocaleDateString("es-VE") : "—");
+        addCell(
+          "Último Acceso",
+          m.lastLogin ? new Date(m.lastLogin).toLocaleString("es-VE", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit" }) : "Nunca"
+        );
+
+        const actionsCell = document.createElement("div");
+        actionsCell.className = "aTxCell aTxCell--actions";
+        actionsCell.style.gap = "6px";
+
+        const editBtn = document.createElement("button");
+        editBtn.className = "aTxDelBtn aTxDelBtn--secondary";
+        editBtn.textContent = "Editar";
+        editBtn.onclick = () => doEditMerchant(m.id, m.username, m.name, m.branchName);
+
+        const delBtn = document.createElement("button");
+        delBtn.className = "aTxDelBtn";
+        delBtn.textContent = "Eliminar";
+        delBtn.onclick = () => doDeleteMerchant(m.id, m.username);
+
+        actionsCell.appendChild(editBtn);
+        actionsCell.appendChild(delBtn);
+        row.appendChild(actionsCell);
+
+        wrap.appendChild(row);
+      }
+
+      container.appendChild(wrap);
+    };
+
+    if (merchantsRefresh) merchantsRefresh.addEventListener("click", loadMerchants);
     let currentStatsRange = "day";
     const loadAdminStats = async (range = currentStatsRange) => {
       const loader = document.getElementById("adminStatsLoader");
@@ -1479,168 +1663,27 @@ Esto eliminará también sus transacciones.`
       // Ocultar botón de perfil en admin mode si así se requiere
       if (profileButton) profileButton.hidden = true;
     };
-    if (loginForm) {
-      loginForm.addEventListener("submit", async (e) => {
-        var _a, _b;
-        e.preventDefault();
-        const email = (((_a = document.getElementById("adminRootEmail")) == null ? void 0 : _a.value) || "").trim();
-        const password = (((_b = document.getElementById("adminRootPassword")) == null ? void 0 : _b.value) || "").trim();
-        if (!email || !password) {
-          setResult(loginResultEl, "err", "Correo y contrase\xF1a requeridos.");
-          return;
-        }
-        setResult(loginResultEl, "info", "Entrando\u2026");
-        try {
-          const res = await fetch("/api/admin/login", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            credentials: "include",
-            body: JSON.stringify({ email, password })
-          });
-          const data = await res.json().catch(() => null);
-          if (!res.ok) {
-            setResult(loginResultEl, "err", (data == null ? void 0 : data.error) || (data == null ? void 0 : data.message) || `Error (${res.status})`);
-            return;
-          }
-          setResult(loginResultEl, "ok", "Acceso concedido.");
-          if (emailEl) emailEl.value = "";
-          if (passwordEl) passwordEl.value = "";
-          try {
-            const me = await apiGet("/api/admin/me");
-            const role = String((me == null ? void 0 : me.role) || "admin").toLowerCase();
-            if (role === "cashier") {
-              window.location.href = "/admin/qr";
-              return;
-            }
-          } catch {
-          }
-          initAuthed();
-        } catch (err) {
-          setResult(loginResultEl, "err", "Fallo de red.");
-        }
-      });
-    }
-    if (forgotBtn) forgotBtn.addEventListener("click", () => {
-      clearRecoveryResults();
-      showLoginStep("forgot");
-    });
-    if (cancelForgotBtn) cancelForgotBtn.addEventListener("click", () => {
-      clearRecoveryResults();
-      showLoginStep("login");
-      setResult(loginResultEl, "", "");
-    });
-    if (cancelVerifyBtn) cancelVerifyBtn.addEventListener("click", () => {
-      clearRecoveryResults();
-      showLoginStep("login");
-      setResult(loginResultEl, "", "");
-    });
-    if (forgotForm) {
-      forgotForm.addEventListener("submit", async (e) => {
-        var _a;
-        e.preventDefault();
-        const resultEl = document.getElementById("adminRootForgotResult");
-        const email = String((_a = forgotEmailEl == null ? void 0 : forgotEmailEl.value) != null ? _a : "").trim();
-        setResult(resultEl, "info", "Enviando c\xF3digo\u2026");
-        const ctrl = new AbortController();
-        const t = setTimeout(() => ctrl.abort(), 15e3);
-        try {
-          const res = await fetch("/api/admin/forgot-password", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email }),
-            signal: ctrl.signal
-          });
-          clearTimeout(t);
-          const data = await res.json().catch(() => null);
-          if (!res.ok) {
-            setResult(resultEl, "err", (data == null ? void 0 : data.error) || "Correo incorrecto.");
-            return;
-          }
-          setResult(resultEl, "ok", "Correo enviado. Revisa tu bandeja.");
-          setTimeout(() => showLoginStep("verify"), 1500);
-        } catch (err) {
-          clearTimeout(t);
-          setResult(resultEl, "err", (err == null ? void 0 : err.name) === "AbortError" ? "Tiempo agotado. Revisa SMTP." : "Error de red.");
-        }
-      });
-    }
-    if (verifyForm) {
-      verifyForm.addEventListener("submit", async (e) => {
-        var _a;
-        e.preventDefault();
-        const resultEl = document.getElementById("adminRootVerifyResult");
-        const code = String((_a = verifyCodeEl == null ? void 0 : verifyCodeEl.value) != null ? _a : "").trim();
-        if (!code) {
-          setResult(resultEl, "err", "Ingresa el c\xF3digo.");
-          return;
-        }
-        setResult(resultEl, "info", "Verificando\u2026");
-        try {
-          const res = await fetch("/api/admin/verify-code", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ code })
-          });
-          const data = await res.json().catch(() => null);
-          if (!res.ok) {
-            setResult(resultEl, "err", (data == null ? void 0 : data.error) || "C\xF3digo incorrecto.");
-            return;
-          }
-          setResult(resultEl, "ok", "C\xF3digo correcto.");
-          currentValidCode = code;
-          setTimeout(() => showLoginStep("reset"), 1e3);
-        } catch (err) {
-          setResult(resultEl, "err", "Error de red.");
-        }
-      });
-    }
-    if (resetForm) {
-      resetForm.addEventListener("submit", async (e) => {
-        var _a;
-        e.preventDefault();
-        const resultEl = document.getElementById("adminRootResetResult");
-        const newPassword = String((_a = newPasswordEl == null ? void 0 : newPasswordEl.value) != null ? _a : "").trim();
-        if (!newPassword || newPassword.length < 6) {
-          setResult(resultEl, "err", "Clave muy corta.");
-          return;
-        }
-        setResult(resultEl, "info", "Actualizando\u2026");
-        try {
-          const res = await fetch("/api/admin/reset-password", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ code: currentValidCode, newPassword })
-          });
-          const data = await res.json().catch(() => null);
-          if (!res.ok) {
-            setResult(resultEl, "err", (data == null ? void 0 : data.error) || "Error al actualizar.");
-            return;
-          }
-          setResult(resultEl, "ok", "\xA1Clave actualizada! Redirigiendo\u2026");
-          setTimeout(() => {
-            showLoginStep("login");
-            clearRecoveryResults();
-            window.location.href = "/admin";
-          }, 2e3);
-        } catch (err) {
-          setResult(resultEl, "err", "Error de red.");
-        }
-      });
-    }
+
     const checkAuth = async () => {
       try {
         const data = await apiGet("/api/admin/me");
-        if (Boolean(data == null ? void 0 : data.authenticated)) {
-          const role = String((data == null ? void 0 : data.role) || "admin").toLowerCase();
+        if (Boolean(data?.authenticated)) {
+          const role = String(data?.role || "admin").toLowerCase();
           if (role === "cashier") {
-            window.location.href = "/admin/qr";
+            window.location.replace("/admin/qr");
+            return;
+          }
+          if (role === "merchant") {
+            window.location.replace("/comercio/qr");
             return;
           }
           initAuthed();
+        } else {
+          // No session → redirect to shared login page
+          window.location.replace("/login");
         }
-        else showLogin();
       } catch (err) {
-        showLogin();
+        window.location.replace("/login");
       } finally {
         document.body.classList.add("is-ready");
       }

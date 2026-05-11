@@ -149,7 +149,9 @@ app.use(express.static(__dirname, {
          path.endsWith('app.js') ||
          path.endsWith('styles.css') ||
          path.endsWith('admin-qr.html') ||
-         path.endsWith('admin-qr.js')
+         path.endsWith('admin-qr.js') ||
+         path.endsWith('merchant-qr.html') ||
+         path.endsWith('merchant-qr.js')
       ) {
          res.setHeader('Cache-Control', 'no-cache');
       }
@@ -160,6 +162,17 @@ app.use(express.static(__dirname, {
 app.get('/admin/qr', (_req, res) => {
    res.sendFile(path.join(__dirname, 'admin-qr.html'));
 });
+
+// Dedicated page for merchant QR flow.
+app.get('/comercio/qr', (_req, res) => {
+   res.sendFile(path.join(__dirname, 'merchant-qr.html'));
+});
+
+// Shared login page (admin + merchant).
+app.get('/login', (_req, res) => {
+   res.sendFile(path.join(__dirname, 'login.html'));
+});
+
 
 // PWA Routing (Vercel.json Rewrites)
 // Serve index.html for main PWA routes

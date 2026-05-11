@@ -42,6 +42,12 @@ Push Notifications (Web Push):
 - Inicia sesión con `ADMIN_PASSWORD`.
 - Genera cobros desde `/admin/qr` cuando necesites emitir un QR de transacción.
 
+## Comercios (QR de cobro)
+
+- El superadmin gestiona credenciales de comercios desde `/admin` → panel **Comercios**.
+- Cada comercio tiene una **Sede fija** asociada a su credencial; esa sede queda registrada en `branchName` al emitir cobros.
+- El dashboard para comercios está en `/comercio/qr` (login con credenciales del comercio).
+
 ## Notas
 
 - Para enviar correos usa MailerSend. Asegúrate de que el dominio emisor esté verificado en su panel.

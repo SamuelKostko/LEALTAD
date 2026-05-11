@@ -34,6 +34,7 @@ export default async function handler(req, res) {
   
   if (auth.data?.name) payload.name = String(auth.data.name).trim();
   if (auth.data?.username) payload.username = String(auth.data.username).trim();
+  if (auth.data?.branchName) payload.branchName = String(auth.data.branchName).trim();
 
   sendJson(res, 200, payload);
 }

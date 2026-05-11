@@ -63,6 +63,11 @@ export async function verifySession(cookieValue) {
       snap = await db.collection('cashiers').where('sessionId', '==', sessionId).limit(1).get();
     }
 
+    // If not found, search in 'merchants'
+    if (snap.empty) {
+      snap = await db.collection('merchants').where('sessionId', '==', sessionId).limit(1).get();
+    }
+
     if (snap.empty) {
       return { ok: false, reason: 'no_session' };
     }
@@ -100,6 +105,11 @@ export async function destroySession(sessionId) {
       snap = await db.collection('cashiers').where('sessionId', '==', sessionId).limit(1).get();
     }
 
+    // Try merchants
+    if (snap.empty) {
+      snap = await db.collection('merchants').where('sessionId', '==', sessionId).limit(1).get();
+    }
+
     if (snap.empty) return true; // Already gone or never existed
 
     await snap.docs[0].ref.update({
@@ -135,7 +145,7 @@ export async function isAdminRequest(req) {
   if (!result.ok) return false;
 
   const role = String(result.data?.role ?? '').trim().toLowerCase();
-  if (role === 'cashier') return false;
+  if (role === 'cashier' || role === 'merchant') return false;
   return true;
 }
 

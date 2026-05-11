@@ -142,68 +142,7 @@
     </header>
 
     <main class="content" id="scroll" aria-label="Contenido">
-      <!-- LOGIN MODAL -->
-      <div class="aLogin" id="adminRootLogin" hidden role="dialog" aria-modal="true" aria-label="Acceso admin">
-        <div class="aLogin__backdrop" aria-hidden="true"></div>
-        <div class="aLogin__card">
-          <div class="aLogin__logo" aria-hidden="true">
-            <img src="/icons/icon-v2.svg" width="32" height="32" alt="Logo" style="object-fit: contain;" />
-          </div>
-          <h1 class="aLogin__title">Panel Admin</h1>
-          <p class="aLogin__sub">V+ Puntos</p>
-
-          <form class="aLogin__form" id="adminRootLoginForm">
-            <div class="aField">
-              <label class="aField__label" for="adminRootEmail">Usuario / Correo</label>
-              <input class="aField__input" id="adminRootEmail" name="email" type="text" autocomplete="username"
-                placeholder="admin o admin@vpuntos.com" required />
-            </div>
-            <div class="aField">
-              <label class="aField__label" for="adminRootPassword">Contraseña</label>
-              <input class="aField__input" id="adminRootPassword" name="password" type="password"
-                autocomplete="current-password" placeholder="••••••••" required />
-            </div>
-            <button class="aBtn aBtn--primary" id="adminRootLoginBtn" type="submit">Entrar</button>
-            <button class="aBtn aBtn--link" type="button" id="adminRootForgotBtn">¿Olvidaste la clave?</button>
-            <div class="aResult" id="adminRootLoginResult" aria-live="polite"></div>
-          </form>
-
-          <form class="aLogin__form" id="adminRootForgotForm" hidden>
-            <p class="aLogin__hint">Ingresa el correo configurado para recuperar tu acceso.</p>
-            <div class="aField">
-              <label class="aField__label" for="adminRootForgotEmail">Usuario / Correo</label>
-              <input class="aField__input" id="adminRootForgotEmail" type="text" placeholder="tucorreo@ejemplo.com"
-                required />
-            </div>
-            <button class="aBtn aBtn--primary" id="adminRootSendForgotBtn" type="submit">Enviar código</button>
-            <button class="aBtn aBtn--ghost" type="button" id="adminRootCancelForgotBtn">Volver</button>
-            <div class="aResult" id="adminRootForgotResult" aria-live="polite"></div>
-          </form>
-
-          <form class="aLogin__form" id="adminRootVerifyForm" hidden>
-            <p class="aLogin__hint">Código enviado. Ingrésalo para continuar.</p>
-            <div class="aField">
-              <label class="aField__label" for="adminRootVerifyCode">Código de 6 dígitos</label>
-              <input class="aField__input" id="adminRootVerifyCode" type="text" inputmode="numeric" placeholder="123456"
-                required autocomplete="one-time-code" maxlength="6" />
-            </div>
-            <button class="aBtn aBtn--primary" id="adminRootVerifyBtn" type="submit">Validar código</button>
-            <button class="aBtn aBtn--ghost" type="button" id="adminRootCancelVerifyBtn">Cancelar</button>
-            <div class="aResult" id="adminRootVerifyResult" aria-live="polite"></div>
-          </form>
-
-          <form class="aLogin__form" id="adminRootResetForm" hidden>
-            <p class="aLogin__hint">Código validado. Crea una nueva contraseña.</p>
-            <div class="aField">
-              <label class="aField__label" for="adminRootNewPassword">Nueva contraseña</label>
-              <input class="aField__input" id="adminRootNewPassword" type="password" placeholder="Mínimo 6 caracteres"
-                required minlength="6" />
-            </div>
-            <button class="aBtn aBtn--primary" id="adminRootUpdatePasswordBtn" type="submit">Actualizar clave</button>
-            <div class="aResult" id="adminRootResetResult" aria-live="polite"></div>
-          </form>
-        </div>
-      </div>
+      <!-- LOGIN MODAL (Removed - now handled by login.html) -->
 
       <!-- ADMIN DASHBOARD -->
       <div class="aDash" id="adminDash" hidden>
@@ -240,6 +179,13 @@
                 <circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="1.6" />
               </svg>
               Cajeros
+            </button>
+            <button class="aSidebar__navItem" id="aNavComercios" type="button" data-panel="comercios">
+              <svg viewBox="0 0 24 24" width="17" height="17" fill="none">
+                <path d="M3 9l9-6 9 6v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M9 22V12h6v10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+              Comercios
             </button>
             <button class="aSidebar__navItem" id="aNavSedes" type="button" data-panel="sedes">
               <svg viewBox="0 0 24 24" width="17" height="17" fill="none">
@@ -296,6 +242,16 @@
                   stroke-linejoin="round" />
               </svg>
               Crear Cajero
+            </button>
+
+            <button class="aSidebar__logout" id="adminCreateMerchantBtn" type="button"
+              style="margin-top: 10px; opacity: 0.6;">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none">
+                <path d="M3 9l9-6 9 6v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M9 22V12h6v10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M12 7v4M10 9h4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+              Crear Comercio
             </button>
           </div>
         </aside>
@@ -452,6 +408,26 @@
             <div class="aResult" id="adminCajerosResult" aria-live="polite"></div>
           </section>
 
+          <!-- Panel Comercios -->
+          <section class="aPanel" id="aPanelComercios" aria-label="Comercios" hidden>
+            <div class="aPanel__header">
+              <div>
+                <h2 class="aPanel__title">Comercios</h2>
+                <p class="aPanel__sub">Credenciales de comercios (para generar QRs)</p>
+              </div>
+              <button class="aIconBtn" id="adminMerchantsRefresh" type="button" aria-label="Recargar">
+                <svg viewBox="0 0 24 24" width="17" height="17" fill="none">
+                  <path d="M20 12a8 8 0 0 1-14.3 4.9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+                  <path d="M4 12a8 8 0 0 1 14.3-4.9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" opacity=".55" />
+                  <path d="M17.8 3.8V7.6h-3.8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" opacity=".55" />
+                  <path d="M6.2 20.2V16.4H10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+                </svg>
+              </button>
+            </div>
+            <div id="adminMerchantsList"></div>
+            <div class="aResult" id="adminMerchantsResult" aria-live="polite"></div>
+          </section>
+
           <!-- Panel Sedes -->
           <section class="aPanel" id="aPanelSedes" aria-label="Sedes" hidden>
             <div class="aPanel__header" style="flex-wrap: wrap; gap: 16px;">
@@ -508,6 +484,13 @@
               <circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="1.7" />
             </svg>
             Cajeros
+          </button>
+          <button class="aMobileNav__item" id="aMobNavComercios" type="button" aria-label="Comercios">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none">
+              <path d="M3 9l9-6 9 6v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9z" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
+              <path d="M9 22V12h6v10" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            Comercios
           </button>
           <button class="aMobileNav__item" id="aMobNavSedes" type="button" aria-label="Sedes">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none">

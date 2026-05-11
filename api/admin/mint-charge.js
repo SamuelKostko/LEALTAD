@@ -2,8 +2,23 @@ import crypto from 'node:crypto';
 import { FieldValue } from 'firebase-admin/firestore';
 import QRCode from 'qrcode';
 import { getPublicOrigin, readJsonBody, sendJson } from '../_lib/http.js';
-import { requireStaff } from '../_lib/adminAuth.js';
+import { verifySession } from '../_lib/adminAuth.js';
 import { getFirestoreDb } from '../_lib/firestore.js';
+
+function parseCookies(header) {
+  const raw = String(header ?? '');
+  if (!raw) return {};
+  const out = {};
+  for (const part of raw.split(';')) {
+    const idx = part.indexOf('=');
+    if (idx === -1) continue;
+    const key = part.slice(0, idx).trim();
+    const val = part.slice(idx + 1).trim();
+    if (!key) continue;
+    out[key] = decodeURIComponent(val);
+  }
+  return out;
+}
 
 function getQrSecret() {
   return String(process.env.QR_SECRET ?? '').trim();
@@ -19,7 +34,14 @@ export default async function handler(req, res) {
     return;
   }
 
-  if (!(await requireStaff(req, res))) return;
+  const cookies = parseCookies(req.headers.cookie);
+  const auth = await verifySession(cookies['admin_session']);
+  if (!auth.ok) {
+    sendJson(res, 401, { error: 'Unauthorized' });
+    return;
+  }
+
+  const role = String(auth.data?.role ?? '').trim().toLowerCase() || 'admin';
 
   const secret = getQrSecret();
   if (!secret) {
@@ -37,7 +59,7 @@ export default async function handler(req, res) {
 
   const points = Number(body?.points ?? 0);
   const description = String(body?.description ?? '').trim();
-  const branchName = String(body?.BranchName ?? body?.branchName ?? '').trim();
+  const requestedBranchName = String(body?.BranchName ?? body?.branchName ?? '').trim();
 
   if (!Number.isFinite(points) || points <= 0 || points > 50000) {
     sendJson(res, 400, { error: 'Puntos inválidos. Máximo permitido: 50000.' });
@@ -46,6 +68,22 @@ export default async function handler(req, res) {
 
   const ts = Date.now();
   const desc = description.slice(0, 120);
+
+  let branchName = requestedBranchName;
+  let merchantId = '';
+  let merchantName = '';
+  let merchantBranch = '';
+
+  if (role === 'merchant') {
+    merchantId = String(auth.adminId ?? '').trim();
+    merchantName = String(auth.data?.name ?? '').trim();
+    merchantBranch = String(auth.data?.branchName ?? '').trim();
+    if (!merchantName || !merchantBranch) {
+      sendJson(res, 500, { error: 'Merchant user is missing name/branchName' });
+      return;
+    }
+    branchName = `${merchantName} - ${merchantBranch}`.slice(0, 120);
+  }
 
   const firestore = getFirestoreDb();
 
@@ -66,7 +104,12 @@ export default async function handler(req, res) {
         points,
         ref: '',
         description: desc,
-        branchName: branchName,
+        branchName,
+        mintedById: String(auth.adminId ?? '').trim(),
+        mintedByRole: role,
+        ...(role === 'merchant'
+          ? { merchantId, merchantName, merchantBranch }
+          : {}),
         ts,
         nonce,
         sig,

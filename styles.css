@@ -2858,6 +2858,11 @@ body {
   min-width: 650px;
 }
 
+.aTxRow--comercios {
+  grid-template-columns: minmax(140px, 1.5fr) minmax(100px, 1fr) minmax(140px, 1.5fr) 80px 120px 130px;
+  min-width: 760px;
+}
+
 .aTxRow--sedes {
   grid-template-columns: 140px 100px 100px 100px 1fr;
   min-width: 580px;
@@ -2919,6 +2924,18 @@ body {
   background: #ef4444;
   color: #fff;
   border-color: #ef4444;
+}
+
+.aTxDelBtn--secondary {
+  background: rgba(255, 255, 255, 0.07);
+  color: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.aTxDelBtn--secondary:hover {
+  background: rgba(255, 255, 255, 0.11);
+  color: rgba(255, 255, 255, 0.7);
+  border-color: rgba(255, 255, 255, 0.12);
 }
 
 /* -- mode-admin overrides: hide old header items, host aDash full height -- */
@@ -3695,3 +3712,27 @@ body.is-ready .bootSplash {
 .firstOpenModal__btn:active {
   transform: scale(0.98);
 }
+
+/* ── Merchant dashboard: standalone aDash layout ──────────────────────────── */
+
+/* When .aDash is used as a top-level element (merchant page, no mode-admin body)
+   we need to ensure it fills the full viewport and the body is correctly set */
+body:has(.aDash:not([hidden])) {
+  overflow: hidden;
+  background: #09090b;
+}
+
+/* aTxRow variant for merchant (6 columns: fecha, puntos, estado, id, sucursal, desc) */
+.aTxRow--merchant {
+  grid-template-columns: 130px 80px 80px 80px 100px minmax(120px, 1fr);
+  min-width: 600px;
+}
+
+/* On mobile keep merchant table card layout too */
+@media (max-width: 640px) {
+  .aTxRow--merchant {
+    min-width: 0;
+    grid-template-columns: 1fr 1fr;
+  }
+}
+

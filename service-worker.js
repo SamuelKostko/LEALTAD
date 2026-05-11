@@ -1,4 +1,4 @@
-const CACHE_NAME = "wallet-pwa-v46";
+const CACHE_NAME = "wallet-pwa-v48";
 
 const PRECACHE_URLS = [
   "/",
@@ -59,14 +59,20 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Never cache admin pages/assets (avoid stale admin UI).
+  // Never cache admin/merchant/login pages (avoid stale UI).
   try {
     const url = new URL(request.url);
     if (
+      url.pathname === '/login' ||
       url.pathname === '/admin' ||
       url.pathname.startsWith('/admin/') ||
       url.pathname === '/admin-qr.html' ||
-      url.pathname === '/admin-qr.js'
+      url.pathname === '/admin-qr.js' ||
+      url.pathname === '/comercio/qr' ||
+      url.pathname.startsWith('/comercio/') ||
+      url.pathname === '/merchant-qr.html' ||
+      url.pathname === '/merchant-qr.js' ||
+      url.pathname === '/login.html'
     ) {
       event.respondWith(fetch(request));
       return;

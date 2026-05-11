@@ -30,6 +30,12 @@ export default async function handler(req, res) {
       collection = 'cashiers';
     }
 
+    // If not found, try username in 'merchants'
+    if (snap.empty) {
+      snap = await db.collection('merchants').where('username', '==', identifier).limit(1).get();
+      collection = 'merchants';
+    }
+
     if (snap.empty) {
       sendJson(res, 403, { error: 'Credenciales incorrectas.' });
       return;
