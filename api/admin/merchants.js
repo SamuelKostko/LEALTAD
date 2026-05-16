@@ -65,6 +65,7 @@ export default async function handler(req, res) {
           username: data.username,
           name: data.name,
           branchName: data.branchName,
+          settings: data.settings || { pointsPerDollar: 1, minRedeemPoints: 0 },
           createdAt: toDateValue(data.createdAt),
           lastLogin: toDateValue(data.sessionCreatedAt)
         };
@@ -150,6 +151,15 @@ export default async function handler(req, res) {
       }
     }
 
+    if (body.settings !== undefined) {
+      const s = body.settings || {};
+      updates.settings = {
+        pointsPerDollar: Number.isFinite(Number(s.pointsPerDollar)) ? Number(s.pointsPerDollar) : 1,
+        minRedeemPoints: Number.isFinite(Number(s.minRedeemPoints)) ? Number(s.minRedeemPoints) : 0,
+        isClosed: s.isClosed === true
+      };
+    }
+
     try {
       await firestore.collection('merchants').doc(id).update(updates);
       sendJson(res, 200, { ok: true, message: 'Comercio actualizado.' });
@@ -223,6 +233,11 @@ export default async function handler(req, res) {
       role: 'merchant',
       name,
       branchName,
+      settings: {
+        pointsPerDollar: Number.isFinite(Number(body?.settings?.pointsPerDollar)) ? Number(body.settings.pointsPerDollar) : 1,
+        minRedeemPoints: Number.isFinite(Number(body?.settings?.minRedeemPoints)) ? Number(body.settings.minRedeemPoints) : 0,
+        isClosed: body?.settings?.isClosed !== false // Default to true for new ones in the Merchants area
+      },
       sessionId: null,
       sessionCreatedAt: null,
       sessionExpiresAt: null,

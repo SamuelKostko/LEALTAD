@@ -159,11 +159,33 @@ export default async function handler(req, res) {
     doc.ref.update(updateData).catch(err => console.error("Error updating opened stats", err));
 
     // Map Firestore fields to what the frontend expects
+    const merchantBalances = data.merchantBalances || {};
+    const balances = [];
+
+    // Fetch merchant names for each balance > 0
+    const merchantIds = Object.keys(merchantBalances).filter(id => merchantBalances[id] > 0);
+    if (merchantIds.length > 0) {
+      const merchantsSnap = await firestoreDb.collection('merchants').where('__name__', 'in', merchantIds).get();
+      const merchantNames = {};
+      merchantsSnap.forEach(doc => {
+        merchantNames[doc.id] = doc.data().name || doc.data().username || 'Comercio';
+      });
+
+      for (const id of merchantIds) {
+        balances.push({
+          merchantId: id,
+          name: merchantNames[id] || 'Comercio',
+          balance: merchantBalances[id]
+        });
+      }
+    }
+
     const clientData = {
       token,
       name: data.nombre || 'Sin nombre',
       cedula: data.idNumber || data.cedula || '—',
       balance: data.totalPoints || 0,
+      merchantBalances: balances,
       updatedAt: toIso(data.updatedAt),
       isFirstOpen,
       lastOpenedAt: toIso(data.lastOpenedAt) || null

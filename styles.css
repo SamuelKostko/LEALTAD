@@ -3736,3 +3736,77 @@ body:has(.aDash:not([hidden])) {
   }
 }
 
+
+/* Merchant Balances Section */
+.merchantBalances {
+  margin: 0 18px 24px;
+  animation: slideIn 0.5s cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+.merchantBalances__title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--label);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 0 0 14px;
+}
+
+.merchantBalances__list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.merchantCard {
+  background: var(--surface-2);
+  border: 1px solid var(--border-soft);
+  border-radius: 18px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  backdrop-filter: blur(8px);
+  transition: transform 0.2s, border-color 0.2s;
+}
+
+.merchantCard:active {
+  transform: scale(0.98);
+}
+
+.merchantCard__info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.merchantCard__name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-strong);
+}
+
+.merchantCard__label {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.merchantCard__balance {
+  text-align: right;
+}
+
+.merchantCard__points {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--text-strong);
+}
+
+.merchantCard__cash {
+  font-size: 11px;
+  color: #a5b4fc;
+  font-weight: 600;
+  opacity: 0.8;
+}
+

@@ -13,83 +13,124 @@ async function dbProcessPurchase({ email, name, cedula, pointsToAdd, absoluteBal
 
   let token = '';
   let firstActivation = false;
-
   const txId = crypto.randomBytes(12).toString('base64url');
   const purchaseTxRef = firestore.collection('transactions').doc(txId);
 
+  let currentBalance = 0;
+  let finalBalance = 0;
   let creditedPoints = 0;
   let balanceBefore = 0;
-  let finalBalance = 0;
 
-  await firestore.runTransaction(async (tx) => {
-    const snap = await tx.get(customerRef);
-    const data = snap.exists ? snap.data() : null;
-    const existingToken = data && typeof data.token === 'string' ? data.token : '';
+    // Check if the sede belongs to a registered merchant (Closed Merchant)
+    let merchantId = '';
+    if (sede) {
+      const merchantSnap = await firestore.collection('merchants').where('branchName', '==', sede).limit(1).get();
+      if (!merchantSnap.empty) {
+        merchantId = merchantSnap.docs[0].id;
+      }
+    }
 
-    if (!existingToken) {
-      token = makeToken();
-      firstActivation = true;
-      finalBalance = absoluteBalance !== null ? absoluteBalance : (pointsToAdd || 0);
-      
-      tx.set(
-        customerRef,
-        {
+    await firestore.runTransaction(async (tx) => {
+      const snap = await tx.get(customerRef);
+      const data = snap.exists ? snap.data() : null;
+      const existingToken = data && typeof data.token === 'string' ? data.token : '';
+
+      if (!existingToken) {
+        token = makeToken();
+        firstActivation = true;
+        
+        const initialBalance = absoluteBalance !== null ? absoluteBalance : (pointsToAdd || 0);
+        
+        const setPayload = {
           token,
           nombre: name,
           idNumber: cedula,
           email,
-          totalPoints: finalBalance,
+          totalPoints: merchantId ? 0 : initialBalance,
           sedes: sede || '',
           createdAt: now,
           updatedAt: now
-        },
-        { merge: true }
-      );
-      creditedPoints = finalBalance;
-      balanceBefore = 0;
-    } else {
-      token = existingToken;
-      const current = Number(data.totalPoints ?? 0);
-      const currentSafe = Number.isFinite(current) ? current : 0;
-      balanceBefore = currentSafe;
+        };
 
-      if (absoluteBalance !== null) {
-        finalBalance = absoluteBalance;
-        creditedPoints = Math.max(0, finalBalance - currentSafe);
+        if (merchantId) {
+          setPayload.merchantBalances = { [merchantId]: initialBalance };
+          creditedPoints = initialBalance;
+          finalBalance = initialBalance;
+        } else {
+          creditedPoints = initialBalance;
+          finalBalance = initialBalance;
+        }
+
+        tx.set(customerRef, setPayload, { merge: true });
+        balanceBefore = 0;
       } else {
-        creditedPoints = Math.max(0, pointsToAdd || 0);
-        finalBalance = currentSafe + creditedPoints;
+        token = existingToken;
+        
+        if (merchantId) {
+          const balances = data.merchantBalances || {};
+          const current = Number(balances[merchantId] ?? 0);
+          balanceBefore = current;
+
+          if (absoluteBalance !== null) {
+            finalBalance = absoluteBalance;
+            creditedPoints = Math.max(0, finalBalance - current);
+          } else {
+            creditedPoints = Math.max(0, pointsToAdd || 0);
+            finalBalance = current + creditedPoints;
+          }
+
+          tx.set(
+            customerRef,
+            {
+              nombre: name,
+              idNumber: cedula,
+              [`merchantBalances.${merchantId}`]: finalBalance,
+              updatedAt: now
+            },
+            { merge: true }
+          );
+        } else {
+          const current = Number(data.totalPoints ?? 0);
+          balanceBefore = current;
+
+          if (absoluteBalance !== null) {
+            finalBalance = absoluteBalance;
+            creditedPoints = Math.max(0, finalBalance - current);
+          } else {
+            creditedPoints = Math.max(0, pointsToAdd || 0);
+            finalBalance = current + creditedPoints;
+          }
+
+          tx.set(
+            customerRef,
+            {
+              nombre: name,
+              idNumber: cedula,
+              totalPoints: finalBalance,
+              updatedAt: now
+            },
+            { merge: true }
+          );
+        }
       }
 
-      tx.set(
-        customerRef,
-        {
-          nombre: name,
-          idNumber: cedula,
-          totalPoints: finalBalance,
-          sedes: sede || '',
-          updatedAt: now
-        },
-        { merge: true }
-      );
-    }
-
-    // Only create a credit transaction when the balance increased.
-    if (creditedPoints > 0) {
-      tx.set(purchaseTxRef, {
-        type: 'credit',
-        status: 'success',
-        token,
-        points: creditedPoints,
-        branchName: sede || '',
-        description: firstActivation ? 'Activación' : 'Crédito',
-        balanceBefore: balanceBefore,
-        balanceAfter: finalBalance,
-        createdAt: FieldValue.serverTimestamp(),
-        processedAt: FieldValue.serverTimestamp()
-      });
-    }
-  });
+      // Only create a credit transaction when the balance increased.
+      if (creditedPoints > 0) {
+        tx.set(purchaseTxRef, {
+          type: 'credit',
+          status: 'success',
+          token,
+          points: creditedPoints,
+          branchName: sede || '',
+          merchantId: merchantId || '',
+          description: firstActivation ? 'Activación' : 'Crédito',
+          balanceBefore: balanceBefore,
+          balanceAfter: finalBalance,
+          createdAt: FieldValue.serverTimestamp(),
+          processedAt: FieldValue.serverTimestamp()
+        });
+      }
+    });
 
   return { token, firstActivation, creditedPoints, balanceBefore, balanceAfter: finalBalance };
 }

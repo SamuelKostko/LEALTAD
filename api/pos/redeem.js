@@ -151,29 +151,58 @@ export default async function handler(req, res) {
         throw new Error('Invalid transaction payload');
       }
 
-      const current = Number(clientData.totalPoints ?? 0);
-      if (!Number.isFinite(current)) throw new Error('Invalid balance');
+      const isClosed = txData.isClosed === true;
+      const merchantId = String(txData.merchantId || '').trim();
 
-      const next = current - points;
-      if (next < 0) {
-        throw new Error('Insufficient balance');
+      let currentBalance = 0;
+      let updateFields = {};
+
+      if (isClosed && merchantId) {
+        const settings = txData.settings || {};
+        const minRedeem = Number(settings.minRedeemPoints || 0);
+        if (points < minRedeem) {
+          throw new Error(`El canje mínimo en este comercio es de ${minRedeem} pts`);
+        }
+
+        const balances = clientData.merchantBalances || {};
+        currentBalance = Number(balances[merchantId] ?? 0);
+        if (!Number.isFinite(currentBalance)) throw new Error('Invalid merchant balance');
+
+        const next = currentBalance - points;
+        if (next < 0) throw new Error('Saldo insuficiente en este comercio');
+
+        updateFields = {
+          [`merchantBalances.${merchantId}`]: next,
+          updatedAt: FieldValue.serverTimestamp()
+        };
+        currentBalance = currentBalance; // for transaction log
+      } else {
+        currentBalance = Number(clientData.totalPoints ?? 0);
+        if (!Number.isFinite(currentBalance)) throw new Error('Invalid balance');
+
+        const next = currentBalance - points;
+        if (next < 0) throw new Error('Insufficient balance');
+
+        updateFields = { totalPoints: next, updatedAt: FieldValue.serverTimestamp() };
       }
 
-      tx.update(clientRef, { totalPoints: next, updatedAt: FieldValue.serverTimestamp() });
+      const finalBalance = currentBalance - points;
+
+      tx.update(clientRef, updateFields);
 
       tx.set(
         txRef,
         {
           status: 'success',
           token,
-          balanceBefore: current,
-          balanceAfter: next,
+          balanceBefore: currentBalance,
+          balanceAfter: finalBalance,
           processedAt: FieldValue.serverTimestamp()
         },
         { merge: true }
       );
 
-      return { previous: current, next };
+      return { previous: currentBalance, next: finalBalance };
     });
 
 

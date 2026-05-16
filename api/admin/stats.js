@@ -48,21 +48,25 @@ export default async function handler(req, res) {
   try {
     const firestore = getFirestoreDb();
 
-    // 1. Total users (entire collection count)
-    const totalUsersSnap = await firestore.collection('clientes').get();
-    const totalUsers = totalUsersSnap.size;
+    // 1. Total users (using count() to save reads)
+    const totalUsersCount = await firestore.collection('clientes').count().get();
+    const totalUsers = totalUsersCount.data().count;
 
-    // Group clients by branch (only those registered in the period)
+    // 2. New Users & Clients by Branch (only fetch what is needed for the selected period)
     const clientsByBranch = {};
     const start = since ? new Date(since) : null;
-    
-    totalUsersSnap.forEach(doc => {
-      const c = doc.data() || {};
-      const createdAt = c.createdAt ? (c.createdAt.toDate ? c.createdAt.toDate() : new Date(c.createdAt)) : null;
-      
-      // Filter by date if 'since' is provided
-      if (start && (!createdAt || createdAt < start)) return;
+    let newUsers = 0;
 
+    let clientsQuery = firestore.collection('clientes').select('sedes', 'sede');
+    if (start) {
+      clientsQuery = clientsQuery.where('createdAt', '>=', start);
+    }
+
+    const clientsSnap = await clientsQuery.get();
+    newUsers = clientsSnap.size;
+    
+    clientsSnap.forEach(doc => {
+      const c = doc.data() || {};
       const branch = (typeof c.sedes === 'string' && c.sedes.trim() !== '') 
         ? c.sedes.trim() 
         : (typeof c.sede === 'string' && c.sede.trim() !== '') 
@@ -70,18 +74,6 @@ export default async function handler(req, res) {
           : 'Sin sede';
       clientsByBranch[branch] = (clientsByBranch[branch] || 0) + 1;
     });
-
-    // 2. New users (filtered by createdAt)
-    let newUsers = 0;
-    if (!since) {
-      newUsers = totalUsers;
-    } else {
-      const sinceDate = new Date(since);
-      const newUsersSnap = await firestore.collection('clientes')
-        .where('createdAt', '>=', sinceDate)
-        .get();
-      newUsers = newUsersSnap.size;
-    }
 
     // 3. Transactions (filtered by date)
     let txQuery = firestore.collection('transactions');

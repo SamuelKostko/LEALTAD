@@ -272,6 +272,34 @@ if (qrButton) {
         }
         if (typeof data.updatedAt === "string") setUpdatedText(data.updatedAt);
         
+        // Render merchant-specific balances (Closed Merchants)
+        const merchantSection = document.getElementById("merchantBalancesSection");
+        const merchantList = document.getElementById("merchantBalancesList");
+        if (merchantSection && merchantList) {
+          const balances = Array.isArray(data.merchantBalances) ? data.merchantBalances : [];
+          if (balances.length > 0) {
+            merchantList.innerHTML = "";
+            balances.forEach(m => {
+              const card = document.createElement("div");
+              card.className = "merchantCard";
+              card.innerHTML = `
+                <div class="merchantCard__info">
+                  <div class="merchantCard__name">${m.name}</div>
+                  <div class="merchantCard__label">Saldo exclusivo</div>
+                </div>
+                <div class="merchantCard__balance">
+                  <div class="merchantCard__points">${m.balance.toFixed(2)}</div>
+                  <div class="merchantCard__cash">≈ ${(m.balance / 100).toFixed(2)} $</div>
+                </div>
+              `;
+              merchantList.appendChild(card);
+            });
+            merchantSection.hidden = false;
+          } else {
+            merchantSection.hidden = true;
+          }
+        }
+
         // Control del Modal de Primera Vez
         if (data.isFirstOpen) {
           const firstModal = document.getElementById("firstOpenModal");
@@ -1436,23 +1464,31 @@ Esto eliminará también sus transacciones.`
 
     if (cajerosRefresh) cajerosRefresh.addEventListener("click", loadCashiers);
 
-    const doEditMerchant = async (id, currentUsername, currentName, currentBranchName) => {
+    const doEditMerchant = async (id, currentUsername, currentName, currentBranchName, currentSettings) => {
       const name = window.prompt(`Nuevo nombre para el comercio ${currentUsername}:`, currentName || "");
       if (name === null) return;
       const branchName = window.prompt(`Nueva sede fija para ${currentUsername}:`, currentBranchName || "");
       if (branchName === null) return;
+      
+      const currentS = currentSettings || { pointsPerDollar: 1, minRedeemPoints: 0 };
+      const pointsPerDollar = window.prompt(`Puntos por cada 1$ gastado (ej: 1 o 1.5):`, currentS.pointsPerDollar ?? 1);
+      if (pointsPerDollar === null) return;
+      
+      const minRedeemPoints = window.prompt(`Mínimo de puntos para canje:`, currentS.minRedeemPoints ?? 0);
+      if (minRedeemPoints === null) return;
+
       const pwd = window.prompt(`Nueva contraseña para ${currentUsername} (deja en blanco para no cambiarla):`);
       if (pwd === null) return;
 
-      if (!name.trim() && !branchName.trim() && !pwd.trim()) {
-        alert("No se introdujeron cambios.");
-        return;
-      }
-
       const body = { id };
-      if (name.trim() && name.trim() !== (currentName || "")) body.name = name.trim();
-      if (branchName.trim() && branchName.trim() !== (currentBranchName || "")) body.branchName = branchName.trim();
+      body.name = name.trim() || currentName;
+      body.branchName = branchName.trim() || currentBranchName;
       if (pwd.trim()) body.password = pwd.trim();
+      body.settings = {
+        pointsPerDollar: Number(pointsPerDollar) || 1,
+        minRedeemPoints: Number(minRedeemPoints) || 0,
+        isClosed: true // Forzado por ahora según requerimiento
+      };
 
       try {
         const res = await fetch("/api/admin/merchants", {
@@ -1564,7 +1600,7 @@ Esto eliminará también sus transacciones.`
         const editBtn = document.createElement("button");
         editBtn.className = "aTxDelBtn aTxDelBtn--secondary";
         editBtn.textContent = "Editar";
-        editBtn.onclick = () => doEditMerchant(m.id, m.username, m.name, m.branchName);
+        editBtn.onclick = () => doEditMerchant(m.id, m.username, m.name, m.branchName, m.settings);
 
         const delBtn = document.createElement("button");
         delBtn.className = "aTxDelBtn";

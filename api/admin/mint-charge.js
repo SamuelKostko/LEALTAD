@@ -82,7 +82,18 @@ export default async function handler(req, res) {
       sendJson(res, 500, { error: 'Merchant user is missing name/branchName' });
       return;
     }
+    
+    // Fetch merchant settings to know if it's a closed merchant
+    const firestoreDb = getFirestoreDb();
+    const merchantDoc = await firestoreDb.collection('merchants').doc(merchantId).get();
+    const mData = merchantDoc.data() || {};
+    const settings = mData.settings || {};
+    const isClosed = settings.isClosed !== false;
+
     branchName = `${merchantName} - ${merchantBranch}`.slice(0, 120);
+    
+    // Extra fields for the transaction
+    var merchantTxData = { merchantId, merchantName, merchantBranch, isClosed, settings };
   }
 
   const firestore = getFirestoreDb();
@@ -107,9 +118,7 @@ export default async function handler(req, res) {
         branchName,
         mintedById: String(auth.adminId ?? '').trim(),
         mintedByRole: role,
-        ...(role === 'merchant'
-          ? { merchantId, merchantName, merchantBranch }
-          : {}),
+        ...(merchantTxData || {}),
         ts,
         nonce,
         sig,
