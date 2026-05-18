@@ -89,6 +89,16 @@ export default async function handler(req, res) {
 
     try {
       const docRef = firestore.collection('merchants').doc(merchantId);
+      const doc = await docRef.get();
+      if (!doc.exists) {
+        sendJson(res, 404, { error: 'Comercio no encontrado.' });
+        return;
+      }
+
+      const currentData = doc.data() || {};
+      const currentSettings = currentData.settings || {};
+      const isClosed = currentSettings.isClosed !== false;
+
       await docRef.update({
         settings: {
           pointsPerDollar,
