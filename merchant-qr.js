@@ -3,12 +3,14 @@ const merchantDash       = document.getElementById("merchantDash");
 const mPanelDashboard    = document.getElementById("mPanelDashboard");
 const mPanelGenerator    = document.getElementById("mPanelGenerator");
 const mPanelGrantPoints  = document.getElementById("mPanelGrantPoints");
-const mPanelSettings    = document.getElementById("mPanelSettings");
+const mPanelCatalog      = document.getElementById("mPanelCatalog");
+const mPanelSettings     = document.getElementById("mPanelSettings");
 
 // Sidebar nav
 const mNavDashboard      = document.getElementById("mNavDashboard");
 const mNavGenerator      = document.getElementById("mNavGenerator");
 const mNavGrantPoints    = document.getElementById("mNavGrantPoints");
+const mNavCatalog        = document.getElementById("mNavCatalog");
 const mNavSettings       = document.getElementById("mNavSettings");
 const merchantLogoutBtn  = document.getElementById("merchantLogoutBtn");
 
@@ -16,6 +18,7 @@ const merchantLogoutBtn  = document.getElementById("merchantLogoutBtn");
 const mMobNavDashboard   = document.getElementById("mMobNavDashboard");
 const mMobNavGenerator   = document.getElementById("mMobNavGenerator");
 const mMobNavGrant       = document.getElementById("mMobNavGrant");
+const mMobNavCatalog     = document.getElementById("mMobNavCatalog");
 const mMobNavSettings    = document.getElementById("mMobNavSettings");
 const mMobNavLogout      = document.getElementById("mMobNavLogout");
 
@@ -43,16 +46,60 @@ const resultEl     = document.getElementById("result");
 // Grant panel
 const grantForm        = document.getElementById("grantForm");
 const grantClientToken = document.getElementById("grantClientToken");
-const grantPoints      = document.getElementById("grantPoints");
-const grantPassword    = document.getElementById("grantPassword");
 const grantSubmitBtn   = document.getElementById("grantSubmitBtn");
 const grantResult      = document.getElementById("grantResult");
 
+// Step 1: Identify Client selectors
+const billingClientSearchWrapper = document.getElementById("billingClientSearchWrapper");
+const billingClientSearchForm  = document.getElementById("billingClientSearchForm");
+const billingClientQuery       = document.getElementById("billingClientQuery");
+const billingClientSearchBtn   = document.getElementById("billingClientSearchBtn");
+const billingClientSearchResult = document.getElementById("billingClientSearchResult");
+
+// Step 2: Billing selectors
+const billingMainLayout        = document.getElementById("billingMainLayout");
+const verifiedClientBanner     = document.getElementById("verifiedClientBanner");
+const verifiedClientName       = document.getElementById("verifiedClientName");
+const verifiedClientId         = document.getElementById("verifiedClientId");
+const changeClientBtn          = document.getElementById("changeClientBtn");
+
+// POS Billing elements
+const billingSearchInput      = document.getElementById("billingSearchInput");
+const billingCatalogGrid      = document.getElementById("billingCatalogGrid");
+const billingCartList         = document.getElementById("billingCartList");
+const ticketCountLabel        = document.getElementById("ticketCountLabel");
+const billingTotalUsd         = document.getElementById("billingTotalUsd");
+const billingCashbackLabel    = document.getElementById("billingCashbackLabel");
+const billingCalculatedPoints = document.getElementById("billingCalculatedPoints");
+
+const billingModeCatalogBtn         = document.getElementById("billingModeCatalogBtn");
+const billingModeManualBtn          = document.getElementById("billingModeManualBtn");
+const billingCatalogSearchContainer = document.getElementById("billingCatalogSearchContainer");
+const billingManualContainer        = document.getElementById("billingManualContainer");
+const billingManualAmountInput      = document.getElementById("billingManualAmountInput");
+const billingManualConceptInput     = document.getElementById("billingManualConceptInput");
+
+// Catalog panel & product modal
+const catalogGrid           = document.getElementById("catalogGrid");
+const catalogAddBtn         = document.getElementById("catalogAddBtn");
+const catalogResult         = document.getElementById("catalogResult");
+const productModal          = document.getElementById("productModal");
+const productModalTitle     = document.getElementById("productModalTitle");
+const productModalCloseBtn  = document.getElementById("productModalCloseBtn");
+const productModalBackdrop  = document.getElementById("productModalBackdrop");
+const productForm           = document.getElementById("productForm");
+const prodId                = document.getElementById("prodId");
+const prodName              = document.getElementById("prodName");
+const prodPrice             = document.getElementById("prodPrice");
+const prodDesc              = document.getElementById("prodDesc");
+const prodSubmitBtn         = document.getElementById("prodSubmitBtn");
+
 // Settings panel
-const settingsForm       = document.getElementById("settingsForm");
-const settMinRedeemPoints = document.getElementById("settMinRedeemPoints");
-const settSubmitBtn      = document.getElementById("settSubmitBtn");
-const settingsResult     = document.getElementById("settingsResult");
+const settingsForm         = document.getElementById("settingsForm");
+const settCashbackPercent  = document.getElementById("settCashbackPercent");
+const settMinRedeemPoints  = document.getElementById("settMinRedeemPoints");
+const settSubmitBtn        = document.getElementById("settSubmitBtn");
+const settingsResult       = document.getElementById("settingsResult");
 
 // Modals
 const copyBtn          = document.getElementById("copyBtn");
@@ -66,14 +113,19 @@ const setupModal       = document.getElementById("setupModal");
 const setupModalBtn    = document.getElementById("setupModalBtn");
 
 // ── State ────────────────────────────────────────────────────────────────────
-let lastUrl          = "";
-let pollInterval     = null;
-let currentTxId      = "";
-let merchantRange    = "day";
-let merchantCursor   = null;
-let merchantHasMore  = false;
+let lastUrl             = "";
+let pollInterval        = null;
+let currentTxId         = "";
+let merchantRange       = "day";
+let merchantCursor      = null;
+let merchantHasMore     = false;
 let merchantLoadingMore = false;
 let merchantConfigured  = true;
+let merchantProducts    = [];
+let billingCart         = [];
+let merchantCashbackPercent = 5;
+let billingMode         = "catalog";
+let verifiedClient      = null;
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 const setLoginResult = (type, message) => {
@@ -120,28 +172,47 @@ const switchPanel = (panel) => {
   const isDash = panel === "dashboard";
   const isGen  = panel === "generator";
   const isGrant = panel === "grant";
+  const isCatalog = panel === "catalog";
   const isSett = panel === "settings";
 
   if (mPanelDashboard) mPanelDashboard.hidden = !isDash;
   if (mPanelGenerator) mPanelGenerator.hidden = !isGen;
   if (mPanelGrantPoints) mPanelGrantPoints.hidden = !isGrant;
+  if (mPanelCatalog) mPanelCatalog.hidden = !isCatalog;
   if (mPanelSettings) mPanelSettings.hidden = !isSett;
 
   // Sidebar
   if (mNavDashboard) mNavDashboard.classList.toggle("is-active", isDash);
   if (mNavGenerator) mNavGenerator.classList.toggle("is-active", isGen);
   if (mNavGrantPoints) mNavGrantPoints.classList.toggle("is-active", isGrant);
+  if (mNavCatalog) mNavCatalog.classList.toggle("is-active", isCatalog);
   if (mNavSettings) mNavSettings.classList.toggle("is-active", isSett);
 
   // Mobile nav
   if (mMobNavDashboard) mMobNavDashboard.classList.toggle("is-active", isDash);
   if (mMobNavGenerator) mMobNavGenerator.classList.toggle("is-active", isGen);
   if (mMobNavGrant) mMobNavGrant.classList.toggle("is-active", isGrant);
+  if (mMobNavCatalog) mMobNavCatalog.classList.toggle("is-active", isCatalog);
   if (mMobNavSettings) mMobNavSettings.classList.toggle("is-active", isSett);
 
   // Load settings from backend if entering settings tab
   if (isSett) {
     loadMerchantSettings();
+  }
+
+  // Load products list if entering catalog tab or grant tab (to pick items)
+  if (isCatalog) {
+    loadMerchantCatalog();
+  }
+  if (isGrant) {
+    loadMerchantCatalog({ andSetupPOS: true });
+    if (!verifiedClient) {
+      if (billingClientSearchWrapper) billingClientSearchWrapper.hidden = false;
+      if (billingMainLayout) billingMainLayout.hidden = true;
+    } else {
+      if (billingClientSearchWrapper) billingClientSearchWrapper.hidden = true;
+      if (billingMainLayout) billingMainLayout.hidden = false;
+    }
   }
 
   // Scroll main to top
@@ -312,6 +383,9 @@ const checkAuth = async () => {
     setAuthenticated(true);
 
     const isConfigured = data?.settings?.configured === true;
+    if (data?.settings?.cashbackPercent) {
+      merchantCashbackPercent = Number(data.settings.cashbackPercent);
+    }
     if (!isConfigured) {
       merchantConfigured = false;
       if (setupModal) {
@@ -431,6 +505,7 @@ if (mNavDashboard) mNavDashboard.addEventListener("click", () => {
 });
 if (mNavGenerator) mNavGenerator.addEventListener("click", () => switchPanel("generator"));
 if (mNavGrantPoints) mNavGrantPoints.addEventListener("click", () => switchPanel("grant"));
+if (mNavCatalog) mNavCatalog.addEventListener("click", () => switchPanel("catalog"));
 if (mNavSettings) mNavSettings.addEventListener("click", () => switchPanel("settings"));
 
 // Mobile navigation
@@ -440,6 +515,7 @@ if (mMobNavDashboard) mMobNavDashboard.addEventListener("click", () => {
 });
 if (mMobNavGenerator) mMobNavGenerator.addEventListener("click", () => switchPanel("generator"));
 if (mMobNavGrant)     mMobNavGrant.addEventListener("click", () => switchPanel("grant"));
+if (mMobNavCatalog)   mMobNavCatalog.addEventListener("click", () => switchPanel("catalog"));
 if (mMobNavSettings)  mMobNavSettings.addEventListener("click", () => switchPanel("settings"));
 if (mMobNavLogout)    mMobNavLogout.addEventListener("click", doLogout);
 
@@ -454,6 +530,96 @@ if (setupModalBtn) {
       setupModal.setAttribute("aria-hidden", "true");
     }
     switchPanel("settings");
+  });
+}
+
+// Step 1: Client search result helper
+const setClientSearchResult = (type, message) => {
+  if (!billingClientSearchResult) return;
+  billingClientSearchResult.className = "aResult" + (type ? ` ${type}` : "");
+  billingClientSearchResult.textContent = message;
+};
+
+// Step 1: Client search form listener
+if (billingClientSearchForm) {
+  billingClientSearchForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (!billingClientQuery) return;
+
+    const query = String(billingClientQuery.value).trim();
+    if (!query) {
+      setClientSearchResult("aResult--err", "Por favor ingresa una cédula o tarjeta.");
+      return;
+    }
+
+    setClientSearchResult("aResult--info", "Buscando cliente...");
+    if (billingClientSearchBtn) billingClientSearchBtn.disabled = true;
+
+    try {
+      const res = await fetch(`/api/admin/cards?q=${encodeURIComponent(query)}&limit=1`, {
+        cache: "no-store",
+        credentials: "include"
+      });
+      const data = await res.json().catch(() => null);
+
+      if (!res.ok) {
+        setClientSearchResult("aResult--err", data?.error || "Error al buscar cliente.");
+        return;
+      }
+
+      const cards = data?.cards || [];
+      if (cards.length === 0) {
+        setClientSearchResult("aResult--err", "Cliente no encontrado. Asegúrate de ingresar una cédula o token de tarjeta registrada.");
+        return;
+      }
+
+      // Found customer!
+      verifiedClient = cards[0];
+      
+      // Update form hidden token
+      if (grantClientToken) grantClientToken.value = verifiedClient.token;
+
+      // Update Digital Receipt Banner
+      if (verifiedClientName) verifiedClientName.textContent = verifiedClient.name || "Cliente sin nombre";
+      if (verifiedClientId) {
+        verifiedClientId.textContent = verifiedClient.cedula 
+          ? `Cédula: ${verifiedClient.cedula}` 
+          : `Tarjeta: ${verifiedClient.token}`;
+      }
+
+      // Switch screens
+      setClientSearchResult("", "");
+      if (billingClientQuery) billingClientQuery.value = "";
+      if (billingClientSearchWrapper) billingClientSearchWrapper.hidden = true;
+      if (billingMainLayout) billingMainLayout.hidden = false;
+
+      // Reset billing cart & mode
+      billingCart = [];
+      if (billingManualAmountInput) billingManualAmountInput.value = "";
+      if (billingManualConceptInput) billingManualConceptInput.value = "";
+      updateCartUI();
+
+    } catch (err) {
+      setClientSearchResult("aResult--err", "Fallo de red al buscar el cliente.");
+    } finally {
+      if (billingClientSearchBtn) billingClientSearchBtn.disabled = false;
+    }
+  });
+}
+
+// Step 2: "Cambiar" Client button
+if (changeClientBtn) {
+  changeClientBtn.addEventListener("click", () => {
+    verifiedClient = null;
+    if (grantClientToken) grantClientToken.value = "";
+    if (billingClientSearchWrapper) billingClientSearchWrapper.hidden = false;
+    if (billingMainLayout) billingMainLayout.hidden = true;
+
+    // Reset fields
+    billingCart = [];
+    if (billingManualAmountInput) billingManualAmountInput.value = "";
+    if (billingManualConceptInput) billingManualConceptInput.value = "";
+    updateCartUI();
   });
 }
 
@@ -579,32 +745,53 @@ const setGrantResult = (type, message) => {
   grantResult.textContent = message;
 };
 
-// Grant Form submission
+// Grant Form submission (POS Billing Checkout - Support Catalog & Manual)
 if (grantForm) {
   grantForm.addEventListener("submit", async (e) => {
     e.preventDefault();
-    if (!grantClientToken || !grantPoints || !grantPassword) return;
+    if (!grantClientToken) return;
 
     const token = String(grantClientToken.value).trim();
-    const points = Number(String(grantPoints.value).trim());
-    const password = String(grantPassword.value).trim();
 
     if (!token) {
-      setGrantResult("aResult--err", "Token o Identificador del Cliente es requerido.");
+      setGrantResult("aResult--err", "Token o Tarjeta del Cliente es requerido.");
       return;
     }
 
-    if (!Number.isFinite(points) || points <= 0) {
-      setGrantResult("aResult--err", "Puntos inválidos.");
+    let totalUsdVal = 0;
+    let itemsPayload = [];
+
+    if (billingMode === "manual") {
+      totalUsdVal = Number(billingManualAmountInput?.value || 0);
+      if (totalUsdVal <= 0 || Number.isNaN(totalUsdVal)) {
+        setGrantResult("aResult--err", "Ingresa un monto de venta manual válido.");
+        return;
+      }
+      const concept = (billingManualConceptInput?.value || "").trim() || "Consumo General";
+      itemsPayload = [{
+        name: concept,
+        price: totalUsdVal,
+        quantity: 1
+      }];
+    } else {
+      if (billingCart.length === 0) {
+        setGrantResult("aResult--err", "El ticket de venta está vacío. Selecciona productos.");
+        return;
+      }
+      billingCart.forEach(it => {
+        totalUsdVal += it.price * it.quantity;
+      });
+      itemsPayload = billingCart;
+    }
+
+    const calculatedPoints = Math.round(totalUsdVal * merchantCashbackPercent);
+
+    if (calculatedPoints <= 0) {
+      setGrantResult("aResult--err", "El monto de la venta es insuficiente para otorgar puntos.");
       return;
     }
 
-    if (!password) {
-      setGrantResult("aResult--err", "Clave de seguridad requerida.");
-      return;
-    }
-
-    setGrantResult("aResult--info", "Procesando abono...");
+    setGrantResult("aResult--info", "Procesando venta y cashback...");
     if (grantSubmitBtn) grantSubmitBtn.disabled = true;
 
     try {
@@ -612,7 +799,12 @@ if (grantForm) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ token, points, password })
+        body: JSON.stringify({ 
+          token, 
+          points: calculatedPoints, 
+          items: itemsPayload,
+          totalUsd: totalUsdVal
+        })
       });
       const data = await res.json().catch(() => null);
 
@@ -625,12 +817,22 @@ if (grantForm) {
         return;
       }
 
-      setGrantResult("aResult--ok", data?.message || `Se han abonado ${points} puntos exitosamente.`);
+      setGrantResult("aResult--ok", data?.message || `Venta registrada y ${calculatedPoints} puntos otorgados exitosamente.`);
       
       // Clear fields on success
       grantClientToken.value = "";
-      grantPoints.value = "";
-      grantPassword.value = "";
+      verifiedClient = null;
+      if (billingClientSearchWrapper) billingClientSearchWrapper.hidden = false;
+      if (billingMainLayout) billingMainLayout.hidden = true;
+      
+      if (billingMode === "manual") {
+        if (billingManualAmountInput) billingManualAmountInput.value = "";
+        if (billingManualConceptInput) billingManualConceptInput.value = "";
+      } else {
+        billingCart = [];
+      }
+      
+      updateCartUI();
 
       // Refresh dashboard stats after brief delay
       setTimeout(() => {
@@ -638,7 +840,7 @@ if (grantForm) {
       }, 1000);
 
     } catch (err) {
-      setGrantResult("aResult--err", "Fallo de red al procesar el abono.");
+      setGrantResult("aResult--err", "Fallo de red al registrar la venta.");
     } finally {
       if (grantSubmitBtn) grantSubmitBtn.disabled = false;
     }
@@ -674,6 +876,10 @@ const loadMerchantSettings = async () => {
 
     const s = data?.settings || {};
     if (settMinRedeemPoints) settMinRedeemPoints.value = Number(s.minRedeemPoints ?? 0);
+    if (settCashbackPercent) {
+      settCashbackPercent.value = Number(s.cashbackPercent ?? 5);
+      merchantCashbackPercent = Number(s.cashbackPercent ?? 5);
+    }
 
     setSettingsResult("", "");
   } catch (err) {
@@ -687,11 +893,15 @@ const loadMerchantSettings = async () => {
 if (settingsForm) {
   settingsForm.addEventListener("submit", async (e) => {
     e.preventDefault();
-    if (!settMinRedeemPoints) return;
+    if (!settMinRedeemPoints || !settCashbackPercent) return;
 
-    const pointsPerDollar = 100;
+    const cashbackPercent = Number(settCashbackPercent.value);
     const minRedeemPoints = Number(settMinRedeemPoints.value);
 
+    if (!Number.isFinite(cashbackPercent) || cashbackPercent <= 0 || cashbackPercent > 100) {
+      setSettingsResult("aResult--err", "El porcentaje de cashback debe estar entre 0.1% y 100%.");
+      return;
+    }
     if (!Number.isFinite(minRedeemPoints) || minRedeemPoints < 0) {
       setSettingsResult("aResult--err", "El mínimo de puntos debe ser igual o mayor a cero.");
       return;
@@ -707,7 +917,7 @@ if (settingsForm) {
         credentials: "include",
         body: JSON.stringify({
           settings: {
-            pointsPerDollar,
+            cashbackPercent,
             minRedeemPoints
           }
         })
@@ -725,6 +935,7 @@ if (settingsForm) {
 
       setSettingsResult("aResult--ok", "¡Configuración guardada exitosamente!");
       merchantConfigured = true;
+      merchantCashbackPercent = cashbackPercent;
       setTimeout(() => {
         switchPanel("dashboard");
         loadMerchantDashboard();
@@ -736,6 +947,421 @@ if (settingsForm) {
     }
   });
 }
+
+// ── Catalog & POS Billing Systems ───────────────────────────────────────────
+const setCatalogResult = (type, message) => {
+  if (!catalogResult) return;
+  catalogResult.className = "aResult" + (type ? ` ${type}` : "");
+  catalogResult.textContent = message;
+};
+
+// Fetch products from database
+const loadMerchantCatalog = async (opts = {}) => {
+  if (catalogResult) setCatalogResult("aResult--info", "Cargando catálogo...");
+  
+  try {
+    const res = await fetch("/api/admin/merchant-products", {
+      cache: "no-store",
+      credentials: "include"
+    });
+    const data = await res.json().catch(() => null);
+
+    if (!res.ok) {
+      if (catalogResult) setCatalogResult("aResult--err", data?.error || "Error al cargar el catálogo.");
+      return;
+    }
+
+    merchantProducts = data?.products || [];
+    if (catalogResult) setCatalogResult("", "");
+    
+    // Render either the Catalog view or the POS Picker view
+    if (opts.andSetupPOS) {
+      renderPOSCatalog();
+    } else {
+      renderCatalogGrid();
+    }
+  } catch (err) {
+    if (catalogResult) setCatalogResult("aResult--err", "Error de red al cargar catálogo.");
+  }
+};
+
+// Render Products inside Catalog panel
+const renderCatalogGrid = () => {
+  if (!catalogGrid) return;
+  
+  if (merchantProducts.length === 0) {
+    catalogGrid.innerHTML = `
+      <div style="grid-column: 1 / -1; text-align: center; padding: 48px; background: rgba(255,255,255,0.02); border-radius: 16px; border: 1px dashed rgba(255,255,255,0.1);">
+        <p style="color: rgba(255,255,255,0.4); margin: 0 0 16px; font-size: 15px;">Aún no tienes productos en tu catálogo.</p>
+        <button class="aBtn aBtn--primary" onclick="openProductModal()" style="margin: 0; min-width: 150px;">Añadir Primero</button>
+      </div>
+    `;
+    return;
+  }
+
+  catalogGrid.innerHTML = merchantProducts.map(p => `
+    <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 12px; justify-content: space-between; transition: all 0.2s;">
+      <div>
+        <h4 style="font-size: 16px; font-weight: 700; color: #ffffff; margin: 0 0 4px 0;">${escapeHtml(p.name)}</h4>
+        <p style="font-size: 13px; color: rgba(255,255,255,0.5); line-height: 1.4; margin: 0; min-height: 36px;">${escapeHtml(p.description || "Sin descripción")}</p>
+      </div>
+      <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 12px; margin-top: 4px;">
+        <span style="font-size: 18px; font-weight: 700; color: #fbbf24;">$${Number(p.price).toFixed(2)}</span>
+        <div style="display: flex; gap: 8px;">
+          <button class="aBtn" onclick="openProductModal('${p.id}')" style="padding: 6px 12px; font-size: 12px; margin: 0; background: rgba(255,255,255,0.05); color: #ffffff; border: 1px solid rgba(255,255,255,0.1);">
+            Editar
+          </button>
+          <button class="aBtn" onclick="deleteCatalogProduct('${p.id}')" style="padding: 6px 12px; font-size: 12px; margin: 0; background: rgba(239,68,68,0.1); color: #ef4444; border: 1px solid rgba(239,68,68,0.2);">
+            Eliminar
+          </button>
+        </div>
+      </div>
+    </div>
+  `).join("");
+};
+
+const escapeHtml = (str) => {
+  return String(str || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+};
+
+const openProductModal = (id = "") => {
+  if (!productModal) return;
+  
+  if (productForm) productForm.reset();
+  if (prodId) prodId.value = id;
+  
+  if (id) {
+    if (productModalTitle) productModalTitle.textContent = "Editar Producto";
+    const prod = merchantProducts.find(p => p.id === id);
+    if (prod) {
+      if (prodName) prodName.value = prod.name;
+      if (prodPrice) prodPrice.value = prod.price;
+      if (prodDesc) prodDesc.value = prod.description || "";
+    }
+  } else {
+    if (productModalTitle) productModalTitle.textContent = "Añadir Producto";
+  }
+  
+  productModal.classList.add("profileMenu--active");
+  productModal.setAttribute("aria-hidden", "false");
+};
+
+const closeProductModal = () => {
+  if (productModal) {
+    productModal.classList.remove("profileMenu--active");
+    productModal.setAttribute("aria-hidden", "true");
+  }
+};
+
+if (productForm) {
+  productForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (!prodName || !prodPrice) return;
+    
+    const id = prodId?.value || "";
+    const name = prodName.value.trim();
+    const price = Number(prodPrice.value);
+    const description = prodDesc?.value.trim() || "";
+    
+    if (!name || Number.isNaN(price) || price < 0) {
+      alert("Por favor, ingresa un nombre y un precio válido.");
+      return;
+    }
+    
+    if (prodSubmitBtn) prodSubmitBtn.disabled = true;
+    
+    try {
+      const url = "/api/admin/merchant-products";
+      const method = id ? "PUT" : "POST";
+      const payload = { name, price, description };
+      if (id) payload.id = id;
+      
+      const res = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json().catch(() => null);
+      
+      if (!res.ok) {
+        alert(data?.error || "Error al guardar el producto.");
+        return;
+      }
+      
+      closeProductModal();
+      loadMerchantCatalog();
+    } catch (err) {
+      alert("Error de red al guardar el producto.");
+    } finally {
+      if (prodSubmitBtn) prodSubmitBtn.disabled = false;
+    }
+  });
+}
+
+const deleteCatalogProduct = async (id) => {
+  if (!confirm("¿Estás seguro de que deseas eliminar este producto del catálogo?")) return;
+  
+  try {
+    const res = await fetch("/api/admin/merchant-products", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ id })
+    });
+    const data = await res.json().catch(() => null);
+    
+    if (!res.ok) {
+      alert(data?.error || "Error al eliminar el producto.");
+      return;
+    }
+    
+    loadMerchantCatalog();
+  } catch (err) {
+    alert("Error de red al eliminar el producto.");
+  }
+};
+
+// Render products list inside POS picker
+const renderPOSCatalog = (filterText = "") => {
+  if (!billingCatalogGrid) return;
+  
+  const filtered = merchantProducts.filter(p => 
+    p.name.toLowerCase().includes(filterText.toLowerCase()) ||
+    (p.description || "").toLowerCase().includes(filterText.toLowerCase())
+  );
+  
+  if (filtered.length === 0) {
+    billingCatalogGrid.innerHTML = `
+      <div style="grid-column: 1 / -1; text-align: center; padding: 24px; color: rgba(255,255,255,0.4); font-size: 14px;">
+        No se encontraron productos.
+      </div>
+    `;
+    return;
+  }
+
+  billingCatalogGrid.innerHTML = filtered.map(p => {
+    const cartItem = billingCart.find(item => item.id === p.id);
+    const qty = cartItem ? cartItem.quantity : 0;
+    
+    return `
+      <div style="background: rgba(255,255,255,0.03); border: 1px solid ${qty > 0 ? "rgba(233,46,134,0.4)" : "rgba(255,255,255,0.06)"}; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 8px; justify-content: space-between; transition: all 0.2s;">
+        <div>
+          <h4 style="font-size: 14px; font-weight: 700; color: #ffffff; margin: 0 0 2px 0;">${escapeHtml(p.name)}</h4>
+          <span style="font-size: 15px; font-weight: 700; color: #fbbf24;">$${Number(p.price).toFixed(2)}</span>
+        </div>
+        <div>
+          ${qty > 0 ? `
+            <div style="display: flex; align-items: center; justify-content: space-between; background: rgba(233,46,134,0.1); border-radius: 8px; padding: 4px 8px; border: 1px solid rgba(233,46,134,0.2);">
+              <button type="button" onclick="updateCartQuantity('${p.id}', -1)" style="background: none; border: none; color: #e92e86; font-size: 16px; font-weight: 700; cursor: pointer; padding: 0 6px;">-</button>
+              <span style="font-size: 14px; font-weight: 700; color: #ffffff;">${qty}</span>
+              <button type="button" onclick="updateCartQuantity('${p.id}', 1)" style="background: none; border: none; color: #e92e86; font-size: 16px; font-weight: 700; cursor: pointer; padding: 0 6px;">+</button>
+            </div>
+          ` : `
+            <button type="button" onclick="addToCart('${p.id}')" class="aBtn" style="width: 100%; margin: 0; padding: 6px 12px; font-size: 12px; background: rgba(255,255,255,0.05); color: #ffffff; border: 1px solid rgba(255,255,255,0.1);">
+              + Añadir
+            </button>
+          `}
+        </div>
+      </div>
+    `;
+  }).join("");
+};
+
+// Add item to shopping cart
+const addToCart = (id) => {
+  const prod = merchantProducts.find(p => p.id === id);
+  if (!prod) return;
+  
+  billingCart.push({
+    id: prod.id,
+    name: prod.name,
+    price: prod.price,
+    quantity: 1
+  });
+  
+  updateCartUI();
+  renderPOSCatalog(billingSearchInput?.value || "");
+};
+
+// Update cart quantity
+const updateCartQuantity = (id, delta) => {
+  const item = billingCart.find(it => it.id === id);
+  if (!item) return;
+  
+  item.quantity += delta;
+  if (item.quantity <= 0) {
+    billingCart = billingCart.filter(it => it.id !== id);
+  }
+  
+  updateCartUI();
+  renderPOSCatalog(billingSearchInput?.value || "");
+};
+
+// Remove item completely from cart
+const removeFromCart = (id) => {
+  billingCart = billingCart.filter(it => it.id !== id);
+  updateCartUI();
+  renderPOSCatalog(billingSearchInput?.value || "");
+};
+
+// Update Cart Receipt details (Catalog and Manual modes)
+const updateCartUI = () => {
+  if (!billingCartList || !ticketCountLabel || !billingTotalUsd || !billingCalculatedPoints || !billingCashbackLabel) return;
+  
+  billingCashbackLabel.textContent = `${merchantCashbackPercent.toFixed(1)}%`;
+  
+  if (billingMode === "manual") {
+    const manualAmount = Number(billingManualAmountInput?.value || 0);
+    const concept = (billingManualConceptInput?.value || "").trim() || "Consumo General";
+    
+    ticketCountLabel.textContent = "1 item";
+    
+    if (manualAmount <= 0 || Number.isNaN(manualAmount)) {
+      billingCartList.innerHTML = `
+        <div style="text-align: center; padding: 40px 0; color: rgba(255,255,255,0.3); font-size: 14px;">
+          Ingresa un monto válido a la izquierda.
+        </div>
+      `;
+      billingTotalUsd.textContent = "$0.00 USD";
+      billingCalculatedPoints.textContent = "0 pts";
+      if (grantSubmitBtn) grantSubmitBtn.disabled = true;
+      return;
+    }
+    
+    billingCartList.innerHTML = `
+      <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.04); padding: 12px 16px; border-radius: 8px;">
+        <div>
+          <div style="font-size: 13px; font-weight: 700; color: #ffffff;">${escapeHtml(concept)}</div>
+          <div style="font-size: 11px; color: rgba(255,255,255,0.4);">Monto facturado manualmente</div>
+        </div>
+        <span style="font-size: 14px; font-weight: 700; color: #fbbf24;">$${manualAmount.toFixed(2)}</span>
+      </div>
+    `;
+    
+    const calculatedPoints = Math.round(manualAmount * merchantCashbackPercent);
+    billingTotalUsd.textContent = `$${manualAmount.toFixed(2)} USD`;
+    billingCalculatedPoints.textContent = `${calculatedPoints} pts`;
+    if (grantSubmitBtn) grantSubmitBtn.disabled = false;
+    
+  } else {
+    ticketCountLabel.textContent = `${billingCart.reduce((acc, it) => acc + it.quantity, 0)} items`;
+    
+    if (billingCart.length === 0) {
+      billingCartList.innerHTML = `
+        <div style="text-align: center; padding: 40px 0; color: rgba(255,255,255,0.3); font-size: 14px;">
+          El ticket está vacío.<br>Selecciona productos a la izquierda.
+        </div>
+      `;
+      billingTotalUsd.textContent = "$0.00 USD";
+      billingCalculatedPoints.textContent = "0 pts";
+      if (grantSubmitBtn) grantSubmitBtn.disabled = true;
+      return;
+    }
+    
+    let totalUsdVal = 0;
+    
+    billingCartList.innerHTML = billingCart.map(it => {
+      const subtotal = it.price * it.quantity;
+      totalUsdVal += subtotal;
+      
+      return `
+        <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.04); padding: 8px 12px; border-radius: 8px;">
+          <div>
+            <div style="font-size: 13px; font-weight: 700; color: #ffffff;">${escapeHtml(it.name)}</div>
+            <div style="font-size: 11px; color: rgba(255,255,255,0.4);">${it.quantity}x $${Number(it.price).toFixed(2)}</div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <span style="font-size: 13px; font-weight: 700; color: #ffffff;">$${subtotal.toFixed(2)}</span>
+            <button type="button" onclick="removeFromCart('${it.id}')" style="background: none; border: none; color: #ef4444; font-size: 14px; cursor: pointer; padding: 4px;">✕</button>
+          </div>
+        </div>
+      `;
+    }).join("");
+    
+    const calculatedPoints = Math.round(totalUsdVal * merchantCashbackPercent);
+    
+    billingTotalUsd.textContent = `$${totalUsdVal.toFixed(2)} USD`;
+    billingCalculatedPoints.textContent = `${calculatedPoints} pts`;
+    if (grantSubmitBtn) grantSubmitBtn.disabled = false;
+  }
+};
+
+// Mode Switcher handlers
+const setBillingMode = (mode) => {
+  billingMode = mode;
+  
+  if (mode === "manual") {
+    if (billingModeCatalogBtn) {
+      billingModeCatalogBtn.style.background = "none";
+      billingModeCatalogBtn.style.color = "rgba(255,255,255,0.6)";
+    }
+    if (billingModeManualBtn) {
+      billingModeManualBtn.style.background = "rgba(233,46,134,0.1)";
+      billingModeManualBtn.style.color = "#e92e86";
+    }
+    if (billingCatalogSearchContainer) billingCatalogSearchContainer.hidden = true;
+    if (billingManualContainer) billingManualContainer.hidden = false;
+  } else {
+    if (billingModeCatalogBtn) {
+      billingModeCatalogBtn.style.background = "rgba(233,46,134,0.1)";
+      billingModeCatalogBtn.style.color = "#e92e86";
+    }
+    if (billingModeManualBtn) {
+      billingModeManualBtn.style.background = "none";
+      billingModeManualBtn.style.color = "rgba(255,255,255,0.6)";
+    }
+    if (billingCatalogSearchContainer) billingCatalogSearchContainer.hidden = false;
+    if (billingManualContainer) billingManualContainer.hidden = true;
+  }
+  
+  updateCartUI();
+};
+
+if (billingModeCatalogBtn) {
+  billingModeCatalogBtn.addEventListener("click", () => setBillingMode("catalog"));
+}
+if (billingModeManualBtn) {
+  billingModeManualBtn.addEventListener("click", () => setBillingMode("manual"));
+}
+
+// Live calculation inputs for manual billing
+if (billingManualAmountInput) {
+  billingManualAmountInput.addEventListener("input", updateCartUI);
+}
+if (billingManualConceptInput) {
+  billingManualConceptInput.addEventListener("input", updateCartUI);
+}
+
+// Bind elements
+if (billingSearchInput) {
+  billingSearchInput.addEventListener("input", (e) => {
+    renderPOSCatalog(e.target.value);
+  });
+}
+if (catalogAddBtn) {
+  catalogAddBtn.addEventListener("click", () => openProductModal());
+}
+if (productModalCloseBtn) {
+  productModalCloseBtn.addEventListener("click", closeProductModal);
+}
+if (productModalBackdrop) {
+  productModalBackdrop.addEventListener("click", closeProductModal);
+}
+
+// Make them globally available
+window.openProductModal = openProductModal;
+window.closeProductModal = closeProductModal;
+window.deleteCatalogProduct = deleteCatalogProduct;
+window.addToCart = addToCart;
+window.updateCartQuantity = updateCartQuantity;
+window.removeFromCart = removeFromCart;
+window.setBillingMode = setBillingMode;
 
 // ── Init ─────────────────────────────────────────────────────────────────────
 checkAuth();

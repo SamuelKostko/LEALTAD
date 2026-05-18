@@ -48,7 +48,11 @@ export default async function handler(req, res) {
         return;
       }
       const data = doc.data() || {};
-      const settings = data.settings || { pointsPerDollar: 1, minRedeemPoints: 0, isClosed: true };
+      const settings = data.settings || {};
+      if (settings.pointsPerDollar === undefined) settings.pointsPerDollar = 100;
+      if (settings.minRedeemPoints === undefined) settings.minRedeemPoints = 0;
+      if (settings.cashbackPercent === undefined) settings.cashbackPercent = 5;
+      if (settings.isClosed === undefined) settings.isClosed = true;
       sendJson(res, 200, {
         ok: true,
         name: data.name,
@@ -75,9 +79,15 @@ export default async function handler(req, res) {
     const s = body?.settings || {};
     const pointsPerDollar = 100;
     const minRedeemPoints = Number(s.minRedeemPoints);
+    const cashbackPercent = Number(s.cashbackPercent ?? 5);
 
     if (!Number.isFinite(minRedeemPoints) || minRedeemPoints < 0) {
       sendJson(res, 400, { error: 'Mínimo de puntos para canje debe ser un número igual o mayor a cero.' });
+      return;
+    }
+
+    if (!Number.isFinite(cashbackPercent) || cashbackPercent <= 0 || cashbackPercent > 100) {
+      sendJson(res, 400, { error: 'El porcentaje de cashback debe ser un número mayor a cero y menor o igual a 100.' });
       return;
     }
 
@@ -97,6 +107,7 @@ export default async function handler(req, res) {
         settings: {
           pointsPerDollar,
           minRedeemPoints,
+          cashbackPercent,
           isClosed,
           configured: true
         },

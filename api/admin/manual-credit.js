@@ -34,21 +34,21 @@ export default async function handler(req, res) {
     const body = await readJsonBody(req);
     const token = String(body?.token || '').trim();
     const points = Number(body?.points || 0);
-    const password = String(body?.password || '').trim();
+    const items = body?.items || null;
+    const totalUsd = Number(body?.totalUsd || 0);
 
-    if (!token || !points || points <= 0 || !password) {
-      sendJson(res, 400, { ok: false, error: 'Token, puntos y clave son requeridos.' });
+    if (!token || !points || points <= 0) {
+      sendJson(res, 400, { ok: false, error: 'Token y puntos son requeridos.' });
       return;
     }
 
-    // 2. Validate password
-    const adminData = auth.data;
-    const adminPassword = String(adminData?.password || '').trim();
-    const expectedPassword = adminPassword || String(process.env.ADMIN_PASSWORD || '').trim();
-
-    if (password !== expectedPassword) {
-      sendJson(res, 403, { ok: false, error: 'Clave incorrecta. No se realizó el abono.' });
-      return;
+    let description = 'Abono manual del comercio';
+    if (items && Array.isArray(items) && items.length > 0) {
+      const parts = items.map(it => `${it.quantity}x ${it.name} ($${Number(it.price).toFixed(2)})`);
+      description = 'Compra: ' + parts.join(', ');
+      if (description.length > 180) {
+        description = description.slice(0, 177) + '...';
+      }
     }
 
     // 3. Find client
@@ -101,10 +101,14 @@ export default async function handler(req, res) {
           merchantId: merchantId,
           merchantName: merchantName,
           branchName: `${merchantName} - ${merchantBranch}`.slice(0, 120),
-          description: 'Abono manual del comercio',
+          description: description,
           createdAt: FieldValue.serverTimestamp(),
           processedAt: FieldValue.serverTimestamp()
         };
+        if (items) {
+          txPayload.items = items;
+          txPayload.totalUsd = totalUsd;
+        }
       } else {
         currentBalance = Number(data?.totalPoints || 0);
         newBalance = currentBalance + points;

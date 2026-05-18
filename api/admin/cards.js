@@ -1,7 +1,7 @@
 import { FieldValue } from 'firebase-admin/firestore';
 import { getFirestoreDb } from '../_lib/firestore.js';
 import { readJsonBody, sendJson } from '../_lib/http.js';
-import { requireAdmin, verifySession } from '../_lib/adminAuth.js';
+import { requireAdmin, requireStaff, verifySession } from '../_lib/adminAuth.js';
 
 function clampInt(value, { min, max, fallback }) {
   const n = Number(value);
@@ -71,8 +71,12 @@ async function verifyAdminPassword(req, password) {
 }
 
 export default async function handler(req, res) {
-  // All methods require an active admin session
-  if (!(await requireAdmin(req, res))) return;
+  // GET requires staff session, PATCH/DELETE require full admin session
+  if (req.method === 'GET') {
+    if (!(await requireStaff(req, res))) return;
+  } else {
+    if (!(await requireAdmin(req, res))) return;
+  }
 
   const firestore = getFirestoreDb();
 
