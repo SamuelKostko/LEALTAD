@@ -169,7 +169,9 @@ export default async function handler(req, res) {
         if (!Number.isFinite(currentBalance)) throw new Error('Invalid merchant balance');
 
         const next = currentBalance - points;
-        if (next < 0) throw new Error('Saldo insuficiente en este comercio');
+        if (next < 0) {
+          throw new Error('Saldo insuficiente. Este es un comercio cerrado, por lo tanto los puntos acumulados aquí solo pueden ser utilizados en este mismo comercio.');
+        }
 
         updateFields = {
           [`merchantBalances.${merchantId}`]: next,

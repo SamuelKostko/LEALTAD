@@ -1865,9 +1865,10 @@ Esto eliminará también sus transacciones.`
         root.classList.add("scanPopup--show");
         root.setAttribute("aria-hidden", "false");
         if (timer) window.clearTimeout(timer);
+        const duration = (detail && detail.length > 30) ? 6000 : 2600;
         timer = window.setTimeout(() => {
           close();
-        }, 2600);
+        }, duration);
       };
       root.addEventListener("click", close);
       return { show, close };
@@ -2061,7 +2062,9 @@ Esto eliminará también sus transacciones.`
       if (!res.ok || !(data == null ? void 0 : data.ok)) {
         const msg = (data == null ? void 0 : data.error) || (data == null ? void 0 : data.message) || `Error (${res.status})`;
         const normalized = String(msg).toLowerCase();
-        if (normalized.includes("insufficient balance") || normalized.includes("saldo")) {
+        if (normalized.includes("cerrado") || normalized.includes("cerrados")) {
+          scanPopup.show({ kind: "err", headline: "Rechazada", detail: msg });
+        } else if (normalized.includes("insufficient balance") || normalized.includes("saldo")) {
           scanPopup.show({ kind: "err", headline: "Rechazada", detail: "Saldo insuficiente" });
         } else if (normalized.includes("expired")) {
           scanPopup.show({ kind: "err", headline: "Rechazada", detail: "QR vencido" });
