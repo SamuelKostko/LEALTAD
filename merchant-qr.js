@@ -3,17 +3,20 @@ const merchantDash       = document.getElementById("merchantDash");
 const mPanelDashboard    = document.getElementById("mPanelDashboard");
 const mPanelGenerator    = document.getElementById("mPanelGenerator");
 const mPanelGrantPoints  = document.getElementById("mPanelGrantPoints");
+const mPanelSettings    = document.getElementById("mPanelSettings");
 
 // Sidebar nav
 const mNavDashboard      = document.getElementById("mNavDashboard");
 const mNavGenerator      = document.getElementById("mNavGenerator");
 const mNavGrantPoints    = document.getElementById("mNavGrantPoints");
+const mNavSettings       = document.getElementById("mNavSettings");
 const merchantLogoutBtn  = document.getElementById("merchantLogoutBtn");
 
 // Mobile nav
 const mMobNavDashboard   = document.getElementById("mMobNavDashboard");
 const mMobNavGenerator   = document.getElementById("mMobNavGenerator");
 const mMobNavGrant       = document.getElementById("mMobNavGrant");
+const mMobNavSettings    = document.getElementById("mMobNavSettings");
 const mMobNavLogout      = document.getElementById("mMobNavLogout");
 
 // Dashboard panel
@@ -44,6 +47,14 @@ const grantPoints      = document.getElementById("grantPoints");
 const grantPassword    = document.getElementById("grantPassword");
 const grantSubmitBtn   = document.getElementById("grantSubmitBtn");
 const grantResult      = document.getElementById("grantResult");
+
+// Settings panel
+const settingsForm       = document.getElementById("settingsForm");
+const settPointsPerDollar = document.getElementById("settPointsPerDollar");
+const settMinRedeemPoints = document.getElementById("settMinRedeemPoints");
+const settIsClosed       = document.getElementById("settIsClosed");
+const settSubmitBtn      = document.getElementById("settSubmitBtn");
+const settingsResult     = document.getElementById("settingsResult");
 
 // Modals
 const copyBtn          = document.getElementById("copyBtn");
@@ -103,20 +114,29 @@ const switchPanel = (panel) => {
   const isDash = panel === "dashboard";
   const isGen  = panel === "generator";
   const isGrant = panel === "grant";
+  const isSett = panel === "settings";
 
   if (mPanelDashboard) mPanelDashboard.hidden = !isDash;
   if (mPanelGenerator) mPanelGenerator.hidden = !isGen;
   if (mPanelGrantPoints) mPanelGrantPoints.hidden = !isGrant;
+  if (mPanelSettings) mPanelSettings.hidden = !isSett;
 
   // Sidebar
   if (mNavDashboard) mNavDashboard.classList.toggle("is-active", isDash);
   if (mNavGenerator) mNavGenerator.classList.toggle("is-active", isGen);
   if (mNavGrantPoints) mNavGrantPoints.classList.toggle("is-active", isGrant);
+  if (mNavSettings) mNavSettings.classList.toggle("is-active", isSett);
 
   // Mobile nav
   if (mMobNavDashboard) mMobNavDashboard.classList.toggle("is-active", isDash);
   if (mMobNavGenerator) mMobNavGenerator.classList.toggle("is-active", isGen);
   if (mMobNavGrant) mMobNavGrant.classList.toggle("is-active", isGrant);
+  if (mMobNavSettings) mMobNavSettings.classList.toggle("is-active", isSett);
+
+  // Load settings from backend if entering settings tab
+  if (isSett) {
+    loadMerchantSettings();
+  }
 
   // Scroll main to top
   const main = document.querySelector(".aDash__main");
@@ -393,6 +413,7 @@ if (mNavDashboard) mNavDashboard.addEventListener("click", () => {
 });
 if (mNavGenerator) mNavGenerator.addEventListener("click", () => switchPanel("generator"));
 if (mNavGrantPoints) mNavGrantPoints.addEventListener("click", () => switchPanel("grant"));
+if (mNavSettings) mNavSettings.addEventListener("click", () => switchPanel("settings"));
 
 // Mobile navigation
 if (mMobNavDashboard) mMobNavDashboard.addEventListener("click", () => {
@@ -401,6 +422,7 @@ if (mMobNavDashboard) mMobNavDashboard.addEventListener("click", () => {
 });
 if (mMobNavGenerator) mMobNavGenerator.addEventListener("click", () => switchPanel("generator"));
 if (mMobNavGrant)     mMobNavGrant.addEventListener("click", () => switchPanel("grant"));
+if (mMobNavSettings)  mMobNavSettings.addEventListener("click", () => switchPanel("settings"));
 if (mMobNavLogout)    mMobNavLogout.addEventListener("click", doLogout);
 
 // Logout
@@ -590,6 +612,102 @@ if (grantForm) {
       setGrantResult("aResult--err", "Fallo de red al procesar el abono.");
     } finally {
       if (grantSubmitBtn) grantSubmitBtn.disabled = false;
+    }
+  });
+}
+
+const setSettingsResult = (type, message) => {
+  if (!settingsResult) return;
+  settingsResult.className = "aResult" + (type ? ` ${type}` : "");
+  settingsResult.textContent = message;
+};
+
+// Fetch current settings from database
+const loadMerchantSettings = async () => {
+  setSettingsResult("aResult--info", "Cargando configuración...");
+  if (settSubmitBtn) settSubmitBtn.disabled = true;
+
+  try {
+    const res = await fetch("/api/admin/merchant-settings", {
+      cache: "no-store",
+      credentials: "include"
+    });
+    const data = await res.json().catch(() => null);
+
+    if (!res.ok) {
+      if (res.status === 401) {
+        setAuthenticated(false);
+        setLoginResult("aResult--err", "Sesión expirada. Inicia sesión de nuevo.");
+      }
+      setSettingsResult("aResult--err", data?.error || "Error al cargar la configuración.");
+      return;
+    }
+
+    const s = data?.settings || {};
+    if (settPointsPerDollar) settPointsPerDollar.value = Number(s.pointsPerDollar ?? 1);
+    if (settMinRedeemPoints) settMinRedeemPoints.value = Number(s.minRedeemPoints ?? 0);
+    if (settIsClosed)         settIsClosed.checked = s.isClosed !== false;
+
+    setSettingsResult("", "");
+  } catch (err) {
+    setSettingsResult("aResult--err", "Fallo de red al cargar configuración.");
+  } finally {
+    if (settSubmitBtn) settSubmitBtn.disabled = false;
+  }
+};
+
+// Submit settings updates
+if (settingsForm) {
+  settingsForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (!settPointsPerDollar || !settMinRedeemPoints || !settIsClosed) return;
+
+    const pointsPerDollar = Number(settPointsPerDollar.value);
+    const minRedeemPoints = Number(settMinRedeemPoints.value);
+    const isClosed = settIsClosed.checked;
+
+    if (!Number.isFinite(pointsPerDollar) || pointsPerDollar <= 0) {
+      setSettingsResult("aResult--err", "Puntos por dólar debe ser mayor a cero.");
+      return;
+    }
+
+    if (!Number.isFinite(minRedeemPoints) || minRedeemPoints < 0) {
+      setSettingsResult("aResult--err", "El mínimo de puntos debe ser igual o mayor a cero.");
+      return;
+    }
+
+    setSettingsResult("aResult--info", "Guardando cambios...");
+    if (settSubmitBtn) settSubmitBtn.disabled = true;
+
+    try {
+      const res = await fetch("/api/admin/merchant-settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          settings: {
+            pointsPerDollar,
+            minRedeemPoints,
+            isClosed
+          }
+        })
+      });
+      const data = await res.json().catch(() => null);
+
+      if (!res.ok) {
+        if (res.status === 401) {
+          setAuthenticated(false);
+          setLoginResult("aResult--err", "Sesión expirada. Inicia sesión de nuevo.");
+        }
+        setSettingsResult("aResult--err", data?.error || "Error al guardar configuración.");
+        return;
+      }
+
+      setSettingsResult("aResult--ok", "¡Configuración guardada exitosamente!");
+    } catch (err) {
+      setSettingsResult("aResult--err", "Fallo de red al guardar la configuración.");
+    } finally {
+      if (settSubmitBtn) settSubmitBtn.disabled = false;
     }
   });
 }

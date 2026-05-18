@@ -79,6 +79,13 @@
           </svg>
           Abonar Puntos
         </button>
+        <button class="aSidebar__navItem" id="mNavSettings" type="button" data-panel="settings">
+          <svg viewBox="0 0 24 24" width="17" height="17" fill="none">
+            <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.6"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Configuración
+        </button>
       </nav>
       <div class="aSidebar__bottom">
         <button class="aSidebar__logout" id="merchantLogoutBtn" type="button">
@@ -250,6 +257,56 @@
         </form>
       </section>
 
+      <!-- Panel: Configuration/Settings -->
+      <section class="aPanel" id="mPanelSettings" aria-label="Configuración del comercio" hidden>
+        <div class="aPanel__header">
+          <div>
+            <h2 class="aPanel__title">Configuración</h2>
+            <p class="aPanel__sub">Determina las condiciones y reglas de tu programa de lealtad</p>
+          </div>
+        </div>
+
+        <form class="aLogin__form" id="settingsForm" style="max-width: 420px;">
+          <!-- Points per Dollar Rule -->
+          <div class="aField">
+            <label class="aField__label" for="settPointsPerDollar">Puntos por Dólar</label>
+            <p style="font-size: 12px; color: rgba(255,255,255,0.4); margin: -4px 0 8px;">¿Cuántos puntos recibe el cliente por cada 1 USD de compra?</p>
+            <input class="aField__input" id="settPointsPerDollar" type="number" inputmode="decimal" min="0.01" step="any"
+              placeholder="Ej: 1" required
+              style="font-size: 20px; font-weight: 700; text-align: center;" />
+          </div>
+
+          <!-- Minimum Redeemable Points -->
+          <div class="aField">
+            <label class="aField__label" for="settMinRedeemPoints">Mínimo para Canje</label>
+            <p style="font-size: 12px; color: rgba(255,255,255,0.4); margin: -4px 0 8px;">Cantidad mínima de puntos requerida para poder realizar un cobro/canje.</p>
+            <input class="aField__input" id="settMinRedeemPoints" type="number" inputmode="numeric" min="0" step="1"
+              placeholder="Ej: 50" required
+              style="font-size: 20px; font-weight: 700; text-align: center;" />
+          </div>
+
+          <!-- Closed Ecosystem (isClosed Toggle) -->
+          <div class="aField" style="display:flex; align-items:center; gap:12px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); padding:16px; border-radius:14px; margin-bottom:24px;">
+            <div style="flex:1;">
+              <label class="aField__label" for="settIsClosed" style="margin-bottom:2px; cursor:pointer;">Ecosistema Cerrado</label>
+              <p style="font-size: 11px; color: rgba(255,255,255,0.4); margin: 0; line-height:1.25;">Si está activo, tus puntos solo se acumulan y canjean en tu propio comercio. Si está inactivo, los puntos se consolidan en el monedero global.</p>
+            </div>
+            <input id="settIsClosed" type="checkbox" style="width:20px; height:20px; accent-color:#a5b4fc; cursor:pointer;" />
+          </div>
+
+          <button class="aBtn aBtn--primary" id="settSubmitBtn" type="submit">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none"
+              style="vertical-align: middle; margin-right: 6px;">
+              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              <polyline points="17 21 17 13 7 13 7 21" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+              <polyline points="7 3 7 8 15 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Guardar Configuración
+          </button>
+          <div class="aResult" id="settingsResult" aria-live="polite"></div>
+        </form>
+      </section>
+
     </div><!-- /.aDash__main -->
 
     <!-- Mobile bottom navigation (≤640px) -->
@@ -275,6 +332,13 @@
           <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
         </svg>
         Abonar
+      </button>
+      <button class="aMobileNav__item" id="mMobNavSettings" type="button" aria-label="Configurar Comercio">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none">
+          <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.7"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Configurar
       </button>
       <button class="aMobileNav__logout" id="mMobNavLogout" type="button" aria-label="Cerrar sesión">
         <svg viewBox="0 0 24 24" width="20" height="20" fill="none">
