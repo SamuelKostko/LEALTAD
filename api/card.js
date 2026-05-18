@@ -69,7 +69,9 @@ export default async function handler(req, res) {
           createdAt: toIso(data.createdAt),
           processedAt: toIso(data.processedAt),
           balanceBefore: Number.isFinite(Number(data.balanceBefore)) ? Number(data.balanceBefore) : null,
-          balanceAfter: Number.isFinite(Number(data.balanceAfter)) ? Number(data.balanceAfter) : null
+          balanceAfter: Number.isFinite(Number(data.balanceAfter)) ? Number(data.balanceAfter) : null,
+          merchantId: typeof data.merchantId === 'string' ? data.merchantId : '',
+          merchantName: typeof data.merchantName === 'string' ? data.merchantName : ''
         };
       });
 

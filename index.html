@@ -520,75 +520,73 @@
         </nav>
       </div>
 
-      <section class="card card--client" aria-label="Tarjeta digital de puntos" role="button" tabindex="0"
-        aria-expanded="false" aria-controls="cardDetails" id="clientCard">
-        <img class="card__art" src="/images/card-cliente.png" alt="Tarjeta de puntos" draggable="false" />
-        <div class="card__floatingPoints">
-          <div class="card__floatingLabel">Ptos.</div>
-          <div id="floatingPoints">0.00</div>
-        </div>
-
-        <div class="card__details" id="cardDetails" aria-hidden="true">
-          <div class="card__detailsTitle">Datos del cliente</div>
-
-          <dl class="card__detailsGrid">
-            <div class="card__detailsRow">
-              <dt>Nombre</dt>
-              <dd id="clientName">—</dd>
+      <div class="cardsCarousel">
+        <div class="cardsCarousel__track" id="cardsCarouselTrack">
+          <section class="card card--client" aria-label="Tarjeta digital de puntos" role="button" tabindex="0"
+            aria-expanded="false" aria-controls="cardDetails" id="clientCard">
+            <img class="card__art" src="/images/card-cliente.png" alt="Tarjeta de puntos" draggable="false" />
+            <div class="card__floatingPoints">
+              <div class="card__floatingLabel">Ptos.</div>
+              <div id="floatingPoints">0.00</div>
             </div>
-            <div class="card__detailsRow">
-              <dt>Cédula</dt>
-              <dd id="clientId">—</dd>
+
+            <div class="card__details" id="cardDetails" aria-hidden="true">
+              <div class="card__detailsTitle">Datos del cliente</div>
+
+              <dl class="card__detailsGrid">
+                <div class="card__detailsRow">
+                  <dt>Nombre</dt>
+                  <dd id="clientName">—</dd>
+                </div>
+                <div class="card__detailsRow">
+                  <dt>Cédula</dt>
+                  <dd id="clientId">—</dd>
+                </div>
+                <div class="card__detailsRow">
+                  <dt>Puntos disponibles</dt>
+                  <dd id="clientBalance">0.00</dd>
+                </div>
+                <div class="card__detailsRow">
+                  <dt>Valor en $</dt>
+                  <dd id="clientBalanceCash">≈ 0.00 $</dd>
+                </div>
+                <div class="card__detailsRow card__detailsRow--rate"
+                  style="margin-top: 2px; padding-top: 2px; border-top: 1px solid rgba(255,255,255,0.04); opacity: 0.5;">
+                  <dt style="font-size: 9px; text-transform: uppercase;">Tasa</dt>
+                  <dd style="font-size: 9px;">100 pts / 1$</dd>
+                </div>
+              </dl>
             </div>
-            <div class="card__detailsRow">
-              <dt>Puntos disponibles</dt>
-              <dd id="clientBalance">0.00</dd>
+
+            <div class="card__sheen" aria-hidden="true"></div>
+
+            <div class="card__top">
+              <div class="brand" aria-label="Marca">
+                <img src="/icons/icon-v2.svg" height="24" alt="Logo" style="object-fit: contain; max-width: 100px;" />
+              </div>
+
+              <div class="chip" aria-hidden="true">
+                <div class="chip__inner"></div>
+                <div class="chip__line chip__line--a"></div>
+                <div class="chip__line chip__line--b"></div>
+                <div class="chip__line chip__line--c"></div>
+              </div>
             </div>
-            <div class="card__detailsRow">
-              <dt>Valor en $</dt>
-              <dd id="clientBalanceCash">≈ 0.00 $</dd>
+
+            <div class="balance">
+              <div class="balance__label">Saldo de puntos</div>
+              <div class="balance__value" id="points">0.00</div>
+              <div class="balance__cash" id="pointsCash">≈ 0.00 $</div>
+              <div class="balance__rate">Tasa: 100 ptos / 1$</div>
             </div>
-            <div class="card__detailsRow card__detailsRow--rate"
-              style="margin-top: 2px; padding-top: 2px; border-top: 1px solid rgba(255,255,255,0.04); opacity: 0.5;">
-              <dt style="font-size: 9px; text-transform: uppercase;">Tasa</dt>
-              <dd style="font-size: 9px;">100 pts / 1$</dd>
+
+            <div class="card__bottom">
+              <div class="card__divider" aria-hidden="true"></div>
+              <div class="card__meta" id="cardUpdated">Actualizado hoy</div>
             </div>
-          </dl>
+          </section>
         </div>
-
-        <div class="card__sheen" aria-hidden="true"></div>
-
-        <div class="card__top">
-          <div class="brand" aria-label="Marca">
-            <img src="/icons/icon-v2.svg" height="24" alt="Logo" style="object-fit: contain; max-width: 100px;" />
-          </div>
-
-          <div class="chip" aria-hidden="true">
-            <div class="chip__inner"></div>
-            <div class="chip__line chip__line--a"></div>
-            <div class="chip__line chip__line--b"></div>
-            <div class="chip__line chip__line--c"></div>
-          </div>
-        </div>
-
-        <div class="balance">
-          <div class="balance__label">Saldo de puntos</div>
-          <div class="balance__value" id="points">0.00</div>
-          <div class="balance__cash" id="pointsCash">≈ 0.00 $</div>
-          <div class="balance__rate">Tasa: 100 ptos / 1$</div>
-        </div>
-
-        <div class="card__bottom">
-          <div class="card__divider" aria-hidden="true"></div>
-          <div class="card__meta" id="cardUpdated">Actualizado hoy</div>
-        </div>
-      </section>
-      
-      <!-- Balances por comercio (Closed Merchants) -->
-      <section class="merchantBalances" id="merchantBalancesSection" hidden>
-        <h2 class="merchantBalances__title">Mis Comercios Aliados</h2>
-        <div class="merchantBalances__list" id="merchantBalancesList"></div>
-      </section>
+      </div>
       
       <section class="activity" aria-label="Actividad reciente">
         <div class="activity__header">

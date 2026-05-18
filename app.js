@@ -1,3 +1,9 @@
+window.walletState = {
+  activeMerchantId: null,
+  allTransactions: [],
+  filterActivity: null
+};
+
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     navigator.serviceWorker.register("/service-worker.js").then(reg => {
@@ -272,82 +278,129 @@ if (qrButton) {
         }
         if (typeof data.updatedAt === "string") setUpdatedText(data.updatedAt);
         
-        // Render merchant-specific balances (Closed Merchants)
-        const merchantSection = document.getElementById("merchantBalancesSection");
-        const merchantList = document.getElementById("merchantBalancesList");
-        if (merchantSection && merchantList) {
+        // Render merchant-specific cards into the main carousel track
+        const track = document.getElementById("cardsCarouselTrack");
+        if (track) {
+          // Remove previous dynamic merchant cards
+          const prevCards = track.querySelectorAll(".card--merchant");
+          prevCards.forEach(c => c.remove());
+
           const balances = Array.isArray(data.merchantBalances) ? data.merchantBalances : [];
-          if (balances.length > 0) {
-            merchantList.innerHTML = "";
-            balances.forEach(m => {
-              const card = document.createElement("div");
-              card.className = "merchantCard";
-              card.innerHTML = `
-                <div class="merchantCard__top" style="width: 100%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
-                  <div class="merchantCard__info">
-                    <div class="merchantCard__name">${m.name}</div>
-                    <div class="merchantCard__label">Saldo exclusivo</div>
-                  </div>
-                  <div style="color: rgba(255, 255, 255, 0.15); flex-shrink: 0;">
-                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8">
-                      <rect x="2" y="5" width="20" height="14" rx="2" />
-                      <line x1="2" y1="10" x2="22" y2="10" />
-                    </svg>
-                  </div>
-                </div>
-                
-                <div style="width: 100%; display: flex; justify-content: space-between; align-items: flex-end;">
-                  <div style="text-align: left;">
-                    <div class="merchantCard__points" style="font-size: 20px; font-weight: 800; color: #ffffff; letter-spacing: 0.05em; font-family: monospace;">••••••</div>
-                    <div class="merchantCard__cash" style="font-size: 13px; color: #a5b4fc; font-weight: 600; margin-top: 4px;">••••••</div>
-                  </div>
-                  <button type="button" class="merchantCard__toggle" aria-label="Mostrar saldo" style="background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 50%; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; color: rgba(255, 255, 255, 0.6); cursor: pointer; transition: all 0.2s; outline: none; margin: 0; padding: 0;">
-                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                      <circle cx="12" cy="12" r="3" />
-                    </svg>
-                  </button>
-                </div>
-              `;
+          balances.forEach(m => {
+            const mCard = document.createElement("section");
+            mCard.className = "card card--merchant";
+            mCard.dataset.merchantId = m.merchantId;
+            mCard.innerHTML = `
+              <div class="card__floatingPoints">
+                <div class="card__floatingLabel">Ptos.</div>
+                <div class="floatingPoints" style="font-family: monospace; font-size: 15px; font-weight: 700;">••••••</div>
+              </div>
 
-              // Toggle visibility logic
-              let isHidden = true;
-              const pointsEl = card.querySelector(".merchantCard__points");
-              const cashEl   = card.querySelector(".merchantCard__cash");
-              const toggleBtn = card.querySelector(".merchantCard__toggle");
+              <div class="card__details" aria-hidden="true" style="display:none;"></div>
+              <div class="card__sheen" aria-hidden="true"></div>
 
-              toggleBtn.addEventListener("click", (e) => {
-                e.stopPropagation();
-                isHidden = !isHidden;
-                if (isHidden) {
-                  pointsEl.textContent = "••••••";
-                  cashEl.textContent = "••••••";
-                  toggleBtn.innerHTML = `
-                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                      <circle cx="12" cy="12" r="3" />
-                    </svg>
-                  `;
-                  toggleBtn.setAttribute("aria-label", "Mostrar saldo");
-                } else {
-                  pointsEl.textContent = `${m.balance.toFixed(2)} pts`;
-                  cashEl.textContent = `≈ ${(m.balance / 100).toFixed(2)} $`;
-                  toggleBtn.innerHTML = `
-                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
-                      <line x1="1" y1="1" x2="23" y2="23" />
-                    </svg>
-                  `;
-                  toggleBtn.setAttribute("aria-label", "Ocultar saldo");
+              <div class="card__top" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <div class="brand" style="display: flex; flex-direction: column; gap: 2px;">
+                  <span class="merchantCardName" style="font-size: 14px; font-weight: 700; color: #ffffff; letter-spacing: -0.01em;">${m.name}</span>
+                  <span style="font-size: 8px; text-transform: uppercase; color: var(--muted); letter-spacing: 0.05em; font-weight: 600;">Saldo Exclusivo</span>
+                </div>
+
+                <div class="chip" aria-hidden="true">
+                  <div class="chip__inner"></div>
+                  <div class="chip__line chip__line--a"></div>
+                  <div class="chip__line chip__line--b"></div>
+                  <div class="chip__line chip__line--c"></div>
+                </div>
+              </div>
+
+              <div class="balance" style="margin-top: 15px;">
+                <div class="balance__label" style="font-size: 9px; text-transform: uppercase; color: var(--muted); letter-spacing: 0.05em;">Saldo de puntos</div>
+                <div class="balance__value" style="font-size: 26px; font-weight: 800; color: #ffffff; font-family: monospace; margin-top: 2px;">••••••</div>
+                <div class="balance__cash" style="font-size: 12px; color: #a5b4fc; font-weight: 600; margin-top: 2px;">••••••</div>
+                <div class="balance__rate" style="font-size: 9px; color: var(--muted); margin-top: 4px;">Tasa: 100 ptos / 1$</div>
+              </div>
+
+              <div class="card__bottom" style="display: flex; justify-content: space-between; align-items: center; width: 100%; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px; margin-top: auto;">
+                <div class="card__meta" style="font-size: 9px; opacity: 0.6; text-transform: uppercase; letter-spacing: 0.05em;">Ecosistema Cerrado</div>
+                <button type="button" class="card__toggleEye" aria-label="Mostrar saldo" style="background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 50%; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; color: rgba(255, 255, 255, 0.6); cursor: pointer; transition: all 0.2s; outline: none; margin: 0; padding: 0;">
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                </button>
+              </div>
+            `;
+
+            // Toggle visibility logic inside closure
+            let isHidden = true;
+            const floatPoints = mCard.querySelector(".floatingPoints");
+            const balanceValue = mCard.querySelector(".balance__value");
+            const balanceCash = mCard.querySelector(".balance__cash");
+            const toggleEyeBtn = mCard.querySelector(".card__toggleEye");
+
+            toggleEyeBtn.addEventListener("click", (e) => {
+              e.stopPropagation();
+              isHidden = !isHidden;
+              if (isHidden) {
+                floatPoints.textContent = "••••••";
+                balanceValue.textContent = "••••••";
+                balanceCash.textContent = "••••••";
+                toggleEyeBtn.innerHTML = `
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                `;
+                toggleEyeBtn.setAttribute("aria-label", "Mostrar saldo");
+              } else {
+                floatPoints.textContent = m.balance.toFixed(2);
+                balanceValue.textContent = m.balance.toFixed(2);
+                balanceCash.textContent = `≈ ${(m.balance / 100).toFixed(2)} $`;
+                toggleEyeBtn.innerHTML = `
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                    <line x1="1" y1="1" x2="23" y2="23" />
+                  </svg>
+                `;
+                toggleEyeBtn.setAttribute("aria-label", "Ocultar saldo");
+              }
+            });
+
+            track.appendChild(mCard);
+          });
+
+          // Bind scroll alignment detection
+          let scrollTimeout;
+          track.addEventListener("scroll", () => {
+            clearTimeout(scrollTimeout);
+            scrollTimeout = setTimeout(() => {
+              const cards = track.querySelectorAll(".card");
+              if (!cards.length) return;
+              
+              let closestCard = null;
+              let minDistance = Infinity;
+              const trackCenter = track.getBoundingClientRect().left + track.offsetWidth / 2;
+              
+              cards.forEach(card => {
+                const cardCenter = card.getBoundingClientRect().left + card.offsetWidth / 2;
+                const distance = Math.abs(cardCenter - trackCenter);
+                if (distance < minDistance) {
+                  minDistance = distance;
+                  closestCard = card;
                 }
               });
-
-              merchantList.appendChild(card);
-            });
-            merchantSection.hidden = false;
-          } else {
-            merchantSection.hidden = true;
-          }
+              
+              if (closestCard) {
+                const merchantId = closestCard.dataset.merchantId || null;
+                if (window.walletState.activeMerchantId !== merchantId) {
+                  window.walletState.activeMerchantId = merchantId;
+                  if (typeof window.walletState.filterActivity === "function") {
+                    window.walletState.filterActivity();
+                  }
+                }
+              }
+            }, 100);
+          });
         }
 
         // Control del Modal de Primera Vez
@@ -2336,7 +2389,23 @@ Esto eliminará también sus transacciones.`
   };
   let loading = false;
   let lastVisibleTx = null;
-  const PAGE_SIZE = 2;
+  const PAGE_SIZE = 50;
+
+  // Global wallet filter function bound to this scope
+  window.walletState.filterActivity = () => {
+    const activeId = window.walletState.activeMerchantId;
+    let filtered = [];
+    if (!activeId) {
+      // General card: show only non-merchant transactions
+      filtered = window.walletState.allTransactions.filter(t => !t.merchantId);
+    } else {
+      // Merchant card: show only matching merchant transactions
+      filtered = window.walletState.allTransactions.filter(t => t.merchantId === activeId);
+    }
+    render(mainList, filtered);
+    if (historyList) render(historyList, filtered);
+  };
+
   const cargarMasTransacciones = async () => {
     if (loading || !lastVisibleTx) return;
     const token = getTokenFromUrl();
@@ -2351,7 +2420,8 @@ Esto eliminará también sus transacciones.`
       if (!res.ok || !(data == null ? void 0 : data.ok)) throw new Error((data == null ? void 0 : data.error) || "Error");
       const txs = Array.isArray(data == null ? void 0 : data.transactions) ? data.transactions : [];
       if (txs.length > 0) {
-        render(historyList, txs, true);
+        window.walletState.allTransactions = window.walletState.allTransactions.concat(txs);
+        window.walletState.filterActivity();
         const last = txs[txs.length - 1];
         lastVisibleTx = { id: last.id, date: last.processedAt || last.createdAt };
       }
@@ -2359,7 +2429,7 @@ Esto eliminará también sus transacciones.`
         historyLoadMoreBtn.hidden = txs.length < PAGE_SIZE;
       }
     } catch (err) {
-      console.error("Error cargando m\xE1s transacciones:", err);
+      console.error("Error cargando más transacciones:", err);
     } finally {
       loading = false;
       if (historyLoading) historyLoading.hidden = true;
@@ -2385,8 +2455,8 @@ Esto eliminará también sus transacciones.`
         return;
       }
       const txs = Array.isArray(data == null ? void 0 : data.transactions) ? data.transactions : [];
-      render(mainList, txs);
-      if (historyList) render(historyList, txs);
+      window.walletState.allTransactions = txs;
+      window.walletState.filterActivity();
       if (txs.length > 0) {
         const last = txs[txs.length - 1];
         lastVisibleTx = { id: last.id, date: last.processedAt || last.createdAt };
