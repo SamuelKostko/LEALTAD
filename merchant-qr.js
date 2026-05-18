@@ -2,15 +2,18 @@
 const merchantDash       = document.getElementById("merchantDash");
 const mPanelDashboard    = document.getElementById("mPanelDashboard");
 const mPanelGenerator    = document.getElementById("mPanelGenerator");
+const mPanelGrantPoints  = document.getElementById("mPanelGrantPoints");
 
 // Sidebar nav
 const mNavDashboard      = document.getElementById("mNavDashboard");
 const mNavGenerator      = document.getElementById("mNavGenerator");
+const mNavGrantPoints    = document.getElementById("mNavGrantPoints");
 const merchantLogoutBtn  = document.getElementById("merchantLogoutBtn");
 
 // Mobile nav
 const mMobNavDashboard   = document.getElementById("mMobNavDashboard");
 const mMobNavGenerator   = document.getElementById("mMobNavGenerator");
+const mMobNavGrant       = document.getElementById("mMobNavGrant");
 const mMobNavLogout      = document.getElementById("mMobNavLogout");
 
 // Dashboard panel
@@ -33,6 +36,14 @@ const qrForm       = document.getElementById("qrForm");
 const pointsEl     = document.getElementById("points");
 const descriptionEl = document.getElementById("description");
 const resultEl     = document.getElementById("result");
+
+// Grant panel
+const grantForm        = document.getElementById("grantForm");
+const grantClientToken = document.getElementById("grantClientToken");
+const grantPoints      = document.getElementById("grantPoints");
+const grantPassword    = document.getElementById("grantPassword");
+const grantSubmitBtn   = document.getElementById("grantSubmitBtn");
+const grantResult      = document.getElementById("grantResult");
 
 // Modals
 const copyBtn          = document.getElementById("copyBtn");
@@ -88,19 +99,24 @@ const fmtDate = (iso) => {
   });
 };
 
-// ── Panel switching ──────────────────────────────────────────────────────────
 const switchPanel = (panel) => {
   const isDash = panel === "dashboard";
+  const isGen  = panel === "generator";
+  const isGrant = panel === "grant";
+
   if (mPanelDashboard) mPanelDashboard.hidden = !isDash;
-  if (mPanelGenerator) mPanelGenerator.hidden = isDash;
+  if (mPanelGenerator) mPanelGenerator.hidden = !isGen;
+  if (mPanelGrantPoints) mPanelGrantPoints.hidden = !isGrant;
 
   // Sidebar
   if (mNavDashboard) mNavDashboard.classList.toggle("is-active", isDash);
-  if (mNavGenerator) mNavGenerator.classList.toggle("is-active", !isDash);
+  if (mNavGenerator) mNavGenerator.classList.toggle("is-active", isGen);
+  if (mNavGrantPoints) mNavGrantPoints.classList.toggle("is-active", isGrant);
 
   // Mobile nav
   if (mMobNavDashboard) mMobNavDashboard.classList.toggle("is-active", isDash);
-  if (mMobNavGenerator) mMobNavGenerator.classList.toggle("is-active", !isDash);
+  if (mMobNavGenerator) mMobNavGenerator.classList.toggle("is-active", isGen);
+  if (mMobNavGrant) mMobNavGrant.classList.toggle("is-active", isGrant);
 
   // Scroll main to top
   const main = document.querySelector(".aDash__main");
@@ -376,6 +392,7 @@ if (mNavDashboard) mNavDashboard.addEventListener("click", () => {
   loadMerchantDashboard();
 });
 if (mNavGenerator) mNavGenerator.addEventListener("click", () => switchPanel("generator"));
+if (mNavGrantPoints) mNavGrantPoints.addEventListener("click", () => switchPanel("grant"));
 
 // Mobile navigation
 if (mMobNavDashboard) mMobNavDashboard.addEventListener("click", () => {
@@ -383,6 +400,7 @@ if (mMobNavDashboard) mMobNavDashboard.addEventListener("click", () => {
   loadMerchantDashboard();
 });
 if (mMobNavGenerator) mMobNavGenerator.addEventListener("click", () => switchPanel("generator"));
+if (mMobNavGrant)     mMobNavGrant.addEventListener("click", () => switchPanel("grant"));
 if (mMobNavLogout)    mMobNavLogout.addEventListener("click", doLogout);
 
 // Logout
@@ -500,6 +518,78 @@ if (qrForm) {
       if (transactionId) startPolling(transactionId);
     } catch {
       setResult("aResult--err", "Fallo de red.");
+    }
+  });
+}
+
+const setGrantResult = (type, message) => {
+  if (!grantResult) return;
+  grantResult.className = "aResult" + (type ? ` ${type}` : "");
+  grantResult.textContent = message;
+};
+
+// Grant Form submission
+if (grantForm) {
+  grantForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (!grantClientToken || !grantPoints || !grantPassword) return;
+
+    const token = String(grantClientToken.value).trim();
+    const points = Number(String(grantPoints.value).trim());
+    const password = String(grantPassword.value).trim();
+
+    if (!token) {
+      setGrantResult("aResult--err", "Token o Identificador del Cliente es requerido.");
+      return;
+    }
+
+    if (!Number.isFinite(points) || points <= 0) {
+      setGrantResult("aResult--err", "Puntos inválidos.");
+      return;
+    }
+
+    if (!password) {
+      setGrantResult("aResult--err", "Clave de seguridad requerida.");
+      return;
+    }
+
+    setGrantResult("aResult--info", "Procesando abono...");
+    if (grantSubmitBtn) grantSubmitBtn.disabled = true;
+
+    try {
+      const res = await fetch("/api/admin/manual-credit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ token, points, password })
+      });
+      const data = await res.json().catch(() => null);
+
+      if (!res.ok) {
+        if (res.status === 401) {
+          setAuthenticated(false);
+          setLoginResult("aResult--err", "Sesión expirada. Inicia sesión de nuevo.");
+        }
+        setGrantResult("aResult--err", data?.error || data?.message || `Error (${res.status})`);
+        return;
+      }
+
+      setGrantResult("aResult--ok", data?.message || `Se han abonado ${points} puntos exitosamente.`);
+      
+      // Clear fields on success
+      grantClientToken.value = "";
+      grantPoints.value = "";
+      grantPassword.value = "";
+
+      // Refresh dashboard stats after brief delay
+      setTimeout(() => {
+        loadMerchantDashboard();
+      }, 1000);
+
+    } catch (err) {
+      setGrantResult("aResult--err", "Fallo de red al procesar el abono.");
+    } finally {
+      if (grantSubmitBtn) grantSubmitBtn.disabled = false;
     }
   });
 }

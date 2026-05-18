@@ -23,7 +23,7 @@ export default async function handler(req, res) {
   }
 
   const role = String(auth.data?.role ?? '').trim().toLowerCase();
-  if (role === 'cashier' || role === 'merchant') {
+  if (role === 'cashier') {
     sendJson(res, 403, { error: 'No autorizado.' });
     return;
   }
@@ -70,30 +70,69 @@ export default async function handler(req, res) {
     }
 
     async function applyCredit(ref, data) {
-      const currentBalance = Number(data?.totalPoints || 0);
-      const newBalance = currentBalance + points;
+      const isMerchant = role === 'merchant';
+      const merchantId = String(auth.adminId ?? '').trim();
+      const merchantName = String(auth.data?.name ?? '').trim();
+      const merchantBranch = String(auth.data?.branchName ?? '').trim();
+
+      let currentBalance = 0;
+      let newBalance = 0;
+      let updateData = {};
+      let txPayload = {};
+
+      if (isMerchant) {
+        if (!merchantId) {
+          throw new Error('Merchant ID not found in session');
+        }
+        const balances = data?.merchantBalances || {};
+        currentBalance = Number(balances[merchantId] ?? 0);
+        newBalance = currentBalance + points;
+        updateData = {
+          [`merchantBalances.${merchantId}`]: newBalance,
+          updatedAt: FieldValue.serverTimestamp()
+        };
+        txPayload = {
+          type: 'manual_credit',
+          status: 'completed',
+          token: token,
+          points: points,
+          balanceBefore: currentBalance,
+          balanceAfter: newBalance,
+          merchantId: merchantId,
+          merchantName: merchantName,
+          branchName: `${merchantName} - ${merchantBranch}`.slice(0, 120),
+          description: 'Abono manual del comercio',
+          createdAt: FieldValue.serverTimestamp(),
+          processedAt: FieldValue.serverTimestamp()
+        };
+      } else {
+        currentBalance = Number(data?.totalPoints || 0);
+        newBalance = currentBalance + points;
+        updateData = {
+          totalPoints: newBalance,
+          updatedAt: FieldValue.serverTimestamp()
+        };
+        txPayload = {
+          type: 'manual_credit',
+          status: 'completed',
+          token: token,
+          points: points,
+          balanceBefore: currentBalance,
+          balanceAfter: newBalance,
+          description: 'Abono manual administrativo',
+          createdAt: FieldValue.serverTimestamp(),
+          processedAt: FieldValue.serverTimestamp()
+        };
+      }
 
       const batch = firestore.batch();
       
       // Update client
-      batch.update(ref, {
-        totalPoints: newBalance,
-        updatedAt: FieldValue.serverTimestamp()
-      });
+      batch.update(ref, updateData);
 
       // Log transaction
       const txRef = firestore.collection('transactions').doc();
-      batch.set(txRef, {
-        type: 'manual_credit',
-        status: 'completed',
-        token: token,
-        points: points,
-        balanceBefore: currentBalance,
-        balanceAfter: newBalance,
-        description: 'Abono manual administrativo',
-        createdAt: FieldValue.serverTimestamp(),
-        processedAt: FieldValue.serverTimestamp()
-      });
+      batch.set(txRef, txPayload);
 
       await batch.commit();
     }

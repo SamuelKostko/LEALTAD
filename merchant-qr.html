@@ -73,6 +73,12 @@
           </svg>
           Nuevo Cobro
         </button>
+        <button class="aSidebar__navItem" id="mNavGrantPoints" type="button" data-panel="grant">
+          <svg viewBox="0 0 24 24" width="17" height="17" fill="none">
+            <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+          </svg>
+          Abonar Puntos
+        </button>
       </nav>
       <div class="aSidebar__bottom">
         <button class="aSidebar__logout" id="merchantLogoutBtn" type="button">
@@ -204,6 +210,46 @@
         </form>
       </section>
 
+      <!-- Panel: Grant Points -->
+      <section class="aPanel" id="mPanelGrantPoints" aria-label="Abonar puntos a cliente" hidden>
+        <div class="aPanel__header">
+          <div>
+            <h2 class="aPanel__title">Abonar Puntos</h2>
+            <p class="aPanel__sub">Otorga puntos exclusivos de tu comercio a un cliente</p>
+          </div>
+        </div>
+
+        <form class="aLogin__form" id="grantForm" style="max-width: 420px;">
+          <div class="aField">
+            <label class="aField__label" for="grantClientToken">Token / Identificador del Cliente</label>
+            <input class="aField__input" id="grantClientToken" type="text" autocomplete="off"
+              placeholder="Ej: ABC123XYZ o correo/cédula" required />
+          </div>
+
+          <div class="aField">
+            <label class="aField__label" for="grantPoints">Puntos a abonar</label>
+            <input class="aField__input" id="grantPoints" type="number" inputmode="numeric" min="1" max="50000" step="1"
+              placeholder="Ej: 100" required
+              style="font-size: 22px; font-weight: 700; text-align: center;" />
+          </div>
+
+          <div class="aField">
+            <label class="aField__label" for="grantPassword">Clave de Seguridad del Comercio</label>
+            <input class="aField__input" id="grantPassword" type="password" autocomplete="current-password"
+              placeholder="••••••••" required />
+          </div>
+
+          <button class="aBtn aBtn--primary" id="grantSubmitBtn" type="submit">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none"
+              style="vertical-align: middle; margin-right: 6px;">
+              <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+            </svg>
+            Abonar Puntos
+          </button>
+          <div class="aResult" id="grantResult" aria-live="polite"></div>
+        </form>
+      </section>
+
     </div><!-- /.aDash__main -->
 
     <!-- Mobile bottom navigation (≤640px) -->
@@ -223,6 +269,12 @@
             stroke-linecap="round" stroke-linejoin="round" />
         </svg>
         Cobro
+      </button>
+      <button class="aMobileNav__item" id="mMobNavGrant" type="button" aria-label="Abonar Puntos">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none">
+          <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+        </svg>
+        Abonar
       </button>
       <button class="aMobileNav__logout" id="mMobNavLogout" type="button" aria-label="Cerrar sesión">
         <svg viewBox="0 0 24 24" width="20" height="20" fill="none">
