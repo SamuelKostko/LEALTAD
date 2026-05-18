@@ -390,6 +390,29 @@ if (qrButton) {
               }
             }, 80);
           });
+
+          // Prevent the parent vertical scroll from stealing horizontal swipe gestures
+          let touchStartX = 0;
+          let touchStartY = 0;
+          const contentEl = track.closest(".content");
+
+          track.addEventListener("touchstart", (e) => {
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+          }, { passive: true });
+
+          track.addEventListener("touchmove", (e) => {
+            const dx = Math.abs(e.touches[0].clientX - touchStartX);
+            const dy = Math.abs(e.touches[0].clientY - touchStartY);
+            // If gesture is more horizontal than vertical, lock parent scroll
+            if (dx > dy && dx > 6) {
+              if (contentEl) contentEl.style.overflowY = "hidden";
+            }
+          }, { passive: true });
+
+          track.addEventListener("touchend", () => {
+            if (contentEl) contentEl.style.overflowY = "";
+          }, { passive: true });
         }
 
         // Control del Modal de Primera Vez

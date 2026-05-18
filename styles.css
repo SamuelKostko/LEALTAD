@@ -989,7 +989,8 @@ body {
   -webkit-touch-callout: none;
   -webkit-user-select: none;
   user-select: none;
-  touch-action: pan-y;
+  /* Allow horizontal swiping so the carousel works */
+  touch-action: pan-x pan-y;
 }
 
 .card--client:focus-visible {
@@ -3748,9 +3749,13 @@ body:has(.aDash:not([hidden])) {
   display: flex;
   flex-direction: row;
   overflow-x: auto;
+  overflow-y: hidden;
   scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
+  /* Explicitly tell the browser to handle horizontal panning here */
+  touch-action: pan-x;
   /* No gap — each slide is exactly 100% wide, like a full-page swipe */
   gap: 0;
 }
@@ -3764,9 +3769,12 @@ body:has(.aDash:not([hidden])) {
   flex: 0 0 100%;
   width: 100%;
   scroll-snap-align: start;
+  scroll-snap-stop: always;
   display: flex;
   flex-direction: column;
   align-items: stretch;
+  /* Allow horizontal touch to propagate to the track */
+  touch-action: pan-x;
 }
 
 /* Merchant name label that floats ABOVE the card image */
