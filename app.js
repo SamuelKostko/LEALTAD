@@ -280,118 +280,107 @@ if (qrButton) {
         
         // Render merchant-specific cards into the main carousel track
         const track = document.getElementById("cardsCarouselTrack");
+        const hint = document.getElementById("cardsCarouselHint");
         if (track) {
-          // Remove previous dynamic merchant cards
-          const prevCards = track.querySelectorAll(".card--merchant");
-          prevCards.forEach(c => c.remove());
+          // Remove previous dynamic merchant slides
+          const prevSlides = track.querySelectorAll(".cardsCarousel__slide--merchant");
+          prevSlides.forEach(s => s.remove());
 
           const balances = Array.isArray(data.merchantBalances) ? data.merchantBalances : [];
+
           balances.forEach(m => {
+            // --- Slide wrapper ---
+            const slide = document.createElement("div");
+            slide.className = "cardsCarousel__slide cardsCarousel__slide--merchant";
+            slide.dataset.merchantId = m.merchantId;
+
+            // --- Merchant name label above the card ---
+            const label = document.createElement("div");
+            label.className = "cardsCarousel__merchantLabel";
+            label.textContent = m.name;
+            slide.appendChild(label);
+
+            // --- Card: same artwork as the client card ---
             const mCard = document.createElement("section");
             mCard.className = "card card--merchant";
-            mCard.dataset.merchantId = m.merchantId;
+            mCard.setAttribute("aria-label", `Tarjeta de puntos – ${m.name}`);
             mCard.innerHTML = `
+              <img class="card__art" src="/images/card-cliente.png" alt="Tarjeta de puntos" draggable="false" />
               <div class="card__floatingPoints">
                 <div class="card__floatingLabel">Ptos.</div>
-                <div class="floatingPoints" style="font-family: monospace; font-size: 15px; font-weight: 700;">••••••</div>
+                <div class="floatingPoints" style="font-family: monospace; font-size: 15px; font-weight: 700; color: #fff; text-shadow: 0 2px 10px rgba(0,0,0,.5);">••••••</div>
               </div>
-
-              <div class="card__details" aria-hidden="true" style="display:none;"></div>
-              <div class="card__sheen" aria-hidden="true"></div>
-
-              <div class="card__top" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-                <div class="brand" style="display: flex; flex-direction: column; gap: 2px;">
-                  <span class="merchantCardName" style="font-size: 14px; font-weight: 700; color: #ffffff; letter-spacing: -0.01em;">${m.name}</span>
-                  <span style="font-size: 8px; text-transform: uppercase; color: var(--muted); letter-spacing: 0.05em; font-weight: 600;">Saldo Exclusivo</span>
-                </div>
-
-                <div class="chip" aria-hidden="true">
-                  <div class="chip__inner"></div>
-                  <div class="chip__line chip__line--a"></div>
-                  <div class="chip__line chip__line--b"></div>
-                  <div class="chip__line chip__line--c"></div>
-                </div>
-              </div>
-
-              <div class="balance" style="margin-top: 15px;">
-                <div class="balance__label" style="font-size: 9px; text-transform: uppercase; color: var(--muted); letter-spacing: 0.05em;">Saldo de puntos</div>
-                <div class="balance__value" style="font-size: 26px; font-weight: 800; color: #ffffff; font-family: monospace; margin-top: 2px;">••••••</div>
-                <div class="balance__cash" style="font-size: 12px; color: #a5b4fc; font-weight: 600; margin-top: 2px;">••••••</div>
-                <div class="balance__rate" style="font-size: 9px; color: var(--muted); margin-top: 4px;">Tasa: 100 ptos / 1$</div>
-              </div>
-
-              <div class="card__bottom" style="display: flex; justify-content: space-between; align-items: center; width: 100%; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px; margin-top: auto;">
-                <div class="card__meta" style="font-size: 9px; opacity: 0.6; text-transform: uppercase; letter-spacing: 0.05em;">Ecosistema Cerrado</div>
-                <button type="button" class="card__toggleEye" aria-label="Mostrar saldo" style="background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 50%; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; color: rgba(255, 255, 255, 0.6); cursor: pointer; transition: all 0.2s; outline: none; margin: 0; padding: 0;">
-                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                    <circle cx="12" cy="12" r="3" />
-                  </svg>
-                </button>
-              </div>
+              <button type="button" class="card__toggleEye" aria-label="Mostrar saldo"
+                style="position:absolute; bottom:18px; right:18px; z-index:20;
+                       background:rgba(0,0,0,.25); border:1px solid rgba(255,255,255,.2);
+                       border-radius:50%; width:34px; height:34px;
+                       display:flex; align-items:center; justify-content:center;
+                       color:rgba(255,255,255,.85); cursor:pointer; transition:all .2s;
+                       outline:none; margin:0; padding:0; backdrop-filter:blur(4px);">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                  <circle cx="12" cy="12" r="3" />
+                </svg>
+              </button>
             `;
 
-            // Toggle visibility logic inside closure
+            // Toggle visibility logic
             let isHidden = true;
-            const floatPoints = mCard.querySelector(".floatingPoints");
-            const balanceValue = mCard.querySelector(".balance__value");
-            const balanceCash = mCard.querySelector(".balance__cash");
+            const floatEl = mCard.querySelector(".floatingPoints");
             const toggleEyeBtn = mCard.querySelector(".card__toggleEye");
 
             toggleEyeBtn.addEventListener("click", (e) => {
               e.stopPropagation();
               isHidden = !isHidden;
               if (isHidden) {
-                floatPoints.textContent = "••••••";
-                balanceValue.textContent = "••••••";
-                balanceCash.textContent = "••••••";
+                floatEl.textContent = "••••••";
                 toggleEyeBtn.innerHTML = `
                   <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
                     <circle cx="12" cy="12" r="3" />
-                  </svg>
-                `;
+                  </svg>`;
                 toggleEyeBtn.setAttribute("aria-label", "Mostrar saldo");
               } else {
-                floatPoints.textContent = m.balance.toFixed(2);
-                balanceValue.textContent = m.balance.toFixed(2);
-                balanceCash.textContent = `≈ ${(m.balance / 100).toFixed(2)} $`;
+                floatEl.textContent = `${m.balance.toFixed(2)} pts`;
                 toggleEyeBtn.innerHTML = `
                   <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
                     <line x1="1" y1="1" x2="23" y2="23" />
-                  </svg>
-                `;
+                  </svg>`;
                 toggleEyeBtn.setAttribute("aria-label", "Ocultar saldo");
               }
             });
 
-            track.appendChild(mCard);
+            slide.appendChild(mCard);
+            track.appendChild(slide);
           });
 
-          // Bind scroll alignment detection
+          // Show or hide the swipe hint
+          if (hint) hint.hidden = balances.length === 0;
+
+          // Scroll snap detection — reads merchantId from the slide wrapper
           let scrollTimeout;
           track.addEventListener("scroll", () => {
             clearTimeout(scrollTimeout);
             scrollTimeout = setTimeout(() => {
-              const cards = track.querySelectorAll(".card");
-              if (!cards.length) return;
-              
-              let closestCard = null;
+              const slides = track.querySelectorAll(".cardsCarousel__slide");
+              if (!slides.length) return;
+
+              let closestSlide = null;
               let minDistance = Infinity;
-              const trackCenter = track.getBoundingClientRect().left + track.offsetWidth / 2;
-              
-              cards.forEach(card => {
-                const cardCenter = card.getBoundingClientRect().left + card.offsetWidth / 2;
-                const distance = Math.abs(cardCenter - trackCenter);
+
+              slides.forEach(slide => {
+                const slideCenter = slide.getBoundingClientRect().left + slide.offsetWidth / 2;
+                const trackCenter = track.getBoundingClientRect().left + track.offsetWidth / 2;
+                const distance = Math.abs(slideCenter - trackCenter);
                 if (distance < minDistance) {
                   minDistance = distance;
-                  closestCard = card;
+                  closestSlide = slide;
                 }
               });
-              
-              if (closestCard) {
-                const merchantId = closestCard.dataset.merchantId || null;
+
+              if (closestSlide) {
+                const merchantId = closestSlide.dataset.merchantId || null;
                 if (window.walletState.activeMerchantId !== merchantId) {
                   window.walletState.activeMerchantId = merchantId;
                   if (typeof window.walletState.filterActivity === "function") {
@@ -399,7 +388,7 @@ if (qrButton) {
                   }
                 }
               }
-            }, 100);
+            }, 80);
           });
         }
 

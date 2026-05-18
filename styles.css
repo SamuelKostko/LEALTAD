@@ -3740,69 +3740,112 @@ body:has(.aDash:not([hidden])) {
 /* Cards Multi-Wallet Carousel */
 .cardsCarousel {
   width: 100%;
-  overflow: hidden;
   position: relative;
-  margin: 10px 0 10px;
+  margin: 0;
 }
 
 .cardsCarousel__track {
   display: flex;
   flex-direction: row;
-  gap: 16px;
   overflow-x: auto;
   scroll-snap-type: x mandatory;
-  padding: 8px 24px 24px;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
+  /* No gap — each slide is exactly 100% wide, like a full-page swipe */
+  gap: 0;
 }
 
 .cardsCarousel__track::-webkit-scrollbar {
   display: none;
 }
 
-/* Base Card override to ensure uniform sizing and snapping */
-.card {
-  position: relative;
-  aspect-ratio: 1.58 / 1;
-  width: 300px;
-  max-width: 85vw;
-  flex-shrink: 0;
-  scroll-snap-align: center;
-  border-radius: 26px;
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.45);
-  transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.3s ease;
-}
-
-/* Card Merchant Glassmorphism Styling */
-.card--merchant {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.015) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  padding: 22px 24px 18px;
+/* Each card slot is full-width of the parent */
+.cardsCarousel__slide {
+  flex: 0 0 100%;
+  width: 100%;
+  scroll-snap-align: start;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  justify-content: space-between;
+  align-items: stretch;
 }
 
-.card--merchant:active {
-  transform: scale(0.98);
-  border-color: rgba(255, 255, 255, 0.15);
+/* Merchant name label that floats ABOVE the card image */
+.cardsCarousel__merchantLabel {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  text-align: center;
+  margin-bottom: 6px;
+  opacity: 0.85;
+  transition: opacity 0.3s ease;
 }
 
+/* Hint strip: appears below the card when merchant cards exist */
+.cardsCarousel__hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 10px;
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 0.04em;
+  opacity: 0.7;
+  pointer-events: none;
+  animation: hintPulse 2.5s ease-in-out infinite;
+}
+
+.cardsCarousel__hint svg {
+  flex-shrink: 0;
+  opacity: 0.6;
+}
+
+@keyframes hintPulse {
+  0%, 100% { opacity: 0.5; }
+  50%       { opacity: 0.9; }
+}
+
+/* Merchant card: uses same card-cliente.png artwork, same sizing */
+.card--merchant {
+  padding: 0;
+  background: transparent;
+  border: 0;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  overflow: hidden !important;
+  display: block;
+  cursor: default;
+  aspect-ratio: 1.58 / 1;
+}
+
+.card--merchant .card__art {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 26px;
+  object-fit: cover;
+}
+
+/* Balance overlay on merchant card (same floating style as main card) */
 .card--merchant .card__floatingPoints {
   position: absolute;
-  top: 18px;
-  right: 24px;
+  top: 50%;
+  left: 32px;
+  transform: translateY(-50%);
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
+  gap: 0;
   pointer-events: none;
-  z-index: 10;
+  z-index: 20;
 }
 
-.card--merchant .chip {
-  margin-top: 2px;
+/* Eye toggle button on merchant card */
+.card--merchant .card__toggleEye {
+  position: absolute;
+  bottom: 18px;
+  right: 18px;
+  z-index: 20;
 }
 
