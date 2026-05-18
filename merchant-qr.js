@@ -50,7 +50,6 @@ const grantResult      = document.getElementById("grantResult");
 
 // Settings panel
 const settingsForm       = document.getElementById("settingsForm");
-const settPointsPerDollar = document.getElementById("settPointsPerDollar");
 const settMinRedeemPoints = document.getElementById("settMinRedeemPoints");
 const settSubmitBtn      = document.getElementById("settSubmitBtn");
 const settingsResult     = document.getElementById("settingsResult");
@@ -674,7 +673,6 @@ const loadMerchantSettings = async () => {
     }
 
     const s = data?.settings || {};
-    if (settPointsPerDollar) settPointsPerDollar.value = Number(s.pointsPerDollar ?? 1);
     if (settMinRedeemPoints) settMinRedeemPoints.value = Number(s.minRedeemPoints ?? 0);
 
     setSettingsResult("", "");
@@ -689,15 +687,10 @@ const loadMerchantSettings = async () => {
 if (settingsForm) {
   settingsForm.addEventListener("submit", async (e) => {
     e.preventDefault();
-    if (!settPointsPerDollar || !settMinRedeemPoints) return;
+    if (!settMinRedeemPoints) return;
 
-    const pointsPerDollar = Number(settPointsPerDollar.value);
+    const pointsPerDollar = 100;
     const minRedeemPoints = Number(settMinRedeemPoints.value);
-
-    if (!Number.isFinite(pointsPerDollar) || pointsPerDollar <= 0) {
-      setSettingsResult("aResult--err", "Puntos por dólar debe ser mayor a cero.");
-      return;
-    }
 
     if (!Number.isFinite(minRedeemPoints) || minRedeemPoints < 0) {
       setSettingsResult("aResult--err", "El mínimo de puntos debe ser igual o mayor a cero.");

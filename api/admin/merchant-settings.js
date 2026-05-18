@@ -73,14 +73,8 @@ export default async function handler(req, res) {
     }
 
     const s = body?.settings || {};
-    const pointsPerDollar = Number(s.pointsPerDollar);
+    const pointsPerDollar = 100;
     const minRedeemPoints = Number(s.minRedeemPoints);
-    const isClosed = s.isClosed === true;
-
-    if (!Number.isFinite(pointsPerDollar) || pointsPerDollar <= 0) {
-      sendJson(res, 400, { error: 'Puntos por dólar debe ser un número mayor a cero.' });
-      return;
-    }
 
     if (!Number.isFinite(minRedeemPoints) || minRedeemPoints < 0) {
       sendJson(res, 400, { error: 'Mínimo de puntos para canje debe ser un número igual o mayor a cero.' });

@@ -234,7 +234,7 @@ export default async function handler(req, res) {
       name,
       branchName,
       settings: {
-        pointsPerDollar: Number.isFinite(Number(body?.settings?.pointsPerDollar)) ? Number(body.settings.pointsPerDollar) : 1,
+        pointsPerDollar: 100,
         minRedeemPoints: Number.isFinite(Number(body?.settings?.minRedeemPoints)) ? Number(body.settings.minRedeemPoints) : 0,
         isClosed: body?.settings?.isClosed !== false // Default to true for new ones in the Merchants area
       },
