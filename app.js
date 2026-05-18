@@ -308,48 +308,9 @@ if (qrButton) {
               <img class="card__art" src="/images/card-cliente.png" alt="Tarjeta de puntos" draggable="false" />
               <div class="card__floatingPoints">
                 <div class="card__floatingLabel">Ptos.</div>
-                <div class="floatingPoints" style="font-family: monospace; font-size: 15px; font-weight: 700; color: #fff; text-shadow: 0 2px 10px rgba(0,0,0,.5);">••••••</div>
+                <div class="floatingPoints">${m.balance.toFixed(2)}</div>
               </div>
-              <button type="button" class="card__toggleEye" aria-label="Mostrar saldo"
-                style="position:absolute; bottom:18px; right:18px; z-index:20;
-                       background:rgba(0,0,0,.25); border:1px solid rgba(255,255,255,.2);
-                       border-radius:50%; width:34px; height:34px;
-                       display:flex; align-items:center; justify-content:center;
-                       color:rgba(255,255,255,.85); cursor:pointer; transition:all .2s;
-                       outline:none; margin:0; padding:0; backdrop-filter:blur(4px);">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                  <circle cx="12" cy="12" r="3" />
-                </svg>
-              </button>
             `;
-
-            // Toggle visibility logic
-            let isHidden = true;
-            const floatEl = mCard.querySelector(".floatingPoints");
-            const toggleEyeBtn = mCard.querySelector(".card__toggleEye");
-
-            toggleEyeBtn.addEventListener("click", (e) => {
-              e.stopPropagation();
-              isHidden = !isHidden;
-              if (isHidden) {
-                floatEl.textContent = "••••••";
-                toggleEyeBtn.innerHTML = `
-                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                    <circle cx="12" cy="12" r="3" />
-                  </svg>`;
-                toggleEyeBtn.setAttribute("aria-label", "Mostrar saldo");
-              } else {
-                floatEl.textContent = `${m.balance.toFixed(2)} pts`;
-                toggleEyeBtn.innerHTML = `
-                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
-                    <line x1="1" y1="1" x2="23" y2="23" />
-                  </svg>`;
-                toggleEyeBtn.setAttribute("aria-label", "Ocultar saldo");
-              }
-            });
 
             slide.appendChild(mCard);
             track.appendChild(slide);
