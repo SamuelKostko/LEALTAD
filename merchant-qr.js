@@ -52,7 +52,6 @@ const grantResult      = document.getElementById("grantResult");
 const settingsForm       = document.getElementById("settingsForm");
 const settPointsPerDollar = document.getElementById("settPointsPerDollar");
 const settMinRedeemPoints = document.getElementById("settMinRedeemPoints");
-const settIsClosed       = document.getElementById("settIsClosed");
 const settSubmitBtn      = document.getElementById("settSubmitBtn");
 const settingsResult     = document.getElementById("settingsResult");
 
@@ -646,7 +645,6 @@ const loadMerchantSettings = async () => {
     const s = data?.settings || {};
     if (settPointsPerDollar) settPointsPerDollar.value = Number(s.pointsPerDollar ?? 1);
     if (settMinRedeemPoints) settMinRedeemPoints.value = Number(s.minRedeemPoints ?? 0);
-    if (settIsClosed)         settIsClosed.checked = s.isClosed !== false;
 
     setSettingsResult("", "");
   } catch (err) {
@@ -660,11 +658,10 @@ const loadMerchantSettings = async () => {
 if (settingsForm) {
   settingsForm.addEventListener("submit", async (e) => {
     e.preventDefault();
-    if (!settPointsPerDollar || !settMinRedeemPoints || !settIsClosed) return;
+    if (!settPointsPerDollar || !settMinRedeemPoints) return;
 
     const pointsPerDollar = Number(settPointsPerDollar.value);
     const minRedeemPoints = Number(settMinRedeemPoints.value);
-    const isClosed = settIsClosed.checked;
 
     if (!Number.isFinite(pointsPerDollar) || pointsPerDollar <= 0) {
       setSettingsResult("aResult--err", "Puntos por dólar debe ser mayor a cero.");
@@ -687,8 +684,7 @@ if (settingsForm) {
         body: JSON.stringify({
           settings: {
             pointsPerDollar,
-            minRedeemPoints,
-            isClosed
+            minRedeemPoints
           }
         })
       });
