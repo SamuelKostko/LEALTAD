@@ -390,6 +390,26 @@
       <button class="aBtn aBtn--primary" id="txSuccessCloseBtn" type="button" style="width: 100%;">Generar Nuevo Cobro</button>
     </div>
   </div>
+  <!-- ── Configuration Pending Modal ── -->
+  <div class="profileMenu" id="setupModal" aria-hidden="true" style="z-index: 10001;">
+    <div class="profileMenu__backdrop"></div>
+    <div class="profileMenu__frame" role="dialog" aria-modal="true"
+      style="max-width: 400px; padding: 40px 24px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+      <div style="width: 70px; height: 70px; border-radius: 50%; background: rgba(245,158,11,0.15); display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
+        <svg viewBox="0 0 24 24" width="34" height="34" fill="none" style="color: #fbbf24;">
+          <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8" />
+          <path d="M12 8v5M12 16h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+        </svg>
+      </div>
+      <h3 style="font-size: 20px; font-weight: 700; color: #ffffff; margin: 0 0 12px 0;">Configuración Requerida</h3>
+      <p style="font-size: 14px; color: rgba(255,255,255,0.7); line-height: 1.5; margin: 0 0 28px 0; padding: 0 8px;">
+        Para comenzar a utilizar tu programa de lealtad, es necesario establecer los puntos otorgados por dólar y el mínimo requerido para el canje.
+      </p>
+      <button class="aBtn aBtn--primary" id="setupModalBtn" type="button" style="width: 100%; max-width: 240px; margin: 0;">
+        Configurar Ahora
+      </button>
+    </div>
+  </div>
 
   <script src="/merchant-qr.js" defer></script>
 </body>

@@ -63,6 +63,8 @@ const qroModal         = document.getElementById("qroModal");
 const qroModalCloseBtn = document.getElementById("qroModalCloseBtn");
 const txSuccessModal   = document.getElementById("txSuccessModal");
 const txSuccessCloseBtn = document.getElementById("txSuccessCloseBtn");
+const setupModal       = document.getElementById("setupModal");
+const setupModalBtn    = document.getElementById("setupModalBtn");
 
 // ── State ────────────────────────────────────────────────────────────────────
 let lastUrl          = "";
@@ -72,6 +74,7 @@ let merchantRange    = "day";
 let merchantCursor   = null;
 let merchantHasMore  = false;
 let merchantLoadingMore = false;
+let merchantConfigured  = true;
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 const setLoginResult = (type, message) => {
@@ -110,6 +113,11 @@ const fmtDate = (iso) => {
 };
 
 const switchPanel = (panel) => {
+  if (!merchantConfigured && panel !== "settings") {
+    panel = "settings";
+    setSettingsResult("aResult--err", "Debes configurar tu comercio primero para continuar.");
+  }
+
   const isDash = panel === "dashboard";
   const isGen  = panel === "generator";
   const isGrant = panel === "grant";
@@ -303,8 +311,20 @@ const checkAuth = async () => {
     if (role !== "merchant") { redirectByRole(role); return; }
 
     setAuthenticated(true);
-    switchPanel("dashboard");
-    loadMerchantDashboard();
+
+    const isConfigured = data?.settings?.configured === true;
+    if (!isConfigured) {
+      merchantConfigured = false;
+      if (setupModal) {
+        setupModal.classList.add("profileMenu--active");
+        setupModal.setAttribute("aria-hidden", "false");
+      }
+      switchPanel("settings");
+    } else {
+      merchantConfigured = true;
+      switchPanel("dashboard");
+      loadMerchantDashboard();
+    }
 
     const merchantName = String(data?.name || "").trim();
     const branchName   = String(data?.branchName || "").trim();
@@ -426,6 +446,17 @@ if (mMobNavLogout)    mMobNavLogout.addEventListener("click", doLogout);
 
 // Logout
 if (merchantLogoutBtn) merchantLogoutBtn.addEventListener("click", doLogout);
+
+// Setup required modal
+if (setupModalBtn) {
+  setupModalBtn.addEventListener("click", () => {
+    if (setupModal) {
+      setupModal.classList.remove("profileMenu--active");
+      setupModal.setAttribute("aria-hidden", "true");
+    }
+    switchPanel("settings");
+  });
+}
 
 // Dashboard controls
 if (merchantRefreshBtn) merchantRefreshBtn.addEventListener("click", () => loadMerchantDashboard({ append: false }));
@@ -700,6 +731,11 @@ if (settingsForm) {
       }
 
       setSettingsResult("aResult--ok", "¡Configuración guardada exitosamente!");
+      merchantConfigured = true;
+      setTimeout(() => {
+        switchPanel("dashboard");
+        loadMerchantDashboard();
+      }, 1200);
     } catch (err) {
       setSettingsResult("aResult--err", "Fallo de red al guardar la configuración.");
     } finally {

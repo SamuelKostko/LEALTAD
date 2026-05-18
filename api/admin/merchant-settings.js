@@ -103,7 +103,8 @@ export default async function handler(req, res) {
         settings: {
           pointsPerDollar,
           minRedeemPoints,
-          isClosed
+          isClosed,
+          configured: true
         },
         updatedAt: FieldValue.serverTimestamp()
       });
