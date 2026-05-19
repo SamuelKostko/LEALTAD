@@ -749,6 +749,17 @@
     </div>
   </div>
 
+  <!-- Modal de Promoción -->
+  <div class="promoModal" id="promoModal" aria-hidden="true" role="dialog" aria-modal="true" aria-label="Promoción especial">
+    <div class="promoModal__backdrop" id="promoModalBackdrop"></div>
+    <div class="promoModal__frame">
+      <button class="promoModal__close" id="promoModalCloseBtn" type="button" aria-label="Cerrar promoción">✕</button>
+      <div class="promoModal__content">
+        <img class="promoModal__image" id="promoModalImage" src="" alt="Promoción especial" draggable="false" />
+      </div>
+    </div>
+  </div>
+
   <!-- Librería ligera de decodificación QR -->
   <script src="https://unpkg.com/jsqr@1.4.0/dist/jsQR.js" crossorigin="anonymous"></script>
   <script src="/app.js?v=3" defer></script>

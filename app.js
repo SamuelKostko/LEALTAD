@@ -376,6 +376,33 @@ if (qrButton) {
           }, { passive: true });
         }
 
+        // Control de Modal de Promoción
+        const showPromoModal = () => {
+          const promoModal = document.getElementById("promoModal");
+          const promoImg = document.getElementById("promoModalImage");
+          if (promoModal && promoImg) {
+            // Selección aleatoria entre publi1 y publi2
+            const chosenImg = Math.random() < 0.5 ? "/images/publi1.jpeg" : "/images/publi2.jpeg";
+            promoImg.src = chosenImg;
+
+            setTimeout(() => {
+              promoModal.classList.add("promoModal--active");
+              promoModal.setAttribute("aria-hidden", "false");
+            }, 800);
+
+            const hidePromo = () => {
+              promoModal.classList.remove("promoModal--active");
+              promoModal.setAttribute("aria-hidden", "true");
+            };
+
+            const closeBtn = document.getElementById("promoModalCloseBtn");
+            if (closeBtn) closeBtn.onclick = hidePromo;
+
+            const backdrop = document.getElementById("promoModalBackdrop");
+            if (backdrop) backdrop.onclick = hidePromo;
+          }
+        };
+
         // Control del Modal de Primera Vez
         if (data.isFirstOpen) {
           const firstModal = document.getElementById("firstOpenModal");
@@ -386,6 +413,11 @@ if (qrButton) {
             const hideFirstModal = () => {
               firstModal.classList.remove("firstOpenModal--active");
               firstModal.setAttribute("aria-hidden", "true");
+            };
+
+            const triggerPromoAfterFirstModal = () => {
+              hideFirstModal();
+              showPromoModal();
             };
 
             const installBtn = document.getElementById("firstOpenInstallBtn");
@@ -400,7 +432,7 @@ if (qrButton) {
                     } catch {
                     }
                     window.deferredInstallPrompt = null;
-                    hideFirstModal();
+                    triggerPromoAfterFirstModal();
                     return;
                   }
 
@@ -410,7 +442,9 @@ if (qrButton) {
                     banner.classList.add("installBanner--show");
                     banner.setAttribute("aria-hidden", "false");
                   }
+                  triggerPromoAfterFirstModal();
                 } catch {
+                  triggerPromoAfterFirstModal();
                 }
               };
             }
@@ -418,11 +452,17 @@ if (qrButton) {
             const btnClose = document.getElementById("firstOpenCloseBtn");
             if (btnClose) {
               btnClose.onclick = () => {
-                hideFirstModal();
+                triggerPromoAfterFirstModal();
               };
             }
+          } else {
+            showPromoModal();
           }
+        } else {
+          showPromoModal();
         }
+
+        // Control de Primera Vez Completado
       }
     } catch {
     } finally {
