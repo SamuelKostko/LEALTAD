@@ -6,7 +6,7 @@ import { verifySession } from '../_lib/adminAuth.js';
 function parseCookies(header) {
   const raw = String(header ?? '');
   if (!raw) return {};
-  const out = {};
+  const out = {}; 
   for (const part of raw.split(';')) {
     const idx = part.indexOf('=');
     if (idx === -1) continue;
