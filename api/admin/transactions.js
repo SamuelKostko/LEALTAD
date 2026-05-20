@@ -88,18 +88,24 @@ export default async function handler(req, res) {
     const mapSnap = (snap) =>
       snap.docs.map((d) => {
         const data = d.data() || {};
+        let type = typeof data.type === 'string' ? data.type : '';
+        const points = Number.isFinite(Number(data.points)) ? Number(data.points) : 0;
+        if (!type && points > 0) {
+          type = 'credit';
+        }
         return {
           id: d.id,
-          type: typeof data.type === 'string' ? data.type : '',
+          type,
           status: typeof data.status === 'string' ? data.status : '',
           token: typeof data.token === 'string' ? data.token : '',
-          points: Number.isFinite(Number(data.points)) ? Number(data.points) : 0,
+          points,
           description: typeof data.description === 'string' ? data.description : '',
           createdAt: toIso(data.createdAt),
           processedAt: toIso(data.processedAt),
           balanceBefore: Number.isFinite(Number(data.balanceBefore)) ? Number(data.balanceBefore) : null,
           balanceAfter: Number.isFinite(Number(data.balanceAfter)) ? Number(data.balanceAfter) : null,
-          branchName: typeof data.branchName === 'string' ? data.branchName : ''
+          branchName: typeof data.branchName === 'string' ? data.branchName : '',
+          merchantId: typeof data.merchantId === 'string' ? data.merchantId : ''
         };
       });
 
@@ -130,12 +136,32 @@ export default async function handler(req, res) {
         if (transactions.length > limit) transactions = transactions.slice(0, limit);
       }
     } else if (!token) {
-      const snap = await firestore
-        .collection('transactions')
-        .orderBy('createdAt', 'desc')
-        .limit(limit)
-        .get();
+      // General list (superadmin transactions)
+      // Fetch a larger batch to account for filtered-out merchant transactions
+      const fallbackLimit = Math.max(limit * 5, 200);
+      const [snap, merchantsSnap] = await Promise.all([
+        firestore
+          .collection('transactions')
+          .orderBy('createdAt', 'desc')
+          .limit(fallbackLimit)
+          .get(),
+        firestore.collection('merchants').get()
+      ]);
+
+      const closedMerchantIds = new Set();
+      for (const doc of merchantsSnap.docs) {
+        const data = doc.data() || {};
+        if (data.settings?.isClosed === true) {
+          closedMerchantIds.add(doc.id);
+        }
+      }
+
       transactions = mapSnap(snap);
+      // Filter out transactions of closed merchants
+      transactions = transactions.filter(t => !t.merchantId || !closedMerchantIds.has(t.merchantId));
+      if (transactions.length > limit) {
+        transactions = transactions.slice(0, limit);
+      }
     } else {
       try {
         const snap = await firestore

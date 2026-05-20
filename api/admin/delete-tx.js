@@ -84,6 +84,7 @@ export default async function handler(req, res) {
       const type = String(data.type ?? '').trim();
       const token = String(data.token ?? '').trim();
       const points = Number(data.points || 0);
+      const merchantId = String(data.merchantId ?? '').trim();
 
       // Only completed/successful transactions affect the balance
       if (status === 'completed' || status === 'success') {
@@ -105,10 +106,17 @@ export default async function handler(req, res) {
             }
 
             if (adjustment !== 0) {
-              t.update(clientRef, {
-                totalPoints: FieldValue.increment(adjustment),
-                updatedAt: FieldValue.serverTimestamp()
-              });
+              if (merchantId) {
+                t.update(clientRef, {
+                  [`merchantBalances.${merchantId}`]: FieldValue.increment(adjustment),
+                  updatedAt: FieldValue.serverTimestamp()
+                });
+              } else {
+                t.update(clientRef, {
+                  totalPoints: FieldValue.increment(adjustment),
+                  updatedAt: FieldValue.serverTimestamp()
+                });
+              }
             }
           }
         }

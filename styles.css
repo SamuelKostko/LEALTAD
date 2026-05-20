@@ -3974,3 +3974,12 @@ body:has(.aDash:not([hidden])) {
   z-index: 20;
 }
 
+/* Premium style classes for credits and debits in tables */
+.aTxCell--credit {
+  color: #10b981 !important; /* Emerald green for positive transaction */
+}
+
+.aTxCell--debit {
+  color: #f87171 !important; /* Soft red for negative transaction */
+}
+

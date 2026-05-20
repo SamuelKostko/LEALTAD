@@ -80,9 +80,14 @@ function normalizeTransaction(id, raw) {
   const createdAt = toDate(data.createdAt);
   const processedAt = toDate(data.processedAt);
 
+  let type = typeof data.type === 'string' ? data.type : '';
+  if (!type && points > 0) {
+    type = 'credit';
+  }
+
   return {
     id,
-    type: typeof data.type === 'string' ? data.type : '',
+    type,
     status: typeof data.status === 'string' ? data.status : '',
     description: typeof data.description === 'string' ? data.description : '',
     token: typeof data.token === 'string' ? data.token : '',
@@ -130,13 +135,13 @@ export default async function handler(req, res) {
     const firestore = getFirestoreDb();
     const txSnap = await firestore
       .collection('transactions')
-      .where('mintedById', '==', merchantId)
+      .where('merchantId', '==', merchantId)
       .limit(400)
       .get();
 
     const allTransactions = txSnap.docs
       .map((d) => normalizeTransaction(d.id, d.data()))
-      .filter((t) => t.type === 'pos_charge')
+      .filter((t) => ['pos_charge', 'manual_credit', 'credit'].includes(t.type))
       .sort((a, b) => {
         const aMs = txTimestampMs(a);
         const bMs = txTimestampMs(b);
@@ -147,6 +152,7 @@ export default async function handler(req, res) {
 
     let rangeChargesCount = 0;
     let rangePointsTotal = 0;
+    let rangePointsCredited = 0;
     let pendingChargesCount = 0;
 
     for (const tx of allTransactions) {
@@ -154,11 +160,15 @@ export default async function handler(req, res) {
         pendingChargesCount += 1;
       }
 
-      if (tx.status !== 'success') continue;
+      if (tx.status !== 'success' && tx.status !== 'completed') continue;
       const ts = txTimestampMs(tx);
       if (ts >= sinceMs) {
-        rangeChargesCount += 1;
-        rangePointsTotal += tx.points;
+        if (tx.type === 'pos_charge') {
+          rangeChargesCount += 1;
+          rangePointsTotal += tx.points;
+        } else if (tx.type === 'manual_credit' || tx.type === 'credit') {
+          rangePointsCredited += tx.points;
+        }
       }
     }
 
@@ -172,6 +182,7 @@ export default async function handler(req, res) {
 
     const recentCharges = page.map((tx) => ({
       id: tx.id,
+      type: tx.type,
       status: tx.status,
       points: tx.points,
       description: tx.description,
@@ -192,6 +203,7 @@ export default async function handler(req, res) {
         selectedRange: range,
         rangeChargesCount,
         rangePointsTotal,
+        rangePointsCredited,
         pendingChargesCount,
         status: pendingChargesCount > 0 ? 'Con cobros pendientes' : 'Operativo',
         recentCharges,

@@ -1691,6 +1691,7 @@ Esto eliminará también sus transacciones.`
       for (const m of list) {
         const row = document.createElement("div");
         row.className = "aTxRow aTxRow--comercios";
+        row.style.cursor = "pointer";
 
         const addCell = (label, text, cls) => {
           const div = document.createElement("div");
@@ -1726,6 +1727,14 @@ Esto eliminará también sus transacciones.`
         actionsCell.appendChild(editBtn);
         actionsCell.appendChild(delBtn);
         row.appendChild(actionsCell);
+
+        row.addEventListener("click", (e) => {
+          if (e.target.closest("button")) return;
+          currentTxLimit = 10;
+          selectedBranch = m.branchName;
+          switchPanel("transacciones");
+          loadAllTransactions(m.branchName);
+        });
 
         wrap.appendChild(row);
       }

@@ -28,8 +28,10 @@ const merchantDashResultEl   = document.getElementById("merchantDashResult");
 const mStatStatusEl          = document.getElementById("mStatStatus");
 const mStatChargesLabelEl    = document.getElementById("mStatChargesLabel");
 const mStatPointsLabelEl     = document.getElementById("mStatPointsLabel");
+const mStatCreditedLabelEl   = document.getElementById("mStatCreditedLabel");
 const mStatTodayChargesEl    = document.getElementById("mStatTodayCharges");
 const mStatTodayPointsEl     = document.getElementById("mStatTodayPoints");
+const mStatTodayCreditedEl   = document.getElementById("mStatTodayCredited");
 const merchantLatestChargesEl = document.getElementById("merchantLatestCharges");
 const merchantLoadMoreBtn    = document.getElementById("merchantLoadMoreBtn");
 const merchantRefreshBtn     = document.getElementById("merchantRefreshBtn");
@@ -284,9 +286,15 @@ const renderLatestCharges = (list, append = false) => {
     };
 
     addCell("Fecha",       fmtDate(tx?.processedAt || tx?.createdAt) || "Sin fecha", "");
-    addCell("Puntos",      `${Number(tx?.points || 0).toFixed(2)} pts`, "aTxCell--strong");
+    
+    const isDebit = String(tx?.type || "").toLowerCase() === "pos_charge";
+    const sign = isDebit ? "-" : "+";
+    const ptsClass = isDebit ? "aTxCell--strong aTxCell--debit" : "aTxCell--strong aTxCell--credit";
+    addCell("Puntos",      `${sign}${Number(tx?.points || 0).toFixed(2)} pts`, ptsClass);
+    
     const status = String(tx?.status || "").toLowerCase();
-    addCell("Estado",      status === "success" ? "Completado" : status === "pending" ? "Pendiente" : (tx?.status || "N/A"), "");
+    const statusText = (status === "success" || status === "completed") ? "Completado" : status === "pending" ? "Pendiente" : (tx?.status || "N/A");
+    addCell("Estado",      statusText, "");
     addCell("ID",          String(tx?.transactionId || tx?.id || "-").slice(0, 12), "");
     addCell("Sucursal",    String(tx?.branchName || tx?.branch || "-"), "");
     addCell("Descripción", String(tx?.description || ""), "");
@@ -323,11 +331,13 @@ const loadMerchantDashboard = async ({ append = false } = {}) => {
     const dashboard = data?.dashboard || {};
     const rangeLabel = getRangeLabel();
 
-    if (mStatChargesLabelEl) mStatChargesLabelEl.textContent = `Cobros ${rangeLabel}`;
-    if (mStatPointsLabelEl)  mStatPointsLabelEl.textContent  = `Puntos ${rangeLabel}`;
-    if (mStatStatusEl)       mStatStatusEl.textContent        = String(dashboard.status || "Operativo");
-    if (mStatTodayChargesEl) mStatTodayChargesEl.textContent  = String(Number(dashboard.rangeChargesCount || 0));
-    if (mStatTodayPointsEl)  mStatTodayPointsEl.textContent   = Number(dashboard.rangePointsTotal || 0).toFixed(2);
+    if (mStatChargesLabelEl)  mStatChargesLabelEl.textContent  = `Cobros ${rangeLabel}`;
+    if (mStatPointsLabelEl)   mStatPointsLabelEl.textContent   = `Puntos ${rangeLabel}`;
+    if (mStatCreditedLabelEl) mStatCreditedLabelEl.textContent = `Abonado ${rangeLabel}`;
+    if (mStatStatusEl)        mStatStatusEl.textContent        = String(dashboard.status || "Operativo");
+    if (mStatTodayChargesEl)  mStatTodayChargesEl.textContent  = String(Number(dashboard.rangeChargesCount || 0));
+    if (mStatTodayPointsEl)   mStatTodayPointsEl.textContent   = Number(dashboard.rangePointsTotal || 0).toFixed(2);
+    if (mStatTodayCreditedEl) mStatTodayCreditedEl.textContent = Number(dashboard.rangePointsCredited || 0).toFixed(2);
 
     renderLatestCharges(Array.isArray(dashboard.recentCharges) ? dashboard.recentCharges : [], append);
 
