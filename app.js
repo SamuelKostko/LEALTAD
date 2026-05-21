@@ -565,6 +565,47 @@ if (qrButton) {
     const sedesList = document.getElementById("adminSedesList");
     const sedesResult = document.getElementById("adminSedesResult");
     const sedesRefresh = document.getElementById("adminSedesRefresh");
+    
+    // Reports Panel DOM elements
+    const panelReportes = document.getElementById("aPanelReportes");
+    const navReportes = document.getElementById("aNavReportes");
+    const mobNavReportes = document.getElementById("aMobNavReportes");
+    const reportRefresh = document.getElementById("adminReportRefresh");
+    const reportDateInput = document.getElementById("adminReportDate");
+    const reportSendEmailBtn = document.getElementById("adminReportSendEmailBtn");
+    const reportPrintBtn = document.getElementById("adminReportPrintBtn");
+    const reportActionStatus = document.getElementById("adminReportActionStatus");
+    const reportPeriodLabel = document.getElementById("adminReportPeriodLabel");
+    const repNewClientsVal = document.getElementById("repNewClientsVal");
+    const repCreditedVal = document.getElementById("repCreditedVal");
+    const repRedeemedVal = document.getElementById("repRedeemedVal");
+    const repBalanceVal = document.getElementById("repBalanceVal");
+    const repTotalClientsHistorical = document.getElementById("repTotalClientsHistorical");
+    const reportSedesTableBody = document.getElementById("adminReportSedesTableBody");
+    const reportConfigForm = document.getElementById("adminReportConfigForm");
+    const reportEmailsInput = document.getElementById("adminReportEmailsInput");
+    const reportConfigResult = document.getElementById("adminReportConfigResult");
+    const reportScheduleEnabled = document.getElementById("adminReportScheduleEnabled");
+    const reportScheduleTime = document.getElementById("adminReportScheduleTime");
+    const reportSchedulePeriod = document.getElementById("adminReportSchedulePeriod");
+    const reportScheduleTimeGroup = document.getElementById("adminReportScheduleTimeGroup");
+    const reportSchedulePeriodGroup = document.getElementById("adminReportSchedulePeriodGroup");
+
+    const getVzlaTodayStr = () => {
+      const formatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'America/Caracas',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      });
+      const parts = formatter.formatToParts(new Date());
+      const d = {};
+      parts.forEach(p => d[p.type] = p.value);
+      return `${d.year}-${d.month}-${d.day}`;
+    };
+
+    let currentReportPeriod = "day";
+    let currentReportDate = getVzlaTodayStr();
     let allCards = [];
     let selectedToken = "";
     let selectedBranch = "";
@@ -670,24 +711,28 @@ if (qrButton) {
       if (panelCajeros) panelCajeros.hidden = panel !== "cajeros";
       if (panelComercios) panelComercios.hidden = panel !== "comercios";
       if (panelSedes) panelSedes.hidden = panel !== "sedes";
+      if (panelReportes) panelReportes.hidden = panel !== "reportes";
       if (navClientes) navClientes.classList.toggle("is-active", panel === "clientes");
       if (navTx) navTx.classList.toggle("is-active", panel === "transacciones");
       if (navStats) navStats.classList.toggle("is-active", panel === "metricas");
       if (navCajeros) navCajeros.classList.toggle("is-active", panel === "cajeros");
       if (navComercios) navComercios.classList.toggle("is-active", panel === "comercios");
       if (navSedes) navSedes.classList.toggle("is-active", panel === "sedes");
+      if (navReportes) navReportes.classList.toggle("is-active", panel === "reportes");
       const mobClientes = document.getElementById("aMobNavClientes");
       const mobTx = document.getElementById("aMobNavTx");
       const mobStats = document.getElementById("aMobNavStats");
       const mobCajeros = document.getElementById("aMobNavCajeros");
       const mobComercios2 = document.getElementById("aMobNavComercios");
       const mobSedes = document.getElementById("aMobNavSedes");
+      const mobReportes = document.getElementById("aMobNavReportes");
       if (mobClientes) mobClientes.classList.toggle("is-active", panel === "clientes");
       if (mobTx) mobTx.classList.toggle("is-active", panel === "transacciones");
       if (mobStats) mobStats.classList.toggle("is-active", panel === "metricas");
       if (mobCajeros) mobCajeros.classList.toggle("is-active", panel === "cajeros");
       if (mobComercios2) mobComercios2.classList.toggle("is-active", panel === "comercios");
       if (mobSedes) mobSedes.classList.toggle("is-active", panel === "sedes");
+      if (mobReportes) mobReportes.classList.toggle("is-active", panel === "reportes");
       const main = document.querySelector(".aDash__main");
       if (main) main.scrollTop = 0;
     };
@@ -712,6 +757,11 @@ if (qrButton) {
     if (navSedes) navSedes.addEventListener("click", () => {
       switchPanel("sedes");
       loadSedesStats();
+    });
+    if (navReportes) navReportes.addEventListener("click", () => {
+      switchPanel("reportes");
+      loadAdminReports();
+      loadReportsConfig();
     });
     const mobNavClientes = document.getElementById("aMobNavClientes");
     const mobNavTx = document.getElementById("aMobNavTx");
@@ -740,6 +790,11 @@ if (qrButton) {
     if (mobNavSedes) mobNavSedes.addEventListener("click", () => {
       switchPanel("sedes");
       loadSedesStats();
+    });
+    if (mobNavReportes) mobNavReportes.addEventListener("click", () => {
+      switchPanel("reportes");
+      loadAdminReports();
+      loadReportsConfig();
     });
 
     if (goQrBtn) goQrBtn.addEventListener("click", () => {
@@ -1439,6 +1494,287 @@ Esto eliminará también sus transacciones.`
     };
 
     if (sedesRefresh) sedesRefresh.addEventListener("click", loadSedesStats);
+
+    // --- REPORTS PANEL INTERACTIVITY ---
+
+    const apiPost = async (path, bodyObj) => {
+      const res = await fetch(path, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(bodyObj),
+        credentials: "include"
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        const err = new Error((data == null ? void 0 : data.error) || (data == null ? void 0 : data.message) || `Error (${res.status})`);
+        err.status = res.status;
+        throw err;
+      }
+      return data;
+    };
+
+    const loadAdminReports = async () => {
+      if (!panelReportes) return;
+      
+      // Update filter buttons UI
+      const periodFilterGroup = document.getElementById("reportPeriodFilterGroups");
+      if (periodFilterGroup) {
+        periodFilterGroup.querySelectorAll(".aFilterBtn").forEach(btn => {
+          btn.classList.toggle("is-active", btn.getAttribute("data-period") === currentReportPeriod);
+        });
+      }
+
+      // Initialize date input value if it hasn't been set
+      if (reportDateInput && !reportDateInput.value) {
+        reportDateInput.value = currentReportDate;
+      }
+
+      // Set loading state
+      if (reportActionStatus) {
+        reportActionStatus.className = "aResult aResult--info";
+        reportActionStatus.textContent = "Cargando datos del reporte...";
+      }
+
+      try {
+        const data = await apiGet(`/api/admin/reports?date=${encodeURIComponent(currentReportDate)}&period=${encodeURIComponent(currentReportPeriod)}`);
+        
+        // Update stats cards
+        if (repNewClientsVal) repNewClientsVal.textContent = data.totalNewClients;
+        if (repCreditedVal) repCreditedVal.textContent = `+${data.totalPointsCredited} pts`;
+        if (repRedeemedVal) repRedeemedVal.textContent = `-${data.totalPointsRedeemed} pts`;
+        
+        if (repBalanceVal) {
+          const balance = data.totalBalance || 0;
+          repBalanceVal.textContent = `${balance >= 0 ? "+" : ""}${balance} pts`;
+          
+          if (balance >= 0) {
+            repBalanceVal.style.color = "#10b981";
+          } else {
+            repBalanceVal.style.color = "#f43f5e";
+          }
+        }
+        
+        if (repTotalClientsHistorical) repTotalClientsHistorical.textContent = data.totalClients || 0;
+
+        // Render date range label
+        if (reportPeriodLabel) {
+          const startD = new Date(data.startDate);
+          const endD = new Date(data.endDate);
+          
+          let periodText = "";
+          if (currentReportPeriod === "day") {
+            periodText = `Reporte Diario del ${startD.toLocaleDateString("es-VE", { timeZone: "America/Caracas", day: "2-digit", month: "2-digit", year: "numeric" })}`;
+          } else if (currentReportPeriod === "week") {
+            periodText = `Reporte Semanal: del ${startD.toLocaleDateString("es-VE", { timeZone: "America/Caracas", day: "2-digit", month: "2-digit" })} al ${endD.toLocaleDateString("es-VE", { timeZone: "America/Caracas", day: "2-digit", month: "2-digit", year: "numeric" })}`;
+          } else if (currentReportPeriod === "month") {
+            periodText = `Reporte Mensual: ${startD.toLocaleDateString("es-VE", { timeZone: "America/Caracas", month: "long", year: "numeric" }).toUpperCase()}`;
+          } else if (currentReportPeriod === "year") {
+            periodText = `Reporte Anual del Año ${startD.getFullYear()}`;
+          }
+          reportPeriodLabel.textContent = periodText;
+        }
+
+        // Render Sede breakdown table body
+        if (reportSedesTableBody) {
+          reportSedesTableBody.innerHTML = "";
+          
+          if (!data.branches || data.branches.length === 0) {
+            const row = document.createElement("tr");
+            row.innerHTML = `<td colspan="5" style="padding: 20px; text-align: center; color: rgba(255,255,255,0.4);">No hay actividad en ninguna sede en este período.</td>`;
+            reportSedesTableBody.appendChild(row);
+          } else {
+            data.branches.forEach(b => {
+              const row = document.createElement("tr");
+              row.style.borderBottom = "1px solid rgba(255,255,255,0.05)";
+              
+              const balanceSign = b.balance > 0 ? `+${b.balance}` : b.balance;
+              const balanceColor = b.balance >= 0 ? "#10b981" : "#f43f5e";
+              
+              row.innerHTML = `
+                <td style="padding: 12px 8px; text-align: left; font-weight: bold; color: #fff;">${b.branchName}</td>
+                <td style="padding: 12px 8px; text-align: center; color: rgba(255,255,255,0.8);">${b.newClients}</td>
+                <td style="padding: 12px 8px; text-align: right; color: #10b981; font-weight: 500;">+${b.pointsCredited}</td>
+                <td style="padding: 12px 8px; text-align: right; color: #f43f5e; font-weight: 500;">-${b.pointsRedeemed}</td>
+                <td style="padding: 12px 8px; text-align: right; color: ${balanceColor}; font-weight: bold;">${balanceSign} pts</td>
+              `;
+              
+              // Allow clicking a branch in report to view its transaction history
+              row.style.cursor = "pointer";
+              row.addEventListener("click", () => {
+                currentTxLimit = 10;
+                selectedBranch = b.branchName;
+                switchPanel("transacciones");
+                loadAllTransactions(b.branchName);
+              });
+              
+              reportSedesTableBody.appendChild(row);
+            });
+          }
+        }
+
+        if (reportActionStatus) {
+          reportActionStatus.textContent = "";
+          reportActionStatus.className = "aResult";
+        }
+      } catch (err) {
+        console.error("Failed to load reports:", err);
+        if (err?.status === 401) {
+          doLogout();
+          return;
+        }
+        if (reportActionStatus) {
+          reportActionStatus.className = "aResult aResult--err";
+          reportActionStatus.textContent = err?.message || "Error al cargar datos del reporte";
+        }
+      }
+    };
+
+    const toggleScheduleInputs = () => {
+      if (!reportScheduleEnabled || !reportScheduleTimeGroup || !reportSchedulePeriodGroup) return;
+      const isEnabled = reportScheduleEnabled.checked;
+      reportScheduleTimeGroup.style.opacity = isEnabled ? "1" : "0.3";
+      reportScheduleTimeGroup.style.pointerEvents = isEnabled ? "auto" : "none";
+      reportSchedulePeriodGroup.style.opacity = isEnabled ? "1" : "0.3";
+      reportSchedulePeriodGroup.style.pointerEvents = isEnabled ? "auto" : "none";
+    };
+
+    const loadReportsConfig = async () => {
+      if (!reportEmailsInput) return;
+      try {
+        const data = await apiGet("/api/admin/reports-config");
+        reportEmailsInput.value = data.emails || "";
+        if (reportScheduleEnabled) reportScheduleEnabled.checked = !!data.scheduleEnabled;
+        if (reportScheduleTime) reportScheduleTime.value = data.scheduleTime || "18:00";
+        if (reportSchedulePeriod) reportSchedulePeriod.value = data.schedulePeriod || "day";
+        toggleScheduleInputs();
+      } catch (err) {
+        console.error("Failed to load reports config:", err);
+      }
+    };
+
+    const saveReportsConfig = async (e) => {
+      if (e) e.preventDefault();
+      if (!reportEmailsInput || !reportConfigResult) return;
+      
+      reportConfigResult.className = "aResult aResult--info";
+      reportConfigResult.textContent = "Guardando configuración...";
+      
+      try {
+        const response = await apiPost("/api/admin/reports-config", {
+          emails: reportEmailsInput.value,
+          scheduleEnabled: reportScheduleEnabled ? reportScheduleEnabled.checked : false,
+          scheduleTime: reportScheduleTime ? reportScheduleTime.value : "18:00",
+          schedulePeriod: reportSchedulePeriod ? reportSchedulePeriod.value : "day"
+        });
+        reportConfigResult.className = "aResult aResult--ok";
+        reportConfigResult.textContent = "Configuración de reportes guardada con éxito.";
+        
+        reportEmailsInput.value = response.emails || "";
+        if (reportScheduleEnabled) reportScheduleEnabled.checked = !!response.scheduleEnabled;
+        if (reportScheduleTime) reportScheduleTime.value = response.scheduleTime || "18:00";
+        if (reportSchedulePeriod) reportSchedulePeriod.value = response.schedulePeriod || "day";
+        
+        toggleScheduleInputs();
+        
+        setTimeout(() => {
+          if (reportConfigResult.textContent.includes("éxito")) {
+            reportConfigResult.textContent = "";
+          }
+        }, 4000);
+      } catch (err) {
+        reportConfigResult.className = "aResult aResult--err";
+        reportConfigResult.textContent = err?.message || "Error al guardar configuración";
+      }
+    };
+
+    const sendReportByEmail = async () => {
+      if (!reportActionStatus || !reportSendEmailBtn) return;
+      
+      const originalText = reportSendEmailBtn.innerHTML;
+      reportSendEmailBtn.disabled = true;
+      reportSendEmailBtn.style.opacity = "0.7";
+      reportSendEmailBtn.innerHTML = `
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" class="spinner" style="animation: spin 1s linear infinite; display: inline-block; margin-right: 5px;">
+          <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2.5" stroke-dasharray="32" stroke-dashoffset="10"></circle>
+        </svg>
+        Enviando...
+      `;
+      
+      reportActionStatus.className = "aResult aResult--info";
+      reportActionStatus.textContent = "Despachando correo del reporte actual...";
+      
+      try {
+        const response = await apiPost("/api/admin/send-report", {
+          date: currentReportDate,
+          period: currentReportPeriod
+        });
+        
+        reportActionStatus.className = "aResult aResult--ok";
+        if (response.devMode) {
+          reportActionStatus.textContent = `Reporte simulado enviado con éxito a: ${response.sentTo.join(", ")} (ver consola del servidor)`;
+        } else {
+          reportActionStatus.textContent = `Reporte enviado con éxito a: ${response.sentTo.join(", ")}`;
+        }
+        
+        setTimeout(() => {
+          if (reportActionStatus.className.includes("aResult--ok")) {
+            reportActionStatus.textContent = "";
+            reportActionStatus.className = "aResult";
+          }
+        }, 5000);
+      } catch (err) {
+        reportActionStatus.className = "aResult aResult--err";
+        reportActionStatus.textContent = err?.message || "Error al enviar el reporte por correo";
+      } finally {
+        reportSendEmailBtn.disabled = false;
+        reportSendEmailBtn.style.opacity = "1";
+        reportSendEmailBtn.innerHTML = originalText;
+      }
+    };
+
+    // Bind report control events
+    if (reportRefresh) {
+      reportRefresh.addEventListener("click", loadAdminReports);
+    }
+    
+    if (reportDateInput) {
+      reportDateInput.addEventListener("change", (e) => {
+        currentReportDate = e.target.value;
+        loadAdminReports();
+      });
+    }
+
+    const reportPeriodFilterGroup = document.getElementById("reportPeriodFilterGroups");
+    if (reportPeriodFilterGroup) {
+      reportPeriodFilterGroup.addEventListener("click", (e) => {
+        const btn = e.target.closest(".aFilterBtn");
+        if (btn) {
+          const period = btn.getAttribute("data-period");
+          if (period) {
+            currentReportPeriod = period;
+            loadAdminReports();
+          }
+        }
+      });
+    }
+
+    if (reportConfigForm) {
+      reportConfigForm.addEventListener("submit", saveReportsConfig);
+    }
+
+    if (reportScheduleEnabled) {
+      reportScheduleEnabled.addEventListener("change", toggleScheduleInputs);
+    }
+
+    if (reportSendEmailBtn) {
+      reportSendEmailBtn.addEventListener("click", sendReportByEmail);
+    }
+
+    if (reportPrintBtn) {
+      reportPrintBtn.addEventListener("click", () => {
+        window.print();
+      });
+    }
 
     const doEditCashier = async (id, currentUsername, currentName) => {
       const name = window.prompt(`Nuevo nombre para el cajero ${currentUsername} (deja en blanco para no cambiar el nombre actual):`, currentName || "");

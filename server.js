@@ -7,6 +7,9 @@ import rateLimit from 'express-rate-limit';
 import { config } from 'dotenv';
 config();
 
+import { getFirestoreDb } from './api/_lib/firestore.js';
+import { sendReportEmail } from './api/admin/send-report.js';
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -197,8 +200,76 @@ app.use((req, res, next) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
+function startReportScheduler() {
+  console.log('[Scheduler] Inicializando programador automático de reportes...');
+  
+  // Tick every 60 seconds (1 minute)
+  setInterval(async () => {
+    try {
+      const firestore = getFirestoreDb();
+      const configDoc = await firestore.collection('config').doc('reports_settings').get();
+      if (!configDoc.exists) return;
+      
+      const configData = configDoc.data() || {};
+      const { scheduleEnabled, scheduleTime, schedulePeriod, emailsList, scheduleLastSentDate } = configData;
+      
+      if (!scheduleEnabled || !emailsList || emailsList.length === 0 || !scheduleTime) {
+        return;
+      }
+      
+      // Get current date and time in America/Caracas
+      const now = new Date();
+      const formatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'America/Caracas',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+      });
+      
+      const parts = formatter.formatToParts(now);
+      const d = {};
+      parts.forEach(p => d[p.type] = p.value);
+      
+      const todayStr = `${d.year}-${d.month}-${d.day}`; // YYYY-MM-DD
+      
+      const hourStr = String(d.hour).padStart(2, '0');
+      const minuteStr = String(d.minute).padStart(2, '0');
+      const currentTimeStr = `${hourStr}:${minuteStr}`; // HH:MM
+      
+      if (currentTimeStr === scheduleTime) {
+        if (scheduleLastSentDate === todayStr) {
+          return; // Already sent today
+        }
+        
+        console.log(`[Scheduler] ¡Coincidencia de hora! Iniciando envío de reporte automático (${schedulePeriod}) para ${todayStr} a las ${currentTimeStr}`);
+        
+        // Prevent race conditions: mark as sent immediately before dispatching the request
+        await firestore.collection('config').doc('reports_settings').update({
+          scheduleLastSentDate: todayStr,
+          scheduleLastSentAt: new Date()
+        });
+        
+        // Dispatch the email
+        const result = await sendReportEmail({
+          dateParam: todayStr,
+          periodParam: schedulePeriod || 'day',
+          emailsList
+        });
+        
+        console.log(`[Scheduler] Reporte automático enviado exitosamente a: ${emailsList.join(', ')}.`, result);
+      }
+    } catch (err) {
+      console.error('[Scheduler] Error en tick del programador automático:', err);
+    }
+  }, 60000);
+}
+
 const server = app.listen(PORT, HOST, () => {
    console.log(`Server running on http://${HOST}:${PORT}`);
+   startReportScheduler();
 });
 
 function gracefulShutdown(signal) {

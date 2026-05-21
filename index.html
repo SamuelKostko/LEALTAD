@@ -193,6 +193,15 @@
               </svg>
               Sedes
             </button>
+            <button class="aSidebar__navItem" id="aNavReportes" type="button" data-panel="reportes">
+              <svg viewBox="0 0 24 24" width="17" height="17" fill="none">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                <polyline points="14 2 14 8 20 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                <line x1="16" y1="13" x2="8" y2="13" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                <line x1="16" y1="17" x2="8" y2="17" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+              Reportes
+            </button>
           </nav>
           <div class="aSidebar__bottom">
             <a class="aSidebar__goQr" id="adminHeaderGoQr" href="/admin/qr">
@@ -455,6 +464,192 @@
             <div id="adminSedesList"></div>
             <div class="aResult" id="adminSedesResult" aria-live="polite"></div>
           </section>
+
+          <!-- Panel Reportes -->
+          <section class="aPanel" id="aPanelReportes" aria-label="Reportes" hidden>
+            <div class="aPanel__header" style="flex-wrap: wrap; gap: 16px;">
+              <div>
+                <h2 class="aPanel__title">Centro de Reportes</h2>
+                <p class="aPanel__sub">Generación, impresión y distribución de reportes de actividad</p>
+              </div>
+              
+              <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-left: auto;">
+                <div class="aFilterGroups" id="reportPeriodFilterGroups">
+                  <button class="aFilterBtn is-active" data-period="day">Diario</button>
+                  <button class="aFilterBtn" data-period="week">Semanal</button>
+                  <button class="aFilterBtn" data-period="month">Mensual</button>
+                  <button class="aFilterBtn" data-period="year">Anual</button>
+                </div>
+                
+                <input type="date" class="aReportDateInput" id="adminReportDate" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 6px 12px; border-radius: 8px; font-family: inherit; font-size: 14px; cursor: pointer; outline: none;">
+                
+                <button class="aIconBtn" id="adminReportRefresh" type="button" aria-label="Recargar">
+                  <svg viewBox="0 0 24 24" width="17" height="17" fill="none">
+                    <path d="M20 12a8 8 0 0 1-14.3 4.9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+                    <path d="M4 12a8 8 0 0 1 14.3-4.9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" opacity=".55" />
+                    <path d="M17.8 3.8V7.6h-3.8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" opacity=".55" />
+                    <path d="M6.2 20.2V16.4H10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+
+            <!-- Top Actions: Print and Email Dispatch -->
+            <div class="aReportActions" style="display: flex; gap: 12px; margin-bottom: 25px; flex-wrap: wrap;">
+              <button class="aBtn" id="adminReportSendEmailBtn" type="button" style="background: #10b981; color: #fff; display: flex; align-items: center; gap: 8px; border: none; padding: 8px 16px; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+                  <path d="M22 6l-10 7L2 6"></path>
+                </svg>
+                Enviar por Correo
+              </button>
+              <button class="aBtn" id="adminReportPrintBtn" type="button" style="background: transparent; color: #a5b4fc; border: 1.5px solid #4f46e5; display: flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                  <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                  <rect x="6" y="14" width="12" height="8"></rect>
+                </svg>
+                Imprimir Reporte
+              </button>
+              <div id="adminReportActionStatus" class="aResult" style="margin-left: 10px; font-size: 14px; align-self: center;"></div>
+            </div>
+
+            <!-- Visual Range Indicator -->
+            <div id="adminReportPeriodLabel" style="font-size: 15px; font-weight: 600; color: #a5b4fc; margin-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 12px;"></div>
+
+            <!-- Report Metrics Grid -->
+            <div class="aStatCards">
+              <!-- Clientes Nuevos -->
+              <div class="aStatCard">
+                <div class="aStatCard__icon" style="color: #60a5fa; background: rgba(96, 165, 250, 0.1);">
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                    <circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="1.8" />
+                  </svg>
+                </div>
+                <div class="aStatCard__val" id="repNewClientsVal">0</div>
+                <div class="aStatCard__lbl">Nuevos Clientes</div>
+                <div class="aStatCard__sub">Registrados en el periodo</div>
+              </div>
+
+              <!-- Puntos Acreditados -->
+              <div class="aStatCard">
+                <div class="aStatCard__icon" style="color: #10b981; background: rgba(16, 185, 129, 0.1);">
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none">
+                    <line x1="12" y1="5" x2="12" y2="19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                    <line x1="5" y1="12" x2="19" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                  </svg>
+                </div>
+                <div class="aStatCard__val" id="repCreditedVal" style="color: #10b981;">0</div>
+                <div class="aStatCard__lbl">Puntos Acreditados</div>
+                <div class="aStatCard__sub">Total puntos otorgados</div>
+              </div>
+
+              <!-- Puntos Canjeados -->
+              <div class="aStatCard">
+                <div class="aStatCard__icon" style="color: #f43f5e; background: rgba(244, 63, 94, 0.1);">
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none">
+                    <line x1="5" y1="12" x2="19" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+                  </svg>
+                </div>
+                <div class="aStatCard__val" id="repRedeemedVal" style="color: #f43f5e;">0</div>
+                <div class="aStatCard__lbl">Puntos Canjeados</div>
+                <div class="aStatCard__sub">Total canjes completados</div>
+              </div>
+
+              <!-- Balance -->
+              <div class="aStatCard">
+                <div class="aStatCard__icon" style="color: #a5b4fc; background: rgba(165, 180, 252, 0.1);">
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="4" y1="9" x2="20" y2="9"></line>
+                    <line x1="4" y1="15" x2="20" y2="15"></line>
+                    <line x1="10" y1="3" x2="8" y2="21"></line>
+                    <line x1="16" y1="3" x2="14" y2="21"></line>
+                  </svg>
+                </div>
+                <div class="aStatCard__val" id="repBalanceVal">0</div>
+                <div class="aStatCard__lbl">Balance del Periodo</div>
+                <div class="aStatCard__sub">Acreditados vs Canjeados</div>
+              </div>
+            </div>
+
+            <!-- Historical Context (Clean Sub-panel) -->
+            <div style="margin-top: 15px; font-size: 13px; color: rgba(255,255,255,0.5); text-align: right; font-weight: 500;">
+              Clientes Históricos Registrados: <span id="repTotalClientsHistorical" style="color: #06b6d4; font-weight: bold;">0</span>
+            </div>
+
+            <!-- Table of Sedes Breakdown -->
+            <div class="aTableWrapper" style="margin-top: 30px; background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 20px; overflow-x: auto;">
+              <h3 style="font-size: 16px; font-weight: 600; color: #fff; margin-top: 0; margin-bottom: 16px; border-left: 3px solid #06b6d4; padding-left: 10px;">Desglose por Sede</h3>
+              <table class="aTable" style="width: 100%; border-collapse: collapse; min-width: 500px;">
+                <thead>
+                  <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+                    <th style="text-align: left; padding: 12px 8px; font-size: 12px; color: rgba(255,255,255,0.6); text-transform: uppercase; font-weight: bold;">Sede</th>
+                    <th style="text-align: center; padding: 12px 8px; font-size: 12px; color: rgba(255,255,255,0.6); text-transform: uppercase; font-weight: bold;">Nuevos Clientes</th>
+                    <th style="text-align: right; padding: 12px 8px; font-size: 12px; color: rgba(255,255,255,0.6); text-transform: uppercase; font-weight: bold;">Acreditado</th>
+                    <th style="text-align: right; padding: 12px 8px; font-size: 12px; color: rgba(255,255,255,0.6); text-transform: uppercase; font-weight: bold;">Canjeado</th>
+                    <th style="text-align: right; padding: 12px 8px; font-size: 12px; color: rgba(255,255,255,0.6); text-transform: uppercase; font-weight: bold;">Balance</th>
+                  </tr>
+                </thead>
+                <tbody id="adminReportSedesTableBody">
+                  <!-- Dynamically filled -->
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Email Configuration Section -->
+            <div class="aCard" style="margin-top: 35px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 25px;">
+              <h3 style="font-size: 16px; font-weight: 600; color: #fff; margin-top: 0; margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+                  <path d="M22 6l-10 7L2 6"></path>
+                </svg>
+                Configuración de Envío de Reportes
+              </h3>
+              <p style="font-size: 13px; color: rgba(255,255,255,0.6); margin-bottom: 16px;">
+                Define las direcciones de correo electrónico autorizadas para recibir los reportes (separa múltiples correos con comas).
+              </p>
+              <form id="adminReportConfigForm" style="display: flex; flex-direction: column; gap: 16px; max-width: 600px;">
+                <div style="display: flex; flex-direction: column; gap: 6px; width: 100%;">
+                  <label for="adminReportEmailsInput" style="font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.8);">Destinatarios (separados por coma)</label>
+                  <input type="text" id="adminReportEmailsInput" placeholder="admin@ejemplo.com, gerencia@ejemplo.com" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 10px 14px; border-radius: 8px; font-family: inherit; font-size: 14px; outline: none; transition: border-color 0.2s;" onfocus="this.style.borderColor='rgba(6, 182, 212, 0.4)'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'">
+                </div>
+                
+                <!-- Scheduling Sub-panel -->
+                <div style="display: flex; flex-wrap: wrap; gap: 16px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); padding: 16px; border-radius: 10px; align-items: flex-end;">
+                  <!-- Checkbox -->
+                  <div style="display: flex; align-items: center; gap: 8px; min-width: 200px; height: 38px;">
+                    <input type="checkbox" id="adminReportScheduleEnabled" style="width: 18px; height: 18px; cursor: pointer; accent-color: #06b6d4; margin: 0;">
+                    <label for="adminReportScheduleEnabled" style="font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.8); cursor: pointer; user-select: none;">Programar envío automático</label>
+                  </div>
+                  
+                  <!-- Time Input -->
+                  <div id="adminReportScheduleTimeGroup" style="display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 120px; transition: opacity 0.2s;">
+                    <label for="adminReportScheduleTime" style="font-size: 12px; color: rgba(255,255,255,0.6); font-weight: 500;">Hora de envío (Caracas)</label>
+                    <input type="time" id="adminReportScheduleTime" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 9px 12px; border-radius: 8px; font-family: inherit; font-size: 13px; outline: none; transition: border-color 0.2s;" onfocus="this.style.borderColor='rgba(6, 182, 212, 0.4)'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'">
+                  </div>
+                  
+                  <!-- Period select -->
+                  <div id="adminReportSchedulePeriodGroup" style="display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 150px; transition: opacity 0.2s;">
+                    <label for="adminReportSchedulePeriod" style="font-size: 12px; color: rgba(255,255,255,0.6); font-weight: 500;">Frecuencia del reporte</label>
+                    <select id="adminReportSchedulePeriod" style="background: #161920; border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 9px 12px; border-radius: 8px; font-family: inherit; font-size: 13px; outline: none; cursor: pointer; transition: border-color 0.2s;" onfocus="this.style.borderColor='rgba(6, 182, 212, 0.4)'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'">
+                      <option value="day">Reporte Diario</option>
+                      <option value="week">Reporte Semanal</option>
+                      <option value="month">Reporte Mensual</option>
+                      <option value="year">Reporte Anual</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div style="display: flex; gap: 10px; width: 100%;">
+                  <button class="aBtn" type="submit" style="background: #06b6d4; color: #fff; padding: 10px 20px; font-weight: 600; border-radius: 8px; cursor: pointer; border: none; font-size: 14px; transition: transform 0.1s, opacity 0.2s;">
+                    Guardar Configuración
+                  </button>
+                </div>
+                <div class="aResult" id="adminReportConfigResult" aria-live="polite" style="font-size: 13px; font-weight: 500;"></div>
+              </form>
+            </div>
+          </section>
         </div>
 
         <!-- Mobile bottom navigation bar (visible only on ≤640px) -->
@@ -497,6 +692,15 @@
               <path d="M3 21h18M3 7v1a3 3 0 0 0 6 0V7m0 1a3 3 0 0 0 6 0V7m0 1a3 3 0 0 0 6 0V7M4 21V10m16 11V10M9 21V10m6 11V10" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
             </svg>
             Sedes
+          </button>
+          <button class="aMobileNav__item" id="aMobNavReportes" type="button" aria-label="Reportes">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
+              <polyline points="14 2 14 8 20 8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
+              <line x1="16" y1="13" x2="8" y2="13" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
+              <line x1="16" y1="17" x2="8" y2="17" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            Reportes
           </button>
           <a class="aMobileNav__qr" href="/admin/qr" aria-label="Crear QR">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none">
