@@ -130,6 +130,12 @@ let billingMode         = "catalog";
 let verifiedClient      = null;
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
+const formatPts = (value) => {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return "0";
+  return String(Math.round(n * 100) / 100);
+};
+
 const setLoginResult = (type, message) => {
   if (!loginResultEl) return;
   loginResultEl.className = "aResult" + (type ? ` ${type}` : "");
@@ -290,7 +296,7 @@ const renderLatestCharges = (list, append = false) => {
     const isDebit = String(tx?.type || "").toLowerCase() === "pos_charge";
     const sign = isDebit ? "-" : "+";
     const ptsClass = isDebit ? "aTxCell--strong aTxCell--debit" : "aTxCell--strong aTxCell--credit";
-    addCell("Puntos",      `${sign}${Number(tx?.points || 0).toFixed(2)} pts`, ptsClass);
+    addCell("Puntos",      `${sign}${formatPts(tx?.points || 0)} pts`, ptsClass);
     
     const status = String(tx?.status || "").toLowerCase();
     const statusText = (status === "success" || status === "completed") ? "Completado" : status === "pending" ? "Pendiente" : (tx?.status || "N/A");
@@ -336,8 +342,8 @@ const loadMerchantDashboard = async ({ append = false } = {}) => {
     if (mStatCreditedLabelEl) mStatCreditedLabelEl.textContent = `Abonado ${rangeLabel}`;
     if (mStatStatusEl)        mStatStatusEl.textContent        = String(dashboard.status || "Operativo");
     if (mStatTodayChargesEl)  mStatTodayChargesEl.textContent  = String(Number(dashboard.rangeChargesCount || 0));
-    if (mStatTodayPointsEl)   mStatTodayPointsEl.textContent   = Number(dashboard.rangePointsTotal || 0).toFixed(2);
-    if (mStatTodayCreditedEl) mStatTodayCreditedEl.textContent = Number(dashboard.rangePointsCredited || 0).toFixed(2);
+    if (mStatTodayPointsEl)   mStatTodayPointsEl.textContent   = formatPts(dashboard.rangePointsTotal || 0);
+    if (mStatTodayCreditedEl) mStatTodayCreditedEl.textContent = formatPts(dashboard.rangePointsCredited || 0);
 
     renderLatestCharges(Array.isArray(dashboard.recentCharges) ? dashboard.recentCharges : [], append);
 

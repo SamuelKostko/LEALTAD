@@ -4,6 +4,12 @@ window.walletState = {
   filterActivity: null
 };
 
+window.formatPts = (value) => {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return "0";
+  return String(Math.round(n * 100) / 100);
+};
+
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     navigator.serviceWorker.register("/service-worker.js").then(reg => {
@@ -241,9 +247,9 @@ if (qrButton) {
     const n = Number(value);
     if (!pointsEl) return;
     if (!Number.isFinite(n)) return;
-    pointsEl.textContent = n.toFixed(2);
-    if (floatingPointsEl) floatingPointsEl.textContent = n.toFixed(2);
-    if (pointsCashEl) pointsCashEl.textContent = `\u2248 ${(n / 100).toFixed(2)} $`;
+    pointsEl.textContent = formatPts(n);
+    if (floatingPointsEl) floatingPointsEl.textContent = formatPts(n);
+    if (pointsCashEl) pointsCashEl.textContent = `\u2248 ${formatPts(n / 100)} $`;
   };
   const loadCardData = window.loadCardData = async () => {
     const token = getTokenFromUrl();
@@ -308,7 +314,7 @@ if (qrButton) {
               <img class="card__art" src="/images/card-cliente.png" alt="Tarjeta de puntos" draggable="false" />
               <div class="card__floatingPoints">
                 <div class="card__floatingLabel">Ptos.</div>
-                <div class="floatingPoints">${m.balance.toFixed(2)}</div>
+                <div class="floatingPoints">${formatPts(m.balance)}</div>
               </div>
             `;
 
@@ -492,7 +498,7 @@ if (qrButton) {
     balanceEl.textContent = val;
     if (clientBalanceCashEl) {
       const n = Number(val);
-      clientBalanceCashEl.textContent = `\u2248 ${(Number.isFinite(n) ? n / 100 : 0).toFixed(2)} $`;
+      clientBalanceCashEl.textContent = `\u2248 ${formatPts(Number.isFinite(n) ? n / 100 : 0)} $`;
     }
   };
   const initialToken = getTokenFromUrl();
@@ -675,10 +681,10 @@ if (qrButton) {
         addCell("Fecha", formatTxDate(t));
         addCell("Tipo", String(t.type || "\u2014"));
         addCell("Estado", String(t.status || "\u2014"), "aTxCell--strong");
-        addCell("Pts", pts.toFixed(2), "aTxCell--pts");
+        addCell("Pts", formatPts(pts), "aTxCell--pts");
         if (mode === "card") {
-          addCell("Antes", before === null ? "\u2014" : before.toFixed(2));
-          addCell("Despu\xE9s", after === null ? "\u2014" : after.toFixed(2));
+          addCell("Antes", before === null ? "\u2014" : formatPts(before));
+          addCell("Despu\xE9s", after === null ? "\u2014" : formatPts(after));
         } else {
           addCell("Cliente", String((t == null ? void 0 : t.name) || (t == null ? void 0 : t.token) || "\u2014"));
         }
@@ -1170,9 +1176,9 @@ Esto eliminará también sus transacciones.`
       if (clientMetaEl) clientMetaEl.textContent = c.cedula ? `CI: ${c.cedula}` : "Sin c\xE9dula";
       const sedesEl = document.getElementById("aClientSedes");
       if (sedesEl) sedesEl.textContent = `Sede: ${c.sedes || "Sin sede"}`;
-      if (clientBalanceEl) clientBalanceEl.textContent = Number((_a = c.balance) != null ? _a : 0).toFixed(2);
+      if (clientBalanceEl) clientBalanceEl.textContent = formatPts((_a = c.balance) != null ? _a : 0);
       const cashEl = document.getElementById("aClientBalanceCash");
-      if (cashEl) cashEl.textContent = `\u2248 ${(Number((_b = c.balance) != null ? _b : 0) / 100).toFixed(2)} $`;
+      if (cashEl) cashEl.textContent = `\u2248 ${formatPts(Number((_b = c.balance) != null ? _b : 0) / 100)} $`;
       if (clientCard) clientCard.hidden = false;
       if (cardTxSection) {
         cardTxSection.hidden = false;
@@ -1217,7 +1223,7 @@ Esto eliminará también sus transacciones.`
         const btn = document.createElement("button");
         btn.type = "button";
         btn.className = "aDropdown__item";
-        btn.innerHTML = `<span class="aDropdown__name">${c.name || "\u2014"}</span><span class="aDropdown__cedula">${c.cedula || ""}</span><span class="aDropdown__pts">${Number(c.balance).toFixed(2)} pts</span>`;
+        btn.innerHTML = `<span class="aDropdown__name">${c.name || "\u2014"}</span><span class="aDropdown__cedula">${c.cedula || ""}</span><span class="aDropdown__pts">${formatPts(c.balance)} pts</span>`;
         btn.addEventListener("click", () => selectClient(c));
         dropdown.appendChild(btn);
       }
@@ -1476,9 +1482,9 @@ Esto eliminará también sus transacciones.`
 
         addCell("Sede", b, "aTxCell--strong");
         addCell("Clientes", String(bClients));
-        addCell("Acreditados", bEarned.toFixed(2));
-        addCell("Canjeados", bRedeemed.toFixed(2));
-        addCell("Balance", bBalance.toFixed(2), bBalance >= 0 ? "aTxCell--pts" : "aTxCell--danger");
+        addCell("Acreditados", formatPts(bEarned));
+        addCell("Canjeados", formatPts(bRedeemed));
+        addCell("Balance", formatPts(bBalance), bBalance >= 0 ? "aTxCell--pts" : "aTxCell--danger");
         
         row.style.cursor = "pointer";
         row.addEventListener("click", () => {
@@ -2093,8 +2099,8 @@ Esto eliminará también sus transacciones.`
           elUsers.textContent = String(data.newUsers || 0);
           if (elUsersSub) elUsersSub.textContent = `Registrados en el periodo (Hist\xF3rico: ${data.totalUsers || 0})`;
         }
-        if (elEarned) elEarned.textContent = Number(data.pointsEarned || 0).toFixed(2);
-        if (elRedeemed) elRedeemed.textContent = Number(data.pointsRedeemed || 0).toFixed(2);
+        if (elEarned) elEarned.textContent = formatPts(data.pointsEarned || 0);
+        if (elRedeemed) elRedeemed.textContent = formatPts(data.pointsRedeemed || 0);
         
         const renderBreakdown = (containerId, obj) => {
           const container = document.getElementById(containerId);
@@ -2107,7 +2113,7 @@ Esto eliminará también sus transacciones.`
           for (const [branch, pts] of Object.entries(obj)) {
             html += `<div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
               <span style="color: rgba(255,255,255,0.7);">${branch}</span>
-              <span style="font-weight: 600; color: #fff;">${Number(pts).toFixed(2)} pts</span>
+              <span style="font-weight: 600; color: #fff;">${formatPts(pts)} pts</span>
             </div>`;
           }
           container.innerHTML = html;
@@ -2436,13 +2442,13 @@ Esto eliminará también sus transacciones.`
     const balanceEl = document.getElementById("clientBalance");
     const n = Number(balance);
     if (!Number.isFinite(n)) return;
-    if (pointsEl) pointsEl.textContent = n.toFixed(2);
+    if (pointsEl) pointsEl.textContent = formatPts(n);
     const pointsCashEl = document.getElementById("pointsCash");
-    if (pointsCashEl) pointsCashEl.textContent = `\u2248 ${(n / 100).toFixed(2)} $`;
+    if (pointsCashEl) pointsCashEl.textContent = `\u2248 ${formatPts(n / 100)} $`;
     if (balanceEl) {
-      balanceEl.textContent = n.toFixed(2);
+      balanceEl.textContent = formatPts(n);
       const detailCashEl = document.getElementById("clientBalanceCash");
-      if (detailCashEl) detailCashEl.textContent = `\u2248 ${(n / 100).toFixed(2)} $`;
+      if (detailCashEl) detailCashEl.textContent = `\u2248 ${formatPts(n / 100)} $`;
     }
   };
   const tryParseScannedUrl = (raw) => {
@@ -2542,7 +2548,7 @@ Esto eliminará también sus transacciones.`
       scanPopup.show({
         kind: "ok",
         headline: "Exitosa",
-        detail: `Nuevo saldo: ${typeof data.balance !== "undefined" ? Number(data.balance).toFixed(2) : "\u2014"}`
+        detail: `Nuevo saldo: ${typeof data.balance !== "undefined" ? formatPts(data.balance) : "\u2014"}`
       });
       try {
         window.dispatchEvent(new Event("wallet:activity-refresh"));
@@ -2727,7 +2733,7 @@ Esto eliminará también sus transacciones.`
     const amount = document.createElement("div");
     amount.className = `activity__amount${isNeg ? " activity__amount--neg" : ""}`;
     const abs = Math.abs(Number(delta) || 0);
-    amount.textContent = `${isNeg ? "-" : "+"}${abs.toFixed(2)}`;
+    amount.textContent = `${isNeg ? "-" : "+"}${formatPts(abs)}`;
     li.appendChild(icon);
     li.appendChild(text);
     li.appendChild(amount);
