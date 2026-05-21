@@ -3,6 +3,13 @@ import { sendJson, readJsonBody } from '../_lib/http.js';
 import { requireAdmin } from '../_lib/adminAuth.js';
 import { getReportRange, aggregateReportData } from './reports.js';
 
+// Same logic as frontend formatPts: rounds to max 2 decimals, no trailing zeros
+function formatPts(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return '0';
+  return String(Math.round(n * 100) / 100);
+}
+
 export async function sendReportEmail({ dateParam, periodParam, emailsList }) {
   // Fetch and aggregate report data
   const { start, end, dateStr } = getReportRange(dateParam, periodParam);
@@ -33,20 +40,26 @@ export async function sendReportEmail({ dateParam, periodParam, emailsList }) {
 
   // Generate table rows for Sedes
   const tableRows = reportData.branches.map(b => {
+    const bCredited = formatPts(b.pointsCredited);
+    const bRedeemed = formatPts(b.pointsRedeemed);
+    const bBalance  = formatPts(b.balance);
     const balanceStyle = b.balance >= 0 ? `color: ${successColor};` : `color: ${errorColor};`;
-    const balanceSign = b.balance > 0 ? `+${b.balance}` : b.balance;
+    const balanceSign  = b.balance > 0 ? `+${bBalance}` : bBalance;
     return `
       <tr style="border-bottom: 1px solid #2d3748;">
         <td style="padding: 12px 10px; font-weight: bold; color: #f7fafc; text-align: left;">${b.branchName}</td>
         <td style="padding: 12px 10px; color: #e2e8f0; text-align: center;">${b.newClients}</td>
-        <td style="padding: 12px 10px; color: ${successColor}; text-align: right; font-weight: 500;">+${b.pointsCredited} pts</td>
-        <td style="padding: 12px 10px; color: ${errorColor}; text-align: right; font-weight: 500;">-${b.pointsRedeemed} pts</td>
+        <td style="padding: 12px 10px; color: ${successColor}; text-align: right; font-weight: 500;">+${bCredited} pts</td>
+        <td style="padding: 12px 10px; color: ${errorColor}; text-align: right; font-weight: 500;">-${bRedeemed} pts</td>
         <td style="padding: 12px 10px; ${balanceStyle} text-align: right; font-weight: bold;">${balanceSign} pts</td>
       </tr>
     `;
   }).join('');
 
-  const globalBalanceSign = reportData.totalBalance > 0 ? `+${reportData.totalBalance}` : reportData.totalBalance;
+  const fmtCredited  = formatPts(reportData.totalPointsCredited);
+  const fmtRedeemed  = formatPts(reportData.totalPointsRedeemed);
+  const fmtBalance   = formatPts(reportData.totalBalance);
+  const globalBalanceSign  = reportData.totalBalance > 0 ? `+${fmtBalance}` : fmtBalance;
   const globalBalanceStyle = reportData.totalBalance >= 0 ? `color: ${successColor};` : `color: ${errorColor};`;
 
   const htmlContent = `
@@ -99,12 +112,12 @@ export async function sendReportEmail({ dateParam, periodParam, emailsList }) {
                     <!-- Points Credited -->
                     <td width="33%" style="background-color: #1a202c; border-radius: 12px; border: 1px solid #2d3748; padding: 15px; text-align: center;">
                       <span style="font-size: 11px; font-weight: 600; color: #a0aec0; display: block; text-transform: uppercase;">Acreditados</span>
-                      <span style="font-size: 20px; font-weight: 800; color: ${successColor}; display: block; margin-top: 5px;">+${reportData.totalPointsCredited}</span>
+                      <span style="font-size: 20px; font-weight: 800; color: ${successColor}; display: block; margin-top: 5px;">+${fmtCredited}</span>
                     </td>
                     <!-- Points Redeemed -->
                     <td width="33%" style="background-color: #1a202c; border-radius: 12px; border: 1px solid #2d3748; padding: 15px; text-align: center;">
                       <span style="font-size: 11px; font-weight: 600; color: #a0aec0; display: block; text-transform: uppercase;">Canjeados</span>
-                      <span style="font-size: 20px; font-weight: 800; color: ${errorColor}; display: block; margin-top: 5px;">-${reportData.totalPointsRedeemed}</span>
+                      <span style="font-size: 20px; font-weight: 800; color: ${errorColor}; display: block; margin-top: 5px;">-${fmtRedeemed}</span>
                     </td>
                   </tr>
                   <tr>

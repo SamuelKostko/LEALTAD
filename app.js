@@ -588,14 +588,80 @@ if (qrButton) {
     const repBalanceVal = document.getElementById("repBalanceVal");
     const repTotalClientsHistorical = document.getElementById("repTotalClientsHistorical");
     const reportSedesTableBody = document.getElementById("adminReportSedesTableBody");
-    const reportConfigForm = document.getElementById("adminReportConfigForm");
-    const reportEmailsInput = document.getElementById("adminReportEmailsInput");
-    const reportConfigResult = document.getElementById("adminReportConfigResult");
-    const reportScheduleEnabled = document.getElementById("adminReportScheduleEnabled");
-    const reportScheduleTime = document.getElementById("adminReportScheduleTime");
-    const reportSchedulePeriod = document.getElementById("adminReportSchedulePeriod");
-    const reportScheduleTimeGroup = document.getElementById("adminReportScheduleTimeGroup");
+    const reportConfigForm     = document.getElementById("adminReportConfigForm");
+    const reportEmailInput      = document.getElementById("adminReportEmailInput");
+    const reportAddEmailBtn     = document.getElementById("adminReportAddEmailBtn");
+    const reportEmailsList      = document.getElementById("adminReportEmailsList");
+    const reportConfigResult    = document.getElementById("adminReportConfigResult");
+    const reportScheduleEnabled    = document.getElementById("adminReportScheduleEnabled");
+    const reportScheduleTime       = document.getElementById("adminReportScheduleTime");
+    const reportSchedulePeriod     = document.getElementById("adminReportSchedulePeriod");
+    const reportScheduleTimeGroup  = document.getElementById("adminReportScheduleTimeGroup");
     const reportSchedulePeriodGroup = document.getElementById("adminReportSchedulePeriodGroup");
+
+    // ── Email list state ─────────────────────────────────────────────────────
+    let configuredReportEmails = [];
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    const renderConfiguredEmails = () => {
+      if (!reportEmailsList) return;
+      if (configuredReportEmails.length === 0) {
+        reportEmailsList.innerHTML = `
+          <div style="display:flex;align-items:center;gap:8px;padding:10px 14px;background:rgba(255,255,255,0.03);border:1px dashed rgba(255,255,255,0.1);border-radius:8px;">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="2"><path d="M4 4h16v16H4z" stroke="none"/><path d="M22 6l-10 7L2 6"/><polyline points="2,6 2,20 22,20 22,6"/></svg>
+            <span style="font-size:13px;color:rgba(255,255,255,0.3);font-style:italic;">No hay destinatarios configurados aún.</span>
+          </div>`;
+        return;
+      }
+      reportEmailsList.innerHTML = configuredReportEmails.map((email, i) => `
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;
+          background:rgba(6,182,212,0.06);border:1px solid rgba(6,182,212,0.2);
+          border-radius:8px;padding:9px 12px;transition:background 0.15s;"
+          onmouseover="this.style.background='rgba(6,182,212,0.12)'"
+          onmouseout="this.style.background='rgba(6,182,212,0.06)'">
+          <div style="display:flex;align-items:center;gap:8px;overflow:hidden;">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#06b6d4" stroke-width="2" style="flex-shrink:0">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+              <polyline points="22,6 12,13 2,6"/>
+            </svg>
+            <span style="font-size:13px;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${email}">${email}</span>
+          </div>
+          <button type="button" onclick="window._removeReportEmail(${i})"
+            title="Eliminar ${email}"
+            style="flex-shrink:0;background:rgba(244,63,94,0.1);border:1px solid rgba(244,63,94,0.3);color:#f43f5e;
+              width:26px;height:26px;border-radius:6px;cursor:pointer;font-size:15px;line-height:1;
+              display:flex;align-items:center;justify-content:center;transition:background 0.15s,border-color 0.15s;"
+            onmouseover="this.style.background='rgba(244,63,94,0.22)';this.style.borderColor='rgba(244,63,94,0.6)'"
+            onmouseout="this.style.background='rgba(244,63,94,0.1)';this.style.borderColor='rgba(244,63,94,0.3)'">
+            &times;
+          </button>
+        </div>`).join("");
+    };
+
+    window._removeReportEmail = (index) => {
+      configuredReportEmails.splice(index, 1);
+      renderConfiguredEmails();
+    };
+
+    const addReportEmail = () => {
+      if (!reportEmailInput) return;
+      const val = reportEmailInput.value.trim().toLowerCase();
+      if (!emailRegex.test(val)) {
+        reportEmailInput.style.borderColor = "rgba(244,63,94,0.7)";
+        reportEmailInput.focus();
+        setTimeout(() => { reportEmailInput.style.borderColor = "rgba(255,255,255,0.1)"; }, 1500);
+        return;
+      }
+      if (configuredReportEmails.includes(val)) {
+        reportEmailInput.style.borderColor = "rgba(251,191,36,0.7)";
+        setTimeout(() => { reportEmailInput.style.borderColor = "rgba(255,255,255,0.1)"; }, 1500);
+        reportEmailInput.select();
+        return;
+      }
+      configuredReportEmails.push(val);
+      reportEmailInput.value = "";
+      renderConfiguredEmails();
+    };
 
     const getVzlaTodayStr = () => {
       const formatter = new Intl.DateTimeFormat('en-US', {
@@ -1649,10 +1715,14 @@ Esto eliminará también sus transacciones.`
     };
 
     const loadReportsConfig = async () => {
-      if (!reportEmailsInput) return;
       try {
         const data = await apiGet("/api/admin/reports-config");
-        reportEmailsInput.value = data.emails || "";
+        // Parse emails string → array
+        configuredReportEmails = (data.emails || "")
+          .split(",")
+          .map(e => e.trim().toLowerCase())
+          .filter(e => emailRegex.test(e));
+        renderConfiguredEmails();
         if (reportScheduleEnabled) reportScheduleEnabled.checked = !!data.scheduleEnabled;
         if (reportScheduleTime) reportScheduleTime.value = data.scheduleTime || "18:00";
         if (reportSchedulePeriod) reportSchedulePeriod.value = data.schedulePeriod || "day";
@@ -1664,28 +1734,32 @@ Esto eliminará también sus transacciones.`
 
     const saveReportsConfig = async (e) => {
       if (e) e.preventDefault();
-      if (!reportEmailsInput || !reportConfigResult) return;
-      
+      if (!reportConfigResult) return;
+
       reportConfigResult.className = "aResult aResult--info";
       reportConfigResult.textContent = "Guardando configuración...";
-      
+
       try {
         const response = await apiPost("/api/admin/reports-config", {
-          emails: reportEmailsInput.value,
+          emails: configuredReportEmails.join(", "),
           scheduleEnabled: reportScheduleEnabled ? reportScheduleEnabled.checked : false,
           scheduleTime: reportScheduleTime ? reportScheduleTime.value : "18:00",
           schedulePeriod: reportSchedulePeriod ? reportSchedulePeriod.value : "day"
         });
         reportConfigResult.className = "aResult aResult--ok";
         reportConfigResult.textContent = "Configuración de reportes guardada con éxito.";
-        
-        reportEmailsInput.value = response.emails || "";
+
+        // Re-sync the list from canonical server response
+        configuredReportEmails = (response.emails || "")
+          .split(",")
+          .map(e => e.trim().toLowerCase())
+          .filter(e => emailRegex.test(e));
+        renderConfiguredEmails();
         if (reportScheduleEnabled) reportScheduleEnabled.checked = !!response.scheduleEnabled;
         if (reportScheduleTime) reportScheduleTime.value = response.scheduleTime || "18:00";
         if (reportSchedulePeriod) reportSchedulePeriod.value = response.schedulePeriod || "day";
-        
         toggleScheduleInputs();
-        
+
         setTimeout(() => {
           if (reportConfigResult.textContent.includes("éxito")) {
             reportConfigResult.textContent = "";
@@ -1770,6 +1844,16 @@ Esto eliminará también sus transacciones.`
 
     if (reportConfigForm) {
       reportConfigForm.addEventListener("submit", saveReportsConfig);
+    }
+
+    // Wire up add-email button and Enter key on email input
+    if (reportAddEmailBtn) {
+      reportAddEmailBtn.addEventListener("click", addReportEmail);
+    }
+    if (reportEmailInput) {
+      reportEmailInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") { e.preventDefault(); addReportEmail(); }
+      });
     }
 
     if (reportScheduleEnabled) {
