@@ -1546,12 +1546,12 @@ Esto eliminará también sus transacciones.`
         
         // Update stats cards
         if (repNewClientsVal) repNewClientsVal.textContent = data.totalNewClients;
-        if (repCreditedVal) repCreditedVal.textContent = `+${data.totalPointsCredited} pts`;
-        if (repRedeemedVal) repRedeemedVal.textContent = `-${data.totalPointsRedeemed} pts`;
+        if (repCreditedVal) repCreditedVal.textContent = `+${formatPts(data.totalPointsCredited)} pts`;
+        if (repRedeemedVal) repRedeemedVal.textContent = `-${formatPts(data.totalPointsRedeemed)} pts`;
         
         if (repBalanceVal) {
-          const balance = data.totalBalance || 0;
-          repBalanceVal.textContent = `${balance >= 0 ? "+" : ""}${balance} pts`;
+          const balance = Number(data.totalBalance || 0);
+          repBalanceVal.textContent = `${balance >= 0 ? "+" : ""}${formatPts(balance)} pts`;
           
           if (balance >= 0) {
             repBalanceVal.style.color = "#10b981";
@@ -1593,14 +1593,18 @@ Esto eliminará también sus transacciones.`
               const row = document.createElement("tr");
               row.style.borderBottom = "1px solid rgba(255,255,255,0.05)";
               
-              const balanceSign = b.balance > 0 ? `+${b.balance}` : b.balance;
-              const balanceColor = b.balance >= 0 ? "#10b981" : "#f43f5e";
+              const formattedCredited = formatPts(b.pointsCredited);
+              const formattedRedeemed = formatPts(b.pointsRedeemed);
+              const formattedBalance = formatPts(b.balance);
+              
+              const balanceSign = Number(b.balance) > 0 ? `+${formattedBalance}` : formattedBalance;
+              const balanceColor = Number(b.balance) >= 0 ? "#10b981" : "#f43f5e";
               
               row.innerHTML = `
                 <td style="padding: 12px 8px; text-align: left; font-weight: bold; color: #fff;">${b.branchName}</td>
                 <td style="padding: 12px 8px; text-align: center; color: rgba(255,255,255,0.8);">${b.newClients}</td>
-                <td style="padding: 12px 8px; text-align: right; color: #10b981; font-weight: 500;">+${b.pointsCredited}</td>
-                <td style="padding: 12px 8px; text-align: right; color: #f43f5e; font-weight: 500;">-${b.pointsRedeemed}</td>
+                <td style="padding: 12px 8px; text-align: right; color: #10b981; font-weight: 500;">+${formattedCredited}</td>
+                <td style="padding: 12px 8px; text-align: right; color: #f43f5e; font-weight: 500;">-${formattedRedeemed}</td>
                 <td style="padding: 12px 8px; text-align: right; color: ${balanceColor}; font-weight: bold;">${balanceSign} pts</td>
               `;
               
