@@ -1028,28 +1028,18 @@ if (qrButton) {
     }
 
     const doCreateMerchant = async () => {
-      const username = String(window.prompt("Usuario del comercio:") ?? "").trim().toLowerCase();
-      if (!username) return;
-
-      const password = String(window.prompt("Contraseña del comercio (mínimo 6 caracteres):") ?? "").trim();
-      if (!password) return;
-      if (password.length < 6) {
-        alert("La contraseña es muy corta.");
-        return;
-      }
-
       const name = String(window.prompt("Nombre del comercio:") ?? "").trim();
       if (!name) return;
 
-      const branchName = String(window.prompt("Sede fija del comercio:") ?? "").trim();
-      if (!branchName) return;
+      const email = String(window.prompt("Correo electrónico del comercio:") ?? "").trim();
+      if (!email) return;
 
       try {
-        const res = await fetch("/api/admin/merchants", {
+        const res = await fetch("/api/admin/invite-merchant", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
-          body: JSON.stringify({ username, password, name, branchName })
+          body: JSON.stringify({ name, email })
         });
         const data = await res.json().catch(() => null);
 
@@ -1062,10 +1052,9 @@ if (qrButton) {
           return;
         }
 
-        alert("Comercio creado correctamente.");
-        if (panelComercios && !panelComercios.hidden) loadMerchants();
+        alert("Invitación enviada correctamente al correo proporcionado.");
       } catch {
-        alert("Error de red al crear el comercio.");
+        alert("Error de red al invitar al comercio.");
       }
     };
 
