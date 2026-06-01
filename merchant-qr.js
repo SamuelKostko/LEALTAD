@@ -1,14 +1,11 @@
-// ── DOM References ──────────────────────────────────────────────────────────
 const merchantDash       = document.getElementById("merchantDash");
 const mPanelDashboard    = document.getElementById("mPanelDashboard");
-const mPanelGenerator    = document.getElementById("mPanelGenerator");
 const mPanelGrantPoints  = document.getElementById("mPanelGrantPoints");
 const mPanelCatalog      = document.getElementById("mPanelCatalog");
 const mPanelSettings     = document.getElementById("mPanelSettings");
 
 // Sidebar nav
 const mNavDashboard      = document.getElementById("mNavDashboard");
-const mNavGenerator      = document.getElementById("mNavGenerator");
 const mNavGrantPoints    = document.getElementById("mNavGrantPoints");
 const mNavCatalog        = document.getElementById("mNavCatalog");
 const mNavSettings       = document.getElementById("mNavSettings");
@@ -16,7 +13,6 @@ const merchantLogoutBtn  = document.getElementById("merchantLogoutBtn");
 
 // Mobile nav
 const mMobNavDashboard   = document.getElementById("mMobNavDashboard");
-const mMobNavGenerator   = document.getElementById("mMobNavGenerator");
 const mMobNavGrant       = document.getElementById("mMobNavGrant");
 const mMobNavCatalog     = document.getElementById("mMobNavCatalog");
 const mMobNavSettings    = document.getElementById("mMobNavSettings");
@@ -39,11 +35,7 @@ const mRangeDayBtn           = document.getElementById("mRangeDay");
 const mRangeWeekBtn          = document.getElementById("mRangeWeek");
 const mRangeMonthBtn         = document.getElementById("mRangeMonth");
 
-// Generator panel
-const qrForm       = document.getElementById("qrForm");
-const pointsEl     = document.getElementById("points");
-const descriptionEl = document.getElementById("description");
-const resultEl     = document.getElementById("result");
+
 
 // Grant panel
 const grantForm        = document.getElementById("grantForm");
@@ -71,8 +63,13 @@ const billingCatalogGrid      = document.getElementById("billingCatalogGrid");
 const billingCartList         = document.getElementById("billingCartList");
 const ticketCountLabel        = document.getElementById("ticketCountLabel");
 const billingTotalUsd         = document.getElementById("billingTotalUsd");
-const billingCashbackLabel    = document.getElementById("billingCashbackLabel");
-const billingCalculatedPoints = document.getElementById("billingCalculatedPoints");
+const billingPaymentMethod    = document.getElementById("billingPaymentMethod");
+const billingMixedFields      = document.getElementById("billingMixedFields");
+const billingMixedPoints      = document.getElementById("billingMixedPoints");
+const billingMixedUsdEquivalent = document.getElementById("billingMixedUsdEquivalent");
+const billingMixedUsdMoney    = document.getElementById("billingMixedUsdMoney");
+const billingPointsToDeduct   = document.getElementById("billingPointsToDeduct");
+const billingPointsToGrant    = document.getElementById("billingPointsToGrant");
 
 const billingModeCatalogBtn         = document.getElementById("billingModeCatalogBtn");
 const billingModeManualBtn          = document.getElementById("billingModeManualBtn");
@@ -126,6 +123,7 @@ let merchantConfigured  = true;
 let merchantProducts    = [];
 let billingCart         = [];
 let merchantCashbackPercent = 5;
+let merchantPointsPerDollar = 100;
 let billingMode         = "catalog";
 let verifiedClient      = null;
 
@@ -148,12 +146,6 @@ const setMerchantInfo = (type, message) => {
   merchantInfoEl.textContent = message;
 };
 
-const setResult = (type, message) => {
-  if (!resultEl) return;
-  resultEl.className = "aResult" + (type ? ` ${type}` : "");
-  resultEl.textContent = message;
-};
-
 const setDashResult = (type, message) => {
   if (!merchantDashResultEl) return;
   merchantDashResultEl.className = "aResult" + (type ? ` ${type}` : "");
@@ -171,6 +163,85 @@ const fmtDate = (iso) => {
   });
 };
 
+// ── QR Modal ─────────────────────────────────────────────────────────────────
+const stopPolling = () => {
+  if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
+};
+
+const closeQroModal = () => {
+  if (qroModal) {
+    qroModal.classList.remove("profileMenu--active");
+    qroModal.setAttribute("aria-hidden", "true");
+  }
+  stopPolling();
+};
+
+const openQroModal = () => {
+  if (qroModal) {
+    qroModal.classList.add("profileMenu--active");
+    qroModal.setAttribute("aria-hidden", "false");
+  }
+};
+
+const openSuccessModal = () => {
+  if (txSuccessModal) {
+    txSuccessModal.classList.add("profileMenu--active");
+    txSuccessModal.setAttribute("aria-hidden", "false");
+  }
+};
+
+const closeSuccessModal = () => {
+  if (txSuccessModal) {
+    txSuccessModal.classList.remove("profileMenu--active");
+    txSuccessModal.setAttribute("aria-hidden", "true");
+  }
+  switchPanel("dashboard");
+  loadMerchantDashboard();
+};
+
+const startPolling = (txId) => {
+  stopPolling();
+  currentTxId  = txId;
+  pollInterval = setInterval(async () => {
+    try {
+      const res  = await fetch(`/api/admin/check-tx?id=${encodeURIComponent(txId)}`);
+      const data = await res.json().catch(() => null);
+      if (res.ok && data?.status === "success") {
+        stopPolling();
+        closeQroModal();
+        const txBranchWrapper = document.getElementById("txBranchWrapper");
+        const txBranchName    = document.getElementById("txBranchName");
+        if (data.branchName && txBranchWrapper && txBranchName) {
+          txBranchName.textContent = data.branchName;
+          txBranchWrapper.hidden   = false;
+        } else if (txBranchWrapper) {
+          txBranchWrapper.hidden = true;
+        }
+        openSuccessModal();
+      }
+    } catch { }
+  }, 2000);
+};
+
+const copyText = async (text) => {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    try {
+      const ta    = document.createElement("textarea");
+      ta.value    = text;
+      ta.style.position = "fixed";
+      ta.style.opacity  = "0";
+      document.body.appendChild(ta);
+      ta.focus(); ta.select();
+      const ok = document.execCommand("copy");
+      ta.remove();
+      return ok;
+    } catch { return false; }
+  }
+};
+
 const switchPanel = (panel) => {
   if (!merchantConfigured && panel !== "settings") {
     panel = "settings";
@@ -178,27 +249,23 @@ const switchPanel = (panel) => {
   }
 
   const isDash = panel === "dashboard";
-  const isGen  = panel === "generator";
   const isGrant = panel === "grant";
   const isCatalog = panel === "catalog";
   const isSett = panel === "settings";
 
   if (mPanelDashboard) mPanelDashboard.hidden = !isDash;
-  if (mPanelGenerator) mPanelGenerator.hidden = !isGen;
   if (mPanelGrantPoints) mPanelGrantPoints.hidden = !isGrant;
   if (mPanelCatalog) mPanelCatalog.hidden = !isCatalog;
   if (mPanelSettings) mPanelSettings.hidden = !isSett;
 
   // Sidebar
   if (mNavDashboard) mNavDashboard.classList.toggle("is-active", isDash);
-  if (mNavGenerator) mNavGenerator.classList.toggle("is-active", isGen);
   if (mNavGrantPoints) mNavGrantPoints.classList.toggle("is-active", isGrant);
   if (mNavCatalog) mNavCatalog.classList.toggle("is-active", isCatalog);
   if (mNavSettings) mNavSettings.classList.toggle("is-active", isSett);
 
   // Mobile nav
   if (mMobNavDashboard) mMobNavDashboard.classList.toggle("is-active", isDash);
-  if (mMobNavGenerator) mMobNavGenerator.classList.toggle("is-active", isGen);
   if (mMobNavGrant) mMobNavGrant.classList.toggle("is-active", isGrant);
   if (mMobNavCatalog) mMobNavCatalog.classList.toggle("is-active", isCatalog);
   if (mMobNavSettings) mMobNavSettings.classList.toggle("is-active", isSett);
@@ -402,6 +469,9 @@ const checkAuth = async () => {
     if (data?.settings?.cashbackPercent) {
       merchantCashbackPercent = Number(data.settings.cashbackPercent);
     }
+    if (data?.settings?.pointsPerDollar) {
+      merchantPointsPerDollar = Number(data.settings.pointsPerDollar);
+    }
     if (!isConfigured) {
       merchantConfigured = false;
       if (setupModal) {
@@ -425,92 +495,7 @@ const checkAuth = async () => {
   }
 };
 
-// ── QR Modal ─────────────────────────────────────────────────────────────────
-const stopPolling = () => {
-  if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
-};
 
-const closeQroModal = () => {
-  if (qroModal) {
-    qroModal.classList.remove("profileMenu--active");
-    qroModal.setAttribute("aria-hidden", "true");
-  }
-  stopPolling();
-};
-
-const openQroModal = () => {
-  if (qroModal) {
-    qroModal.classList.add("profileMenu--active");
-    qroModal.setAttribute("aria-hidden", "false");
-  }
-};
-
-const openSuccessModal = () => {
-  if (txSuccessModal) {
-    txSuccessModal.classList.add("profileMenu--active");
-    txSuccessModal.setAttribute("aria-hidden", "false");
-  }
-};
-
-const closeSuccessModal = () => {
-  if (txSuccessModal) {
-    txSuccessModal.classList.remove("profileMenu--active");
-    txSuccessModal.setAttribute("aria-hidden", "true");
-  }
-  if (pointsEl)      pointsEl.value = "";
-  if (descriptionEl) descriptionEl.value = "";
-  setResult("", "");
-  switchPanel("dashboard");
-  loadMerchantDashboard();
-};
-
-const startPolling = (txId) => {
-  stopPolling();
-  currentTxId  = txId;
-  pollInterval = setInterval(async () => {
-    try {
-      const res  = await fetch(`/api/admin/check-tx?id=${encodeURIComponent(txId)}`);
-      const data = await res.json().catch(() => null);
-      if (res.ok && data?.status === "success") {
-        stopPolling();
-        closeQroModal();
-        const txBranchWrapper = document.getElementById("txBranchWrapper");
-        const txBranchName    = document.getElementById("txBranchName");
-        if (data.branchName && txBranchWrapper && txBranchName) {
-          txBranchName.textContent = data.branchName;
-          txBranchWrapper.hidden   = false;
-        } else if (txBranchWrapper) {
-          txBranchWrapper.hidden = true;
-        }
-        openSuccessModal();
-      }
-    } catch { }
-  }, 2000);
-};
-
-const setCopyEnabled = (enabled) => {
-  if (!copyBtn) return;
-  copyBtn.disabled = !enabled;
-};
-
-const copyText = async (text) => {
-  try {
-    await navigator.clipboard.writeText(text);
-    return true;
-  } catch {
-    try {
-      const ta    = document.createElement("textarea");
-      ta.value    = text;
-      ta.style.position = "fixed";
-      ta.style.opacity  = "0";
-      document.body.appendChild(ta);
-      ta.focus(); ta.select();
-      const ok = document.execCommand("copy");
-      ta.remove();
-      return ok;
-    } catch { return false; }
-  }
-};
 
 // ── Event Listeners ──────────────────────────────────────────────────────────
 
@@ -519,7 +504,6 @@ if (mNavDashboard) mNavDashboard.addEventListener("click", () => {
   switchPanel("dashboard");
   loadMerchantDashboard();
 });
-if (mNavGenerator) mNavGenerator.addEventListener("click", () => switchPanel("generator"));
 if (mNavGrantPoints) mNavGrantPoints.addEventListener("click", () => switchPanel("grant"));
 if (mNavCatalog) mNavCatalog.addEventListener("click", () => switchPanel("catalog"));
 if (mNavSettings) mNavSettings.addEventListener("click", () => switchPanel("settings"));
@@ -529,7 +513,6 @@ if (mMobNavDashboard) mMobNavDashboard.addEventListener("click", () => {
   switchPanel("dashboard");
   loadMerchantDashboard();
 });
-if (mMobNavGenerator) mMobNavGenerator.addEventListener("click", () => switchPanel("generator"));
 if (mMobNavGrant)     mMobNavGrant.addEventListener("click", () => switchPanel("grant"));
 if (mMobNavCatalog)   mMobNavCatalog.addEventListener("click", () => switchPanel("catalog"));
 if (mMobNavSettings)  mMobNavSettings.addEventListener("click", () => switchPanel("settings"));
@@ -658,117 +641,19 @@ if (mRangeMonthBtn) mRangeMonthBtn.addEventListener("click", () => {
 });
 setRangeButtons();
 
-// QR modal
-if (qroModalCloseBtn) {
-  qroModalCloseBtn.addEventListener("click", async () => {
-    if (currentTxId) {
-      const loaderText = document.getElementById("qroLoaderText");
-      if (loaderText) loaderText.textContent = "Cancelando cobro...";
-      qroModalCloseBtn.disabled = true;
-      try {
-        await fetch("/api/admin/cancel-tx", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({ transactionId: currentTxId })
-        });
-      } catch { }
-      qroModalCloseBtn.disabled = false;
-      if (loaderText) loaderText.textContent = "Esperando escaneo...";
-    }
-    closeQroModal();
-  });
-}
-
-if (txSuccessCloseBtn) txSuccessCloseBtn.addEventListener("click", closeSuccessModal);
-
-if (copyBtn) {
-  copyBtn.addEventListener("click", async () => {
-    if (!lastUrl) return;
-    const ok = await copyText(lastUrl);
-    setResult(ok ? "aResult--ok" : "aResult--err", ok ? "Link copiado." : "No se pudo copiar el link.");
-  });
-}
-
-// QR Form submission
-if (qrForm) {
-  qrForm.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    setCopyEnabled(false);
-    lastUrl = "";
-
-    const wrap = document.getElementById("qrWrap");
-    if (wrap)    wrap.hidden = true;
-    if (qrCanvas) qrCanvas.hidden = true;
-    if (qrImg)  { qrImg.src = ""; qrImg.hidden = true; }
-
-    const points      = Number(String(pointsEl?.value ?? "").trim());
-    const description = String(descriptionEl?.value ?? "").trim();
-
-    if (!Number.isFinite(points) || points <= 0) {
-      setResult("aResult--err", "Puntos inválidos.");
-      return;
-    }
-
-    setResult("aResult--info", "Generando...");
-
-    try {
-      const res  = await fetch("/api/admin/mint-charge", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ points, description })
-      });
-      const data = await res.json().catch(() => null);
-
-      if (!res.ok) {
-        if (res.status === 401) {
-          setAuthenticated(false);
-          setLoginResult("aResult--err", "Sesión expirada. Inicia sesión de nuevo.");
-        }
-        setResult("aResult--err", data?.error || data?.message || `Error (${res.status})`);
-        return;
-      }
-
-      const urlPath      = String(data?.url ?? "").trim();
-      if (!urlPath) { setResult("aResult--err", "No se pudo generar."); return; }
-
-      const transactionId  = String(data?.transactionId ?? "").trim();
-      const fullUrl        = `${window.location.origin}${urlPath}`;
-      lastUrl              = fullUrl;
-
-      const qrPngDataUrl = String(data?.qrPngDataUrl ?? "").trim();
-      if (qrImg && qrPngDataUrl.startsWith("data:image/")) {
-        qrImg.src          = qrPngDataUrl;
-        qrImg.hidden       = false;
-        qrImg.style.display = "block";
-        if (wrap) { wrap.hidden = false; wrap.style.display = "flex"; }
-      }
-
-      setCopyEnabled(true);
-      setResult("aResult--ok", "QR listo, esperando escaneo...");
-      openQroModal();
-      if (transactionId) startPolling(transactionId);
-    } catch {
-      setResult("aResult--err", "Fallo de red.");
-    }
-  });
-}
-
 const setGrantResult = (type, message) => {
   if (!grantResult) return;
   grantResult.className = "aResult" + (type ? ` ${type}` : "");
   grantResult.textContent = message;
 };
 
-// Grant Form submission (POS Billing Checkout - Support Catalog & Manual)
+// Grant Form submission (POS Billing Checkout)
 if (grantForm) {
   grantForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     if (!grantClientToken) return;
 
     const token = String(grantClientToken.value).trim();
-
     if (!token) {
       setGrantResult("aResult--err", "Token o Tarjeta del Cliente es requerido.");
       return;
@@ -784,42 +669,50 @@ if (grantForm) {
         return;
       }
       const concept = (billingManualConceptInput?.value || "").trim() || "Consumo General";
-      itemsPayload = [{
-        name: concept,
-        price: totalUsdVal,
-        quantity: 1
-      }];
+      itemsPayload = [{ name: concept, price: totalUsdVal, quantity: 1 }];
     } else {
       if (billingCart.length === 0) {
         setGrantResult("aResult--err", "El ticket de venta está vacío. Selecciona productos.");
         return;
       }
-      billingCart.forEach(it => {
-        totalUsdVal += it.price * it.quantity;
-      });
+      billingCart.forEach(it => { totalUsdVal += it.price * it.quantity; });
       itemsPayload = billingCart;
     }
 
-    const calculatedPoints = Math.round(totalUsdVal * merchantCashbackPercent);
+    const paymentMethod = billingPaymentMethod?.value || 'money';
+    let usdPaidWithPoints = 0;
+    let usdPaidWithMoney = 0;
 
-    if (calculatedPoints <= 0) {
-      setGrantResult("aResult--err", "El monto de la venta es insuficiente para otorgar puntos.");
-      return;
+    if (paymentMethod === 'money') {
+      usdPaidWithMoney = totalUsdVal;
+    } else if (paymentMethod === 'points') {
+      usdPaidWithPoints = totalUsdVal;
+    } else if (paymentMethod === 'mixed') {
+      const mixedPts = Number(billingMixedPoints?.value || 0);
+      usdPaidWithPoints = mixedPts / merchantPointsPerDollar;
+      
+      if (usdPaidWithPoints <= 0 || usdPaidWithPoints >= totalUsdVal) {
+        setGrantResult("aResult--err", "La cantidad de puntos debe ser mayor a 0 y menor al equivalente del total de la venta.");
+        return;
+      }
+      usdPaidWithMoney = totalUsdVal - usdPaidWithPoints;
     }
 
-    setGrantResult("aResult--info", "Procesando venta y cashback...");
+    setGrantResult("aResult--info", "Procesando venta...");
     if (grantSubmitBtn) grantSubmitBtn.disabled = true;
 
     try {
-      const res = await fetch("/api/admin/manual-credit", {
+      const res = await fetch("/api/admin/pos-checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({ 
           token, 
-          points: calculatedPoints, 
           items: itemsPayload,
-          totalUsd: totalUsdVal
+          totalUsd: totalUsdVal,
+          paymentMethod,
+          usdPaidWithPoints,
+          usdPaidWithMoney
         })
       });
       const data = await res.json().catch(() => null);
@@ -833,27 +726,49 @@ if (grantForm) {
         return;
       }
 
-      setGrantResult("aResult--ok", data?.message || `Venta registrada y ${calculatedPoints} puntos otorgados exitosamente.`);
-      
-      // Clear fields on success
-      grantClientToken.value = "";
-      verifiedClient = null;
-      if (billingClientSearchWrapper) billingClientSearchWrapper.hidden = false;
-      if (billingMainLayout) billingMainLayout.hidden = true;
-      
-      if (billingMode === "manual") {
-        if (billingManualAmountInput) billingManualAmountInput.value = "";
-        if (billingManualConceptInput) billingManualConceptInput.value = "";
+      // If backend returns a QR for pending transaction
+      if (data?.qrPngDataUrl && data?.transactionId) {
+        setGrantResult("aResult--ok", "QR generado, esperando escaneo...");
+        
+        lastUrl = data.url ? `${window.location.origin}${data.url}` : "";
+        if (qrImg) {
+          qrImg.src = data.qrPngDataUrl;
+          qrImg.hidden = false;
+          qrImg.style.display = "block";
+          const wrap = document.getElementById("qrWrap");
+          if (wrap) { wrap.hidden = false; wrap.style.display = "flex"; }
+        }
+        
+        openQroModal();
+        startPolling(data.transactionId);
+        
       } else {
-        billingCart = [];
-      }
-      
-      updateCartUI();
+        // Direct processing (Money only)
+        setGrantResult("aResult--ok", data?.message || "Venta procesada exitosamente.");
+        
+        if (verifiedClientPoints && data?.details?.finalBalance !== undefined) {
+          verifiedClientPoints.textContent = formatPts(data.details.finalBalance) + " pts";
+        }
 
-      // Refresh dashboard stats after brief delay
-      setTimeout(() => {
-        loadMerchantDashboard();
-      }, 1000);
+        // Clear fields on success
+        setTimeout(() => {
+          grantClientToken.value = "";
+          verifiedClient = null;
+          if (billingClientSearchWrapper) billingClientSearchWrapper.hidden = false;
+          if (billingMainLayout) billingMainLayout.hidden = true;
+          
+          if (billingMode === "manual") {
+            if (billingManualAmountInput) billingManualAmountInput.value = "";
+            if (billingManualConceptInput) billingManualConceptInput.value = "";
+          } else {
+            billingCart = [];
+          }
+          
+          updateCartUI();
+          loadMerchantDashboard();
+          setGrantResult("", "");
+        }, 2000);
+      }
 
     } catch (err) {
       setGrantResult("aResult--err", "Fallo de red al registrar la venta.");
@@ -895,6 +810,9 @@ const loadMerchantSettings = async () => {
     if (settCashbackPercent) {
       settCashbackPercent.value = Number(s.cashbackPercent ?? 5);
       merchantCashbackPercent = Number(s.cashbackPercent ?? 5);
+    }
+    if (s.pointsPerDollar !== undefined) {
+      merchantPointsPerDollar = Number(s.pointsPerDollar);
     }
 
     setSettingsResult("", "");
@@ -1228,14 +1146,17 @@ const removeFromCart = (id) => {
 
 // Update Cart Receipt details (Catalog and Manual modes)
 const updateCartUI = () => {
-  if (!billingCartList || !ticketCountLabel || !billingTotalUsd || !billingCalculatedPoints || !billingCashbackLabel) return;
+  if (!billingCartList || !ticketCountLabel || !billingTotalUsd) return;
   
-  billingCashbackLabel.textContent = `${merchantCashbackPercent.toFixed(1)}%`;
+  if (verifiedClient && document.getElementById("verifiedClientPoints")) {
+    document.getElementById("verifiedClientPoints").textContent = formatPts(verifiedClient.balance || 0) + " pts";
+  }
+
+  let totalUsdVal = 0;
   
   if (billingMode === "manual") {
     const manualAmount = Number(billingManualAmountInput?.value || 0);
     const concept = (billingManualConceptInput?.value || "").trim() || "Consumo General";
-    
     ticketCountLabel.textContent = "1 item";
     
     if (manualAmount <= 0 || Number.isNaN(manualAmount)) {
@@ -1244,27 +1165,19 @@ const updateCartUI = () => {
           Ingresa un monto válido a la izquierda.
         </div>
       `;
-      billingTotalUsd.textContent = "$0.00 USD";
-      billingCalculatedPoints.textContent = "0 pts";
-      if (grantSubmitBtn) grantSubmitBtn.disabled = true;
-      return;
-    }
-    
-    billingCartList.innerHTML = `
-      <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.04); padding: 12px 16px; border-radius: 8px;">
-        <div>
-          <div style="font-size: 13px; font-weight: 700; color: #ffffff;">${escapeHtml(concept)}</div>
-          <div style="font-size: 11px; color: rgba(255,255,255,0.4);">Monto facturado manualmente</div>
+      totalUsdVal = 0;
+    } else {
+      totalUsdVal = manualAmount;
+      billingCartList.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.04); padding: 12px 16px; border-radius: 8px;">
+          <div>
+            <div style="font-size: 13px; font-weight: 700; color: #ffffff;">${escapeHtml(concept)}</div>
+            <div style="font-size: 11px; color: rgba(255,255,255,0.4);">Monto facturado manualmente</div>
+          </div>
+          <span style="font-size: 14px; font-weight: 700; color: #fbbf24;">$${manualAmount.toFixed(2)}</span>
         </div>
-        <span style="font-size: 14px; font-weight: 700; color: #fbbf24;">$${manualAmount.toFixed(2)}</span>
-      </div>
-    `;
-    
-    const calculatedPoints = Math.round(manualAmount * merchantCashbackPercent);
-    billingTotalUsd.textContent = `$${manualAmount.toFixed(2)} USD`;
-    billingCalculatedPoints.textContent = `${calculatedPoints} pts`;
-    if (grantSubmitBtn) grantSubmitBtn.disabled = false;
-    
+      `;
+    }
   } else {
     ticketCountLabel.textContent = `${billingCart.reduce((acc, it) => acc + it.quantity, 0)} items`;
     
@@ -1274,38 +1187,74 @@ const updateCartUI = () => {
           El ticket está vacío.<br>Selecciona productos a la izquierda.
         </div>
       `;
-      billingTotalUsd.textContent = "$0.00 USD";
-      billingCalculatedPoints.textContent = "0 pts";
-      if (grantSubmitBtn) grantSubmitBtn.disabled = true;
-      return;
+      totalUsdVal = 0;
+    } else {
+      billingCartList.innerHTML = billingCart.map(it => {
+        const subtotal = it.price * it.quantity;
+        totalUsdVal += subtotal;
+        
+        return `
+          <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.04); padding: 8px 12px; border-radius: 8px;">
+            <div>
+              <div style="font-size: 13px; font-weight: 700; color: #ffffff;">${escapeHtml(it.name)}</div>
+              <div style="font-size: 11px; color: rgba(255,255,255,0.4);">${it.quantity}x $${Number(it.price).toFixed(2)}</div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <span style="font-size: 13px; font-weight: 700; color: #ffffff;">$${subtotal.toFixed(2)}</span>
+              <button type="button" onclick="removeFromCart('${it.id}')" style="background: none; border: none; color: #ef4444; font-size: 14px; cursor: pointer; padding: 4px;">✕</button>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+  }
+  
+  billingTotalUsd.textContent = `$${totalUsdVal.toFixed(2)} USD`;
+  
+  if (totalUsdVal <= 0) {
+    if (grantSubmitBtn) grantSubmitBtn.disabled = true;
+    if (billingPointsToDeduct) billingPointsToDeduct.textContent = "0 pts";
+    if (billingPointsToGrant) billingPointsToGrant.textContent = "0 pts";
+    return;
+  }
+  if (grantSubmitBtn) grantSubmitBtn.disabled = false;
+
+  const paymentMethod = billingPaymentMethod?.value || 'money';
+  
+  let pDeduct = 0;
+  let pGrant = 0;
+
+  if (paymentMethod === 'money') {
+    if (billingMixedFields) billingMixedFields.hidden = true;
+    pGrant = Math.round(totalUsdVal * merchantCashbackPercent);
+  } else if (paymentMethod === 'points') {
+    if (billingMixedFields) billingMixedFields.hidden = true;
+    pDeduct = Math.round(totalUsdVal * merchantPointsPerDollar);
+  } else if (paymentMethod === 'mixed') {
+    if (billingMixedFields) billingMixedFields.hidden = false;
+    
+    let mixedPts = Number(billingMixedPoints?.value || 0);
+    if (mixedPts < 0) mixedPts = 0;
+    
+    // Calculate USD equivalent
+    let mixedUsd = mixedPts / merchantPointsPerDollar;
+    if (mixedUsd > totalUsdVal) {
+      mixedUsd = totalUsdVal;
+      mixedPts = Math.round(totalUsdVal * merchantPointsPerDollar);
+      if (billingMixedPoints) billingMixedPoints.value = mixedPts;
     }
     
-    let totalUsdVal = 0;
+    if (billingMixedUsdEquivalent) billingMixedUsdEquivalent.textContent = `Equivale a: $${mixedUsd.toFixed(2)} USD`;
     
-    billingCartList.innerHTML = billingCart.map(it => {
-      const subtotal = it.price * it.quantity;
-      totalUsdVal += subtotal;
-      
-      return `
-        <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.04); padding: 8px 12px; border-radius: 8px;">
-          <div>
-            <div style="font-size: 13px; font-weight: 700; color: #ffffff;">${escapeHtml(it.name)}</div>
-            <div style="font-size: 11px; color: rgba(255,255,255,0.4);">${it.quantity}x $${Number(it.price).toFixed(2)}</div>
-          </div>
-          <div style="display: flex; align-items: center; gap: 12px;">
-            <span style="font-size: 13px; font-weight: 700; color: #ffffff;">$${subtotal.toFixed(2)}</span>
-            <button type="button" onclick="removeFromCart('${it.id}')" style="background: none; border: none; color: #ef4444; font-size: 14px; cursor: pointer; padding: 4px;">✕</button>
-          </div>
-        </div>
-      `;
-    }).join("");
+    let remainingUsd = totalUsdVal - mixedUsd;
+    if (billingMixedUsdMoney) billingMixedUsdMoney.textContent = `$${remainingUsd.toFixed(2)} USD`;
     
-    const calculatedPoints = Math.round(totalUsdVal * merchantCashbackPercent);
-    
-    billingTotalUsd.textContent = `$${totalUsdVal.toFixed(2)} USD`;
-    billingCalculatedPoints.textContent = `${calculatedPoints} pts`;
-    if (grantSubmitBtn) grantSubmitBtn.disabled = false;
+    pDeduct = mixedPts;
+    pGrant = Math.round(remainingUsd * merchantCashbackPercent);
   }
+
+  if (billingPointsToDeduct) billingPointsToDeduct.textContent = `${formatPts(pDeduct)} pts`;
+  if (billingPointsToGrant) billingPointsToGrant.textContent = `${formatPts(pGrant)} pts`;
 };
 
 // Mode Switcher handlers
@@ -1346,12 +1295,52 @@ if (billingModeManualBtn) {
   billingModeManualBtn.addEventListener("click", () => setBillingMode("manual"));
 }
 
-// Live calculation inputs for manual billing
+// Live calculation inputs for manual billing and mixed payment
 if (billingManualAmountInput) {
   billingManualAmountInput.addEventListener("input", updateCartUI);
 }
 if (billingManualConceptInput) {
   billingManualConceptInput.addEventListener("input", updateCartUI);
+}
+if (billingPaymentMethod) {
+  billingPaymentMethod.addEventListener("change", updateCartUI);
+}
+if (billingMixedPoints) {
+  billingMixedPoints.addEventListener("input", updateCartUI);
+}
+
+// QR Modal bindings
+if (qroModalCloseBtn) {
+  qroModalCloseBtn.addEventListener("click", async () => {
+    if (currentTxId) {
+      const loaderText = document.getElementById("qroLoaderText");
+      if (loaderText) loaderText.textContent = "Cancelando cobro...";
+      qroModalCloseBtn.disabled = true;
+      try {
+        await fetch("/api/admin/cancel-tx", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ transactionId: currentTxId })
+        });
+      } catch { }
+      qroModalCloseBtn.disabled = false;
+      if (loaderText) loaderText.textContent = "Esperando escaneo...";
+    }
+    closeQroModal();
+  });
+}
+
+if (txSuccessCloseBtn) {
+  txSuccessCloseBtn.addEventListener("click", closeSuccessModal);
+}
+
+if (copyBtn) {
+  copyBtn.addEventListener("click", async () => {
+    if (!lastUrl) return;
+    const ok = await copyText(lastUrl);
+    setGrantResult(ok ? "aResult--ok" : "aResult--err", ok ? "Link copiado." : "No se pudo copiar el link.");
+  });
 }
 
 // Bind elements

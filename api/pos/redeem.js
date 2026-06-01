@@ -173,11 +173,52 @@ export default async function handler(req, res) {
           throw new Error('Saldo insuficiente. Este es un comercio cerrado, por lo tanto los puntos acumulados aquí solo pueden ser utilizados en este mismo comercio.');
         }
 
+        const pointsToGrant = Number(txData.pointsToGrant ?? 0);
+        const finalBalance = next + pointsToGrant;
+
         updateFields = {
-          [`merchantBalances.${merchantId}`]: next,
+          [`merchantBalances.${merchantId}`]: finalBalance,
           updatedAt: FieldValue.serverTimestamp()
         };
         currentBalance = currentBalance; // for transaction log
+        
+        tx.update(clientRef, updateFields);
+
+        // Update the pos_charge transaction to success
+        tx.set(
+          txRef,
+          {
+            status: 'success',
+            token,
+            balanceBefore: currentBalance,
+            balanceAfter: next,
+            processedAt: FieldValue.serverTimestamp()
+          },
+          { merge: true }
+        );
+
+        // If there's a cashback grant (mixed payment), create the manual_credit transaction
+        if (pointsToGrant > 0) {
+          const creditTxRef = firestore.collection('transactions').doc();
+          tx.set(creditTxRef, {
+            type: 'manual_credit',
+            status: 'completed',
+            token: token,
+            points: pointsToGrant,
+            balanceBefore: next,
+            balanceAfter: finalBalance,
+            merchantId: merchantId,
+            merchantName: txData.merchantName || '',
+            branchName: txData.branchName || '',
+            description: (txData.description || 'Consumo en POS') + ' (Cashback)',
+            createdAt: FieldValue.serverTimestamp(),
+            processedAt: FieldValue.serverTimestamp(),
+            items: txData.items || [],
+            totalUsd: txData.totalUsd || 0
+          });
+        }
+
+        return { previous: currentBalance, next: finalBalance };
       } else {
         currentBalance = Number(clientData.totalPoints ?? 0);
         if (!Number.isFinite(currentBalance)) throw new Error('Invalid balance');
@@ -186,25 +227,23 @@ export default async function handler(req, res) {
         if (next < 0) throw new Error('Insufficient balance');
 
         updateFields = { totalPoints: next, updatedAt: FieldValue.serverTimestamp() };
+
+        tx.update(clientRef, updateFields);
+
+        tx.set(
+          txRef,
+          {
+            status: 'success',
+            token,
+            balanceBefore: currentBalance,
+            balanceAfter: next,
+            processedAt: FieldValue.serverTimestamp()
+          },
+          { merge: true }
+        );
+
+        return { previous: currentBalance, next: next };
       }
-
-      const finalBalance = currentBalance - points;
-
-      tx.update(clientRef, updateFields);
-
-      tx.set(
-        txRef,
-        {
-          status: 'success',
-          token,
-          balanceBefore: currentBalance,
-          balanceAfter: finalBalance,
-          processedAt: FieldValue.serverTimestamp()
-        },
-        { merge: true }
-      );
-
-      return { previous: currentBalance, next: finalBalance };
     });
 
 

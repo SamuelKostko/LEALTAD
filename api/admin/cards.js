@@ -203,9 +203,10 @@ export default async function handler(req, res) {
   const search = String(url.searchParams.get('q') ?? '').trim().toLowerCase();
 
   try {
-    const url = new URL(req.url, 'http://localhost');
-    const limit = clampInt(url.searchParams.get('limit'), { min: 1, max: 5000, fallback: 1000 });
-    const search = String(url.searchParams.get('q') ?? '').trim().toLowerCase();
+    const cookies = parseCookies(req.headers.cookie);
+    const auth = await verifySession(cookies['admin_session']);
+    const isMerchant = String(auth.data?.role ?? '').trim().toLowerCase() === 'merchant';
+    const merchantId = String(auth.adminId ?? '').trim();
 
     let query = firestore.collection('clientes');
     
@@ -213,12 +214,19 @@ export default async function handler(req, res) {
     const snap = await query.limit(2000).get();
     let cards = snap.docs.map((d) => {
       const data = d.data() || {};
+      let balance = 0;
+      if (isMerchant && merchantId) {
+        const balances = data.merchantBalances || {};
+        balance = Number(balances[merchantId]) || 0;
+      } else {
+        balance = Number.isFinite(Number(data.totalPoints)) ? Number(data.totalPoints) : 0;
+      }
       return {
         token: String(data.token || d.id),
         name: String(data.nombre || data.name || ''),
         email: String(data.email || d.id),
         cedula: String(data.idNumber || data.cedula || ''),
-        balance: Number.isFinite(Number(data.totalPoints)) ? Number(data.totalPoints) : 0,
+        balance: balance,
         sedes: String(data.sedes || data.sede || 'Sin sede'),
         updatedAt: toIso(data.updatedAt)
       };
