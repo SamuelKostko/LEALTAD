@@ -11,7 +11,7 @@ export default async function handler(req, res) {
   if (!(await requireAdmin(req, res))) return;
 
   const url = new URL(req.url, 'http://localhost');
-  const range = String(url.searchParams.get('range') ?? 'all').trim();
+  const range = String(url.searchParams.get('range') ?? 'month').trim();
 
   let since = null;
   const now = new Date();

@@ -93,6 +93,7 @@ export default async function handler(req, res) {
     const name = String(body?.name ?? '').trim();
     const cedula = String(body?.cedula ?? '').trim();
     const sede = String(body?.sede ?? '').trim();
+    let email = String(body?.email ?? '').trim().toLowerCase();
 
     if (!token) {
       sendJson(res, 400, { error: 'Token requerido.' });
@@ -114,16 +115,19 @@ export default async function handler(req, res) {
         return;
       }
 
-      await ref.set(
-        {
-          nombre: name,
-          idNumber: cedula,
-          cedula,
-          sedes: sede,
-          updatedAt: FieldValue.serverTimestamp()
-        },
-        { merge: true }
-      );
+      const updateData = {
+        nombre: name,
+        idNumber: cedula,
+        cedula,
+        sedes: sede,
+        updatedAt: FieldValue.serverTimestamp()
+      };
+
+      if (email) {
+        updateData.email = email;
+      }
+
+      await ref.set(updateData, { merge: true });
 
       sendJson(res, 200, { ok: true });
     } catch (err) {
@@ -209,9 +213,27 @@ export default async function handler(req, res) {
     const merchantId = String(auth.adminId ?? '').trim();
 
     let query = firestore.collection('clientes');
-    
-    // Fetch a large enough set without complex ordering to avoid index requirements
-    const snap = await query.limit(2000).get();
+    let snap;
+
+    if (!search) {
+      // Estado normal: solo cargar los más recientes para ahorrar lecturas (ej. limit=50)
+      snap = await query.orderBy('updatedAt', 'desc').limit(limit).get();
+    } else {
+      // Estado de búsqueda
+      const isNumeric = /^\d+$/.test(search);
+      if (isNumeric) {
+        // Optimización: si es solo números, intentar buscar la cédula directa primero
+        const exactSnap = await query.where('idNumber', '==', search).limit(limit).get();
+        if (!exactSnap.empty) {
+          snap = exactSnap;
+        } else {
+          snap = await query.limit(2000).get();
+        }
+      } else {
+        // Fetch a large set for memory filtering
+        snap = await query.limit(2000).get();
+      }
+    }
     let cards = snap.docs.map((d) => {
       const data = d.data() || {};
       let balance = 0;

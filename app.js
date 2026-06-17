@@ -542,6 +542,7 @@ if (qrButton) {
     const clientBalanceEl = document.getElementById("aClientBalance");
     const clientClearBtn = document.getElementById("aClientClear");
     const clientEditBtn = document.getElementById("adminClientEditBtn");
+    const clientResendBtn = document.getElementById("adminClientResendBtn");
     const clientDeleteBtn = document.getElementById("adminClientDeleteBtn");
     const clientsResult = document.getElementById("adminClientsResult");
     const cardTxSection = document.getElementById("adminRootCardTx");
@@ -1075,6 +1076,8 @@ if (qrButton) {
       const cedula = String(window.prompt("Cédula del cliente:", current.cedula || "") ?? "").trim();
       if (!cedula) return;
 
+      const email = String(window.prompt("Correo del cliente:", current.email || "") ?? "").trim();
+
       const sede = String(window.prompt("Sede del cliente:", current.sedes || "") ?? "").trim();
 
       setResult(clientsResult, "info", "Actualizando cliente…");
@@ -1083,7 +1086,7 @@ if (qrButton) {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
-          body: JSON.stringify({ token: selectedToken, name, cedula, sede })
+          body: JSON.stringify({ token: selectedToken, name, cedula, sede, email })
         });
         const data = await res.json().catch(() => null);
 
@@ -1154,6 +1157,46 @@ Esto eliminará también sus transacciones.`
       }
     };
 
+    const doResendCard = async () => {
+      if (!selectedToken) {
+        alert("Por favor, selecciona un cliente primero.");
+        return;
+      }
+
+      const current = allCards.find((c) => c.token === selectedToken) || { name: "", email: "" };
+      if (!current.email || !current.email.includes('@')) {
+        alert("Este cliente no tiene un correo válido configurado. Por favor, dale a 'Editar' y asigna un correo electrónico primero.");
+        return;
+      }
+
+      const ok = window.confirm(`¿Enviar enlace de la tarjeta al correo ${current.email}?`);
+      if (!ok) return;
+
+      setResult(clientsResult, "info", "Enviando correo...");
+      try {
+        const res = await fetch("/api/admin/resend-card", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ token: selectedToken })
+        });
+        const data = await res.json().catch(() => null);
+
+        if (!res.ok) {
+          if (res.status === 401) {
+            doLogout();
+            return;
+          }
+          setResult(clientsResult, "err", (data?.error || `Error (${res.status})`));
+          return;
+        }
+
+        setResult(clientsResult, "ok", "Correo enviado exitosamente.");
+      } catch {
+        setResult(clientsResult, "err", "Error de red al reenviar la tarjeta.");
+      }
+    };
+
     const doDeleteTransaction = async (txId) => {
       const ok = window.confirm("\xBFEst\xE1s seguro de que deseas eliminar esta transacci\xF3n?\n\nEsta acci\xF3n afectar\xE1 el balance del cliente de forma permanente.");
       if (!ok) return;
@@ -1198,6 +1241,7 @@ Esto eliminará también sus transacciones.`
     };
 
     if (clientEditBtn) clientEditBtn.addEventListener("click", doEditClient);
+    if (clientResendBtn) clientResendBtn.addEventListener("click", doResendCard);
     if (clientDeleteBtn) clientDeleteBtn.addEventListener("click", doDeleteClient);
 
     const getInitials = (name) => {
@@ -1209,6 +1253,7 @@ Esto eliminará también sus transacciones.`
       if (clientCard) clientCard.hidden = true;
       if (cardTxSection) cardTxSection.hidden = true;
       if (clientEditBtn) clientEditBtn.disabled = true;
+      if (clientResendBtn) clientResendBtn.disabled = true;
       if (clientDeleteBtn) clientDeleteBtn.disabled = true;
       if (searchInput) searchInput.value = "";
       if (dropdown) {
@@ -1220,6 +1265,7 @@ Esto eliminará también sus transacciones.`
       var _a, _b;
       selectedToken = c.token;
       if (clientEditBtn) clientEditBtn.disabled = false;
+      if (clientResendBtn) clientResendBtn.disabled = false;
       if (clientDeleteBtn) clientDeleteBtn.disabled = false;
       if (searchInput) searchInput.value = "";
       if (dropdown) {
