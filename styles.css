@@ -1537,6 +1537,20 @@ body {
   box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5);
 }
 
+.profileMenu__item--referrals {
+  background: linear-gradient(135deg, #f59e0b 0%, #ea580c 100%);
+  color: #fff !important;
+  border-color: transparent;
+  box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+  margin-bottom: 8px;
+}
+
+.profileMenu__item--referrals:hover {
+  transform: translateY(-2px);
+  opacity: 0.95;
+  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4);
+}
+
 .profileMenu__soon {
   font-size: 12px;
   color: var(--muted);
