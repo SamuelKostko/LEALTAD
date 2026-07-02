@@ -3071,31 +3071,9 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
       
-      const originalHtml = refBtn.innerHTML;
-      refBtn.innerHTML = "Generando...";
-      refBtn.disabled = true;
-
-      try {
-        const res = await fetch("/api/referral", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ token })
-        });
-        const data = await res.json();
-        
-        if (res.ok && data.referralCode) {
-          alert(`¡Tu código de referido es: ${data.referralCode}!\nCompártelo para ganar puntos.`);
-          refBtn.innerHTML = `Código: ${data.referralCode}`;
-        } else {
-          alert("Error: " + (data.error || "No se pudo generar el código"));
-          refBtn.innerHTML = originalHtml;
-        }
-      } catch (err) {
-        alert("Error de conexión");
-        refBtn.innerHTML = originalHtml;
-      } finally {
-        refBtn.disabled = false;
-      }
+      const refCode = token.substring(0, 6).toUpperCase();
+      alert(`¡Tu código de referido es: ${refCode}!\nCompártelo para ganar puntos.`);
+      refBtn.innerHTML = `Código: ${refCode}`;
     });
   }
 });

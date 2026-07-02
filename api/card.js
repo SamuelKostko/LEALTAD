@@ -155,6 +155,16 @@ export default async function handler(req, res) {
       updateData.firstOpenedAt = new Date();
     }
     
+    // Auto-asignar código de referido si no lo tiene
+    if (!data.referralCode) {
+      updateData.referralCode = token.substring(0, 6).toUpperCase();
+      // Guardarlo también en la colección cards
+      firestoreDb.collection('cards').doc(token).set({
+        referralCode: updateData.referralCode,
+        updatedAt: new Date().toISOString()
+      }, { merge: true }).catch(err => console.error("Error updating cards referralCode", err));
+    }
+    
     // Al estar en un entorno continuo (Railway) y no Serverless,
     // podemos enviar la actualización en segundo plano sin el 'await' 
     // para no demorar la respuesta de la tarjeta al usuario.

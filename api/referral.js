@@ -30,14 +30,13 @@ export default async function handler(req, res) {
     const db = getFirestoreDb();
     
     // Find the user's card by token
-    const snap = await db.collection('cards').where('token', '==', token).limit(1).get();
+    const doc = await db.collection('cards').doc(token).get();
     
-    if (snap.empty) {
+    if (!doc.exists) {
       sendJson(res, 404, { error: 'Card not found' });
       return;
     }
 
-    const doc = snap.docs[0];
     const data = doc.data();
 
     // If they already have a code, return it
@@ -67,7 +66,7 @@ export default async function handler(req, res) {
     // Save to DB
     await doc.ref.update({
       referralCode: newCode,
-      updatedAt: new Date()
+      updatedAt: new Date().toISOString()
     });
 
     sendJson(res, 200, { referralCode: newCode });
