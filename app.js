@@ -3048,7 +3048,7 @@ if (themeColorMeta && window.matchMedia) {
     mq.addListener(applyThemeColor);
   }
 }
-}
+
 
 document.addEventListener("DOMContentLoaded", () => {
   const refBtn = document.getElementById("profileReferralsBtn");
