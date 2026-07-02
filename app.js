@@ -577,6 +577,9 @@ if (qrButton) {
     const panelReportes = document.getElementById("aPanelReportes");
     const navReportes = document.getElementById("aNavReportes");
     const mobNavReportes = document.getElementById("aMobNavReportes");
+    const panelReferidos = document.getElementById("secReferidos");
+    const navReferidos = document.getElementById("aNavReferidos");
+    const mobNavReferidos = document.getElementById("aMobNavReferidos");
     const reportRefresh = document.getElementById("adminReportRefresh");
     const reportDateInput = document.getElementById("adminReportDate");
     const reportSendEmailBtn = document.getElementById("adminReportSendEmailBtn");
@@ -785,6 +788,7 @@ if (qrButton) {
       if (panelComercios) panelComercios.hidden = panel !== "comercios";
       if (panelSedes) panelSedes.hidden = panel !== "sedes";
       if (panelReportes) panelReportes.hidden = panel !== "reportes";
+      if (panelReferidos) panelReferidos.hidden = panel !== "referidos";
       if (navClientes) navClientes.classList.toggle("is-active", panel === "clientes");
       if (navTx) navTx.classList.toggle("is-active", panel === "transacciones");
       if (navStats) navStats.classList.toggle("is-active", panel === "metricas");
@@ -792,6 +796,7 @@ if (qrButton) {
       if (navComercios) navComercios.classList.toggle("is-active", panel === "comercios");
       if (navSedes) navSedes.classList.toggle("is-active", panel === "sedes");
       if (navReportes) navReportes.classList.toggle("is-active", panel === "reportes");
+      if (navReferidos) navReferidos.classList.toggle("is-active", panel === "referidos");
       const mobClientes = document.getElementById("aMobNavClientes");
       const mobTx = document.getElementById("aMobNavTx");
       const mobStats = document.getElementById("aMobNavStats");
@@ -799,6 +804,7 @@ if (qrButton) {
       const mobComercios2 = document.getElementById("aMobNavComercios");
       const mobSedes = document.getElementById("aMobNavSedes");
       const mobReportes = document.getElementById("aMobNavReportes");
+      const mobReferidos = document.getElementById("aMobNavReferidos");
       if (mobClientes) mobClientes.classList.toggle("is-active", panel === "clientes");
       if (mobTx) mobTx.classList.toggle("is-active", panel === "transacciones");
       if (mobStats) mobStats.classList.toggle("is-active", panel === "metricas");
@@ -806,6 +812,7 @@ if (qrButton) {
       if (mobComercios2) mobComercios2.classList.toggle("is-active", panel === "comercios");
       if (mobSedes) mobSedes.classList.toggle("is-active", panel === "sedes");
       if (mobReportes) mobReportes.classList.toggle("is-active", panel === "reportes");
+      if (mobReferidos) mobReferidos.classList.toggle("is-active", panel === "referidos");
       const main = document.querySelector(".aDash__main");
       if (main) main.scrollTop = 0;
     };
@@ -835,6 +842,9 @@ if (qrButton) {
       switchPanel("reportes");
       loadAdminReports();
       loadReportsConfig();
+    });
+    if (navReferidos) navReferidos.addEventListener("click", () => {
+      switchPanel("referidos");
     });
     const mobNavClientes = document.getElementById("aMobNavClientes");
     const mobNavTx = document.getElementById("aMobNavTx");
@@ -868,6 +878,9 @@ if (qrButton) {
       switchPanel("reportes");
       loadAdminReports();
       loadReportsConfig();
+    });
+    if (mobNavReferidos) mobNavReferidos.addEventListener("click", () => {
+      switchPanel("referidos");
     });
 
     if (goQrBtn) goQrBtn.addEventListener("click", () => {

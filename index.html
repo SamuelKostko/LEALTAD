@@ -202,6 +202,12 @@
               </svg>
               Reportes
             </button>
+            <button class="aSidebar__navItem" id="aNavReferidos" type="button" data-panel="referidos">
+              <svg viewBox="0 0 24 24" width="17" height="17" fill="none">
+                <path d="M17 20h5V10l-5-5-5 5v10h5zM12 20H7v-8l-5-5 5-5 5 5v13z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              Referidos
+            </button>
           </nav>
           <div class="aSidebar__bottom">
             <a class="aSidebar__goQr" id="adminHeaderGoQr" href="/admin/qr">
@@ -670,8 +676,14 @@
               </form>
             </div>
 
-            <!-- Referral Configuration Section -->
-            <div class="aCard" style="margin-top: 35px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 25px;">
+
+          </section>
+
+          <section class="adminSection" id="secReferidos" hidden>
+            <div class="aSectionHeader">
+              <h2>Referidos</h2>
+            </div>
+            <div class="aCard" style="margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 25px;">
               <h3 style="font-size: 16px; font-weight: 600; color: #fff; margin-top: 0; margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M17 20h5V10l-5-5-5 5v10h5zM12 20H7v-8l-5-5 5-5 5 5v13z" stroke-linecap="round" stroke-linejoin="round"/>
@@ -750,6 +762,12 @@
               <line x1="16" y1="17" x2="8" y2="17" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
             </svg>
             Reportes
+          </button>
+          <button class="aMobileNav__item" id="aMobNavReferidos" type="button" aria-label="Referidos">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none">
+              <path d="M17 20h5V10l-5-5-5 5v10h5zM12 20H7v-8l-5-5 5-5 5 5v13z" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Referidos
           </button>
           <a class="aMobileNav__qr" href="/admin/qr" aria-label="Crear QR">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none">
