@@ -3086,22 +3086,45 @@ document.addEventListener("DOMContentLoaded", () => {
       
       const refCode = token.substring(0, 6).toUpperCase();
       const shareUrl = `https://form.vmaspuntos.com?ref=${refCode}`;
-      const shareData = {
-        title: "¡Únete a V+ Puntos!",
-        text: `Regístrate en V+ Puntos con mi código ${refCode} y obtén beneficios.`,
-        url: shareUrl
+      const textToCopy = `Regístrate en V+ Puntos con mi código ${refCode} y obtén beneficios. ${shareUrl}`;
+      
+      const copyToClipboardFallback = async () => {
+        try {
+          await navigator.clipboard.writeText(textToCopy);
+          alert(`¡Código y enlace copiados al portapapeles!\n\nCompártelo con tus amigos para ganar puntos.`);
+        } catch (e) {
+          console.error("Error al copiar al portapapeles", e);
+          const textArea = document.createElement("textarea");
+          textArea.value = textToCopy;
+          textArea.style.position = "fixed";
+          textArea.style.opacity = "0";
+          document.body.appendChild(textArea);
+          textArea.focus();
+          textArea.select();
+          try {
+            document.execCommand("copy");
+            alert(`¡Código y enlace copiados al portapapeles!\n\nCompártelo con tus amigos para ganar puntos.`);
+          } catch (err) {
+            alert(`Tu código es: ${refCode}\nEnlace: ${shareUrl}\nCópialo manualmente.`);
+          }
+          document.body.removeChild(textArea);
+        }
       };
       
       try {
         if (navigator.share) {
-          await navigator.share(shareData);
+          await navigator.share({
+            title: "¡Únete a V+ Puntos!",
+            text: `Regístrate en V+ Puntos con mi código ${refCode} y obtén beneficios.`,
+            url: shareUrl
+          });
         } else {
-          await navigator.clipboard.writeText(`${shareData.text} ${shareData.url}`);
-          alert(`Código copiado al portapapeles: ${refCode}\n¡Compártelo para ganar puntos!`);
+          await copyToClipboardFallback();
         }
       } catch (e) {
         if (e.name !== "AbortError") {
           console.error("Error al compartir", e);
+          await copyToClipboardFallback();
         }
       }
       
