@@ -3085,7 +3085,26 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       
       const refCode = token.substring(0, 6).toUpperCase();
-      alert(`¡Tu código de referido es: ${refCode}!\nCompártelo para ganar puntos.`);
+      const shareUrl = `https://form.vmaspuntos.com?ref=${refCode}`;
+      const shareData = {
+        title: "¡Únete a V+ Puntos!",
+        text: `Regístrate en V+ Puntos con mi código ${refCode} y obtén beneficios.`,
+        url: shareUrl
+      };
+      
+      try {
+        if (navigator.share) {
+          await navigator.share(shareData);
+        } else {
+          await navigator.clipboard.writeText(`${shareData.text} ${shareData.url}`);
+          alert(`Código copiado al portapapeles: ${refCode}\n¡Compártelo para ganar puntos!`);
+        }
+      } catch (e) {
+        if (e.name !== "AbortError") {
+          console.error("Error al compartir", e);
+        }
+      }
+      
       refBtn.innerHTML = `Código: ${refCode}`;
     });
   }
