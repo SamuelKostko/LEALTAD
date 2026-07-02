@@ -1798,13 +1798,64 @@ Esto eliminará también sus transacciones.`
         setTimeout(() => {
           if (reportConfigResult.textContent.includes("éxito")) {
             reportConfigResult.textContent = "";
+            reportConfigResult.className = "aResult";
           }
-        }, 4000);
+        }, 5000);
       } catch (err) {
         reportConfigResult.className = "aResult aResult--err";
         reportConfigResult.textContent = err?.message || "Error al guardar configuración";
       }
     };
+
+    const adminReferralConfigForm = document.getElementById("adminReferralConfigForm");
+    const adminReferralBonusPercent = document.getElementById("adminReferralBonusPercent");
+    const adminReferralConfigResult = document.getElementById("adminReferralConfigResult");
+
+    const loadReferralConfig = async () => {
+      try {
+        const data = await apiGet("/api/admin/referral-config");
+        if (adminReferralBonusPercent && data.settings) {
+          adminReferralBonusPercent.value = data.settings.bonusPercent ?? 5;
+        }
+      } catch (err) {
+        console.error("Failed to load referral config:", err);
+      }
+    };
+
+    const saveReferralConfig = async (e) => {
+      if (e) e.preventDefault();
+      if (!adminReferralConfigResult) return;
+
+      adminReferralConfigResult.className = "aResult aResult--info";
+      adminReferralConfigResult.textContent = "Guardando configuración...";
+
+      try {
+        const percentVal = adminReferralBonusPercent ? Number(adminReferralBonusPercent.value) : 5;
+        await apiPost("/api/admin/referral-config", {
+          bonusPercent: percentVal
+        });
+        adminReferralConfigResult.className = "aResult aResult--ok";
+        adminReferralConfigResult.textContent = "Configuración de referidos guardada con éxito.";
+
+        setTimeout(() => {
+          if (adminReferralConfigResult.textContent.includes("éxito")) {
+            adminReferralConfigResult.textContent = "";
+            adminReferralConfigResult.className = "aResult";
+          }
+        }, 5000);
+      } catch (err) {
+        adminReferralConfigResult.className = "aResult aResult--err";
+        adminReferralConfigResult.textContent = err?.message || "Error al guardar configuración";
+      }
+    };
+
+    if (adminReportConfigForm) {
+      adminReportConfigForm.addEventListener("submit", saveReportsConfig);
+    }
+    if (adminReferralConfigForm) {
+      adminReferralConfigForm.addEventListener("submit", saveReferralConfig);
+      loadReferralConfig();
+    }
 
     const sendReportByEmail = async () => {
       if (!reportActionStatus || !reportSendEmailBtn) return;
@@ -2997,3 +3048,54 @@ if (themeColorMeta && window.matchMedia) {
     mq.addListener(applyThemeColor);
   }
 }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  const refBtn = document.getElementById("profileReferralsBtn");
+  if (refBtn) {
+    refBtn.addEventListener("click", async () => {
+      let token = "";
+      try {
+        const url = new URL(window.location.href);
+        token = (url.searchParams.get("token") || url.searchParams.get("t") || "").trim();
+        if (!token) {
+          const path = url.pathname || "";
+          if (path.startsWith("/card/")) {
+            token = decodeURIComponent(path.slice("/card/".length)).trim();
+          }
+        }
+      } catch(e) {}
+      
+      if (!token) {
+        alert("No se encontró el token de tu tarjeta.");
+        return;
+      }
+      
+      const originalHtml = refBtn.innerHTML;
+      refBtn.innerHTML = "Generando...";
+      refBtn.disabled = true;
+
+      try {
+        const res = await fetch("/api/referral", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token })
+        });
+        const data = await res.json();
+        
+        if (res.ok && data.referralCode) {
+          alert(`¡Tu código de referido es: ${data.referralCode}!\nCompártelo para ganar puntos.`);
+          refBtn.innerHTML = `Código: ${data.referralCode}`;
+        } else {
+          alert("Error: " + (data.error || "No se pudo generar el código"));
+          refBtn.innerHTML = originalHtml;
+        }
+      } catch (err) {
+        alert("Error de conexión");
+        refBtn.innerHTML = originalHtml;
+      } finally {
+        refBtn.disabled = false;
+      }
+    });
+  }
+});

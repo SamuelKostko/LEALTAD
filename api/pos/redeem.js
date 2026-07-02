@@ -136,6 +136,40 @@ export default async function handler(req, res) {
         throw new Error('Transaction not pending');
       }
 
+      // Check referral bonus
+      const cardRef = firestore.collection('cards').doc(token);
+      const cardSnap = await tx.get(cardRef);
+      const cardData = cardSnap.exists ? cardSnap.data() : {};
+      
+      let referralBonusPoints = 0;
+      let referrerToken = null;
+      
+      if (cardData.referredBy && cardData.hasPaidFirstTime === false) {
+        const configSnap = await tx.get(firestore.collection('config').doc('referral_settings'));
+        const bonusPercent = configSnap.exists ? (configSnap.data().bonusPercent ?? 5) : 5;
+        
+        referralBonusPoints = Math.floor(points * (bonusPercent / 100));
+        referrerToken = cardData.referredBy;
+      }
+
+      let referrerClientSnap = null;
+      let referrerClientRef = null;
+      let referrerClientData = null;
+      if (referrerToken && referralBonusPoints > 0) {
+        const referrerQuery = firestore.collection('clientes').where('token', '==', referrerToken).limit(1);
+        referrerClientSnap = await tx.get(referrerQuery);
+        if (!referrerClientSnap.empty) {
+          const rDoc = referrerClientSnap.docs[0];
+          referrerClientRef = rDoc.ref;
+          referrerClientData = rDoc.data() || {};
+        }
+      }
+
+      if (referrerToken) {
+        // Mark as paid for the first time
+        tx.update(cardRef, { hasPaidFirstTime: true, updatedAt: FieldValue.serverTimestamp() });
+      }
+
       // Ensure the QR params match the minted transaction.
       const mintedPoints = Number(txData.points ?? 0);
       const mintedTs = Number(txData.ts ?? 0);
@@ -218,7 +252,6 @@ export default async function handler(req, res) {
           });
         }
 
-        return { previous: currentBalance, next: finalBalance };
       } else {
         currentBalance = Number(clientData.totalPoints ?? 0);
         if (!Number.isFinite(currentBalance)) throw new Error('Invalid balance');
@@ -241,9 +274,52 @@ export default async function handler(req, res) {
           },
           { merge: true }
         );
-
-        return { previous: currentBalance, next: next };
       }
+
+      // Process referral bonus if applicable
+      if (referrerClientRef && referralBonusPoints > 0) {
+        let rBalanceBefore = 0;
+        let rBalanceAfter = 0;
+        let rUpdates = {};
+
+        if (isClosed && merchantId) {
+          const rBalances = referrerClientData.merchantBalances || {};
+          rBalanceBefore = Number(rBalances[merchantId] ?? 0);
+          rBalanceAfter = rBalanceBefore + referralBonusPoints;
+          rUpdates = {
+            [`merchantBalances.${merchantId}`]: rBalanceAfter,
+            updatedAt: FieldValue.serverTimestamp()
+          };
+        } else {
+          rBalanceBefore = Number(referrerClientData.totalPoints ?? 0);
+          rBalanceAfter = rBalanceBefore + referralBonusPoints;
+          rUpdates = { totalPoints: rBalanceAfter, updatedAt: FieldValue.serverTimestamp() };
+        }
+
+        tx.update(referrerClientRef, rUpdates);
+
+        // Record the referral bonus transaction
+        const refTxRef = firestore.collection('transactions').doc();
+        tx.set(refTxRef, {
+          type: 'referral_bonus',
+          status: 'completed',
+          token: referrerToken,
+          points: referralBonusPoints,
+          balanceBefore: rBalanceBefore,
+          balanceAfter: rBalanceAfter,
+          merchantId: isClosed ? merchantId : '',
+          merchantName: txData.merchantName || '',
+          branchName: txData.branchName || '',
+          description: `Bono por referido (${cardData.name || 'Usuario'})`,
+          createdAt: FieldValue.serverTimestamp(),
+          processedAt: FieldValue.serverTimestamp()
+        });
+      }
+
+      return { 
+        previous: isClosed ? currentBalance : currentBalance, 
+        next: updateFields[`merchantBalances.${merchantId}`] ?? updateFields.totalPoints 
+      };
     });
 
 
