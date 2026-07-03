@@ -68,6 +68,11 @@ export async function verifySession(cookieValue) {
       snap = await db.collection('merchants').where('sessionId', '==', sessionId).limit(1).get();
     }
 
+    // If not found, search in 'marketing'
+    if (snap.empty) {
+      snap = await db.collection('marketing').where('sessionId', '==', sessionId).limit(1).get();
+    }
+
     if (snap.empty) {
       return { ok: false, reason: 'no_session' };
     }
@@ -110,6 +115,11 @@ export async function destroySession(sessionId) {
       snap = await db.collection('merchants').where('sessionId', '==', sessionId).limit(1).get();
     }
 
+    // Try marketing
+    if (snap.empty) {
+      snap = await db.collection('marketing').where('sessionId', '==', sessionId).limit(1).get();
+    }
+
     if (snap.empty) return true; // Already gone or never existed
 
     await snap.docs[0].ref.update({
@@ -145,7 +155,7 @@ export async function isAdminRequest(req) {
   if (!result.ok) return false;
 
   const role = String(result.data?.role ?? '').trim().toLowerCase();
-  if (role === 'cashier' || role === 'merchant') return false;
+  if (role === 'cashier' || role === 'merchant' || role === 'marketing') return false;
   return true;
 }
 
@@ -154,6 +164,28 @@ export async function isAdminRequest(req) {
  */
 export async function requireAdmin(req, res) {
   const authorized = await isAdminRequest(req);
+  if (authorized) return true;
+
+  res.statusCode = 401;
+  res.setHeader('Content-Type', 'application/json; charset=utf-8');
+  res.setHeader('Cache-Control', 'no-store');
+  res.end(JSON.stringify({ error: 'Unauthorized' }));
+  return false;
+}
+
+export async function isAdminOrMarketingRequest(req) {
+  const cookies = parseCookies(req.headers.cookie);
+  const sessionId = cookies[COOKIE_NAME];
+  const result = await verifySession(sessionId);
+  if (!result.ok) return false;
+
+  const role = String(result.data?.role ?? '').trim().toLowerCase();
+  if (role === 'cashier' || role === 'merchant') return false;
+  return true; // admin or marketing
+}
+
+export async function requireAdminOrMarketing(req, res) {
+  const authorized = await isAdminOrMarketingRequest(req);
   if (authorized) return true;
 
   res.statusCode = 401;

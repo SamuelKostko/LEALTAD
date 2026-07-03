@@ -30,10 +30,16 @@ export default async function handler(req, res) {
       collection = 'cashiers';
     }
 
-    // If not found, try username in 'merchants'
+    // If not found, search in 'merchants'
     if (snap.empty) {
       snap = await db.collection('merchants').where('username', '==', identifier).limit(1).get();
       collection = 'merchants';
+    }
+
+    // If not found, search in 'marketing'
+    if (snap.empty) {
+      snap = await db.collection('marketing').where('username', '==', identifier).limit(1).get();
+      collection = 'marketing';
     }
 
     if (snap.empty) {

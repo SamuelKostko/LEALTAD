@@ -208,6 +208,20 @@
               </svg>
               Referidos
             </button>
+            <button class="aSidebar__navItem" id="aNavMarketing" type="button" data-panel="marketing">
+              <svg viewBox="0 0 24 24" width="17" height="17" fill="none">
+                <circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="1.6" />
+                <path d="M5.5 21v-2a6.5 6.5 0 0 1 13 0v2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+                <path d="M19 10l3 3-3 3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              Marketing
+            </button>
+            <button class="aSidebar__navItem" id="aNavPromociones" type="button" data-panel="promociones">
+              <svg viewBox="0 0 24 24" width="17" height="17" fill="none">
+                <path d="M12 2l3 6 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1 3-6z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+              Promociones
+            </button>
           </nav>
           <div class="aSidebar__bottom">
             <a class="aSidebar__goQr" id="adminHeaderGoQr" href="/admin/qr">
@@ -711,7 +725,89 @@
               </form>
             </div>
           </section>
+
+          <section class="adminSection" id="secMarketing" hidden>
+            <div class="aSectionHeader">
+              <h2>Marketing</h2>
+            </div>
+            
+            <div style="margin-top: 20px;">
+              <h3 style="font-size: 16px; font-weight: 600; color: #fff; margin-bottom: 15px;">Usuarios de Marketing</h3>
+              <div class="aCard">
+                <form id="adminMarketingUserForm" style="display: flex; flex-direction: column; gap: 15px; margin-bottom: 25px;">
+                  <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <input type="text" id="mktUserName" placeholder="Nombre completo" required class="aInput" style="flex: 1; min-width: 200px; padding: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #fff;">
+                    <input type="text" id="mktUserUsername" placeholder="Usuario de acceso" required class="aInput" style="flex: 1; min-width: 200px; padding: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #fff;">
+                    <input type="password" id="mktUserPassword" placeholder="Contraseña" required class="aInput" style="flex: 1; min-width: 200px; padding: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #fff;">
+                    <button type="submit" class="aBtn" style="background: #06b6d4; color: #fff; border: none; border-radius: 8px; padding: 10px 20px; font-weight: 600; cursor: pointer;">Crear Usuario</button>
+                  </div>
+                  <div id="mktUserFormResult" style="font-size: 13px;"></div>
+                </form>
+                
+                <div style="overflow-x: auto;">
+                  <table class="aTable" style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                      <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+                        <th style="padding: 12px; text-align: left; color: rgba(255,255,255,0.6); font-size: 13px; font-weight: 500;">Nombre</th>
+                        <th style="padding: 12px; text-align: left; color: rgba(255,255,255,0.6); font-size: 13px; font-weight: 500;">Usuario</th>
+                        <th style="padding: 12px; text-align: right; color: rgba(255,255,255,0.6); font-size: 13px; font-weight: 500;">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody id="marketingUsersTableBody">
+                      <tr><td colspan="3" style="text-align: center; padding: 20px; color: rgba(255,255,255,0.5);">Cargando...</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="adminSection" id="secPromociones" hidden>
+            <div class="aSectionHeader">
+              <h2>Promociones</h2>
+            </div>
+            <div class="aCard" style="margin-top: 15px;">
+              <form id="adminPromotionForm" style="display: flex; flex-direction: column; gap: 15px; margin-bottom: 25px;">
+                <h3 style="font-size: 16px; font-weight: 600; color: #fff; margin: 0;">Subir Nueva Promoción</h3>
+                
+                <div style="display: flex; flex-direction: column; gap: 6px;">
+                  <label for="promoTitle" style="font-size: 13px; color: rgba(255,255,255,0.8);">Nombre del producto / Título</label>
+                  <input type="text" id="promoTitle" required style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 10px; border-radius: 8px;">
+                </div>
+                
+                <div style="display: flex; flex-direction: column; gap: 6px;">
+                  <label for="promoDescription" style="font-size: 13px; color: rgba(255,255,255,0.8);">Descripción (opcional)</label>
+                  <textarea id="promoDescription" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 10px; border-radius: 8px; min-height: 60px;"></textarea>
+                </div>
+                
+                <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                  <div style="display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 200px;">
+                    <label for="promoPoints" style="font-size: 13px; color: rgba(255,255,255,0.8);">Costo en Puntos</label>
+                    <input type="number" id="promoPoints" required min="0" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 10px; border-radius: 8px;">
+                  </div>
+                  
+                  <div style="display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 200px;">
+                    <label for="promoImage" style="font-size: 13px; color: rgba(255,255,255,0.8);">Imagen</label>
+                    <input type="file" id="promoImage" accept="image/*" required style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 7px; border-radius: 8px;">
+                  </div>
+                </div>
+
+                <div style="display: flex; gap: 10px;">
+                  <button type="submit" class="aBtn" style="background: #06b6d4; color: #fff; border: none; border-radius: 8px; padding: 10px 20px; font-weight: 600; cursor: pointer;">Subir Promoción</button>
+                </div>
+                <div id="promoFormResult" style="font-size: 13px;"></div>
+              </form>
+            </div>
+            
+            <div style="margin-top: 30px;">
+              <h3 style="font-size: 16px; font-weight: 600; color: #fff; margin-bottom: 15px;">Promociones Activas</h3>
+              <div id="promotionsListAdmin" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px;">
+                <!-- Lista de promociones -->
+              </div>
+            </div>
+          </section>
         </div>
+
 
         <!-- Mobile bottom navigation bar (visible only on ≤640px) -->
         <nav class="aMobileNav" id="aMobileNav" aria-label="Navegación admin">
@@ -768,6 +864,19 @@
               <path d="M17 20h5V10l-5-5-5 5v10h5zM12 20H7v-8l-5-5 5-5 5 5v13z" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
             Referidos
+          </button>
+          <button class="aMobileNav__item" id="aMobNavMarketing" type="button" aria-label="Marketing">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none">
+              <circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="1.6" />
+              <path d="M5.5 21v-2a6.5 6.5 0 0 1 13 0v2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+            </svg>
+            Marketing
+          </button>
+          <button class="aMobileNav__item" id="aMobNavPromociones" type="button" aria-label="Promociones">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none">
+              <path d="M12 2l3 6 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1 3-6z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+            Promos
           </button>
           <a class="aMobileNav__qr" href="/admin/qr" aria-label="Crear QR">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none">
@@ -953,6 +1062,13 @@
           Referidos
         </button>
 
+        <button class="profileMenu__item profileMenu__item--promotions" id="profilePromocionesBtn" type="button" style="color: #f43f5e;">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" style="margin-right: 10px;">
+            <path d="M12 2l3 6 7 1-5 5 1 7-6-3-6 3 1-7-5-5 7-1 3-6z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Promociones
+        </button>
+
         <button class="profileMenu__item profileMenu__item--install" id="profileInstallBtn" type="button" hidden>
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" style="margin-right: 10px;">
             <path d="M12 15V3m0 12l-4-4m4 4l4-4M5 21h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
@@ -1032,6 +1148,20 @@
       <button class="promoModal__close" id="promoModalCloseBtn" type="button" aria-label="Cerrar promoción">✕</button>
       <div class="promoModal__content">
         <img class="promoModal__image" id="promoModalImage" src="" alt="Promoción especial" draggable="false" />
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Lista de Promociones -->
+  <div class="profileMenu" id="promotionsListModal" aria-hidden="true">
+    <div class="profileMenu__backdrop" id="promotionsListBackdrop"></div>
+    <div class="profileMenu__frame" role="dialog" aria-modal="true" aria-label="Lista de Promociones">
+      <header class="profileMenu__header">
+        <span class="profileMenu__title">Promociones</span>
+        <button class="profileMenu__close" id="promotionsListClose" type="button" aria-label="Cerrar promociones">✕</button>
+      </header>
+      <div class="profileMenu__body" id="promotionsListClientContainer" style="padding: 20px; overflow-y: auto; max-height: calc(85vh - 60px); display: flex; flex-direction: column; gap: 15px;">
+        <!-- Promotions will be rendered here -->
       </div>
     </div>
   </div>

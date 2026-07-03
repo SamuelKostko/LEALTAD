@@ -35,7 +35,7 @@ export default async function handler(req, res) {
   if (auth.data?.name) payload.name = String(auth.data.name).trim();
   if (auth.data?.username) payload.username = String(auth.data.username).trim();
   if (auth.data?.branchName) payload.branchName = String(auth.data.branchName).trim();
-  if (role === 'merchant') payload.settings = auth.data.settings || {};
+  if (role === 'merchant' || role === 'marketing') payload.settings = auth.data.settings || {};
 
   sendJson(res, 200, payload);
 }

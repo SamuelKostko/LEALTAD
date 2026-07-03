@@ -580,6 +580,14 @@ if (qrButton) {
     const panelReferidos = document.getElementById("secReferidos");
     const navReferidos = document.getElementById("aNavReferidos");
     const mobNavReferidos = document.getElementById("aMobNavReferidos");
+    
+    // Marketing & Promociones
+    const panelMarketing = document.getElementById("secMarketing");
+    const navMarketing = document.getElementById("aNavMarketing");
+    const mobNavMarketing = document.getElementById("aMobNavMarketing");
+    const panelPromociones = document.getElementById("secPromociones");
+    const navPromociones = document.getElementById("aNavPromociones");
+    const mobNavPromociones = document.getElementById("aMobNavPromociones");
     const reportRefresh = document.getElementById("adminReportRefresh");
     const reportDateInput = document.getElementById("adminReportDate");
     const reportSendEmailBtn = document.getElementById("adminReportSendEmailBtn");
@@ -789,6 +797,9 @@ if (qrButton) {
       if (panelSedes) panelSedes.hidden = panel !== "sedes";
       if (panelReportes) panelReportes.hidden = panel !== "reportes";
       if (panelReferidos) panelReferidos.hidden = panel !== "referidos";
+      if (panelMarketing) panelMarketing.hidden = panel !== "marketing";
+      if (panelPromociones) panelPromociones.hidden = panel !== "promociones";
+      
       if (navClientes) navClientes.classList.toggle("is-active", panel === "clientes");
       if (navTx) navTx.classList.toggle("is-active", panel === "transacciones");
       if (navStats) navStats.classList.toggle("is-active", panel === "metricas");
@@ -797,6 +808,9 @@ if (qrButton) {
       if (navSedes) navSedes.classList.toggle("is-active", panel === "sedes");
       if (navReportes) navReportes.classList.toggle("is-active", panel === "reportes");
       if (navReferidos) navReferidos.classList.toggle("is-active", panel === "referidos");
+      if (navMarketing) navMarketing.classList.toggle("is-active", panel === "marketing");
+      if (navPromociones) navPromociones.classList.toggle("is-active", panel === "promociones");
+      
       const mobClientes = document.getElementById("aMobNavClientes");
       const mobTx = document.getElementById("aMobNavTx");
       const mobStats = document.getElementById("aMobNavStats");
@@ -805,6 +819,8 @@ if (qrButton) {
       const mobSedes = document.getElementById("aMobNavSedes");
       const mobReportes = document.getElementById("aMobNavReportes");
       const mobReferidos = document.getElementById("aMobNavReferidos");
+      const mobMarketing = document.getElementById("aMobNavMarketing");
+      const mobPromociones = document.getElementById("aMobNavPromociones");
       if (mobClientes) mobClientes.classList.toggle("is-active", panel === "clientes");
       if (mobTx) mobTx.classList.toggle("is-active", panel === "transacciones");
       if (mobStats) mobStats.classList.toggle("is-active", panel === "metricas");
@@ -813,6 +829,8 @@ if (qrButton) {
       if (mobSedes) mobSedes.classList.toggle("is-active", panel === "sedes");
       if (mobReportes) mobReportes.classList.toggle("is-active", panel === "reportes");
       if (mobReferidos) mobReferidos.classList.toggle("is-active", panel === "referidos");
+      if (mobMarketing) mobMarketing.classList.toggle("is-active", panel === "marketing");
+      if (mobPromociones) mobPromociones.classList.toggle("is-active", panel === "promociones");
       const main = document.querySelector(".aDash__main");
       if (main) main.scrollTop = 0;
     };
@@ -846,9 +864,19 @@ if (qrButton) {
     if (navReferidos) navReferidos.addEventListener("click", () => {
       switchPanel("referidos");
     });
+    if (navMarketing) navMarketing.addEventListener("click", () => {
+      switchPanel("marketing");
+      loadMarketingUsers();
+    });
+    if (navPromociones) navPromociones.addEventListener("click", () => {
+      switchPanel("promociones");
+      loadPromotionsAdmin();
+    });
     const mobNavClientes = document.getElementById("aMobNavClientes");
     const mobNavTx = document.getElementById("aMobNavTx");
     const mobNavStats = document.getElementById("aMobNavStats");
+    const mobNavMarketing = document.getElementById("aMobNavMarketing");
+    const mobNavPromociones = document.getElementById("aMobNavPromociones");
     const mobNavCajerosLocal = document.getElementById("aMobNavCajeros");
     const mobNavLogout = document.getElementById("aMobNavLogout");
     if (mobNavClientes) mobNavClientes.addEventListener("click", () => switchPanel("clientes"));
@@ -881,6 +909,14 @@ if (qrButton) {
     });
     if (mobNavReferidos) mobNavReferidos.addEventListener("click", () => {
       switchPanel("referidos");
+    });
+    if (mobNavMarketing) mobNavMarketing.addEventListener("click", () => {
+      switchPanel("marketing");
+      loadMarketingUsers();
+    });
+    if (mobNavPromociones) mobNavPromociones.addEventListener("click", () => {
+      switchPanel("promociones");
+      loadPromotionsAdmin();
     });
 
     if (goQrBtn) goQrBtn.addEventListener("click", () => {
@@ -2342,13 +2378,48 @@ Esto eliminará también sus transacciones.`
         loadAdminStats(r);
       });
     });
-    const initAuthed = () => {
+    const initAuthed = (role) => {
       showDash();
-      switchPanel("clientes");
-      loadClients();
       
-      // Mostrar botones de admin en el sidebar (ya visibles por HTML, pero nos aseguramos)
-      if (adminResetTxsBtn) adminResetTxsBtn.hidden = false;
+      if (role === "marketing") {
+        // Ocultar paneles no permitidos para marketing
+        if (navClientes) navClientes.hidden = true;
+        if (navTx) navTx.hidden = true;
+        if (navStats) navStats.hidden = true;
+        if (navCajeros) navCajeros.hidden = true;
+        if (navComercios) navComercios.hidden = true;
+        if (navSedes) navSedes.hidden = true;
+        if (navReportes) navReportes.hidden = true;
+        if (navReferidos) navReferidos.hidden = true;
+        
+        const mobNavClientes = document.getElementById("aMobNavClientes");
+        const mobNavTx = document.getElementById("aMobNavTx");
+        const mobNavStats = document.getElementById("aMobNavStats");
+        const mobNavCajeros = document.getElementById("aMobNavCajeros");
+        const mobNavComercios = document.getElementById("aMobNavComercios");
+        const mobNavSedes = document.getElementById("aMobNavSedes");
+        const mobNavReportes = document.getElementById("aMobNavReportes");
+        const mobNavReferidos = document.getElementById("aMobNavReferidos");
+        
+        if (mobNavClientes) mobNavClientes.hidden = true;
+        if (mobNavTx) mobNavTx.hidden = true;
+        if (mobNavStats) mobNavStats.hidden = true;
+        if (mobNavCajeros) mobNavCajeros.hidden = true;
+        if (mobNavComercios) mobNavComercios.hidden = true;
+        if (mobNavSedes) mobNavSedes.hidden = true;
+        if (mobNavReportes) mobNavReportes.hidden = true;
+        if (mobNavReferidos) mobNavReferidos.hidden = true;
+        
+        // Hide config functions like reset txs
+        if (adminResetTxsBtn) adminResetTxsBtn.hidden = true;
+        
+        switchPanel("promociones");
+        loadPromotionsAdmin();
+      } else {
+        switchPanel("clientes");
+        loadClients();
+        if (adminResetTxsBtn) adminResetTxsBtn.hidden = false;
+      }
       
       // Ocultar botón de perfil en admin mode si así se requiere
       if (profileButton) profileButton.hidden = true;
@@ -2367,7 +2438,7 @@ Esto eliminará también sus transacciones.`
             window.location.replace("/comercio/qr");
             return;
           }
-          initAuthed();
+          initAuthed(role);
         } else {
           // No session → redirect to shared login page
           window.location.replace("/login");
@@ -3131,4 +3202,257 @@ document.addEventListener("DOMContentLoaded", () => {
       refBtn.innerHTML = `Código: ${refCode}`;
     });
   }
+  
+  // ==========================================
+  // MARKETING & PROMOCIONES LOGIC
+  // ==========================================
+  
+  // Marketing Users Management
+  window.loadMarketingUsers = async () => {
+    const tbody = document.getElementById("marketingUsersTableBody");
+    if (!tbody) return;
+    tbody.innerHTML = `<tr><td colspan="3" style="text-align: center; padding: 20px; color: rgba(255,255,255,0.5);">Cargando...</td></tr>`;
+    try {
+      const res = await fetch("/api/admin/marketing-users", { credentials: "include" });
+      const users = await res.json();
+      if (!res.ok) throw new Error(users.error || "Error al cargar");
+      
+      if (users.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="3" style="text-align: center; padding: 20px; color: rgba(255,255,255,0.5);">No hay usuarios de marketing</td></tr>`;
+        return;
+      }
+      
+      tbody.innerHTML = "";
+      users.forEach(u => {
+        const tr = document.createElement("tr");
+        tr.style.borderBottom = "1px solid rgba(255,255,255,0.05)";
+        
+        tr.innerHTML = `
+          <td style="padding: 12px; color: #fff; font-size: 14px;">${u.name || "—"}</td>
+          <td style="padding: 12px; color: #fff; font-size: 14px;">${u.username}</td>
+          <td style="padding: 12px; text-align: right;">
+            <button class="aBtn" style="background: rgba(239, 68, 68, 0.2); color: #ef4444; padding: 6px 12px; font-size: 12px; border-radius: 6px; border: none; cursor: pointer;">Eliminar</button>
+          </td>
+        `;
+        
+        const delBtn = tr.querySelector("button");
+        delBtn.onclick = async () => {
+          if (!confirm(`¿Eliminar usuario ${u.username}?`)) return;
+          try {
+            await fetch(`/api/admin/marketing-users?id=${u.id}`, { method: "DELETE", credentials: "include" });
+            loadMarketingUsers();
+          } catch (e) {
+            alert("Error al eliminar");
+          }
+        };
+        tbody.appendChild(tr);
+      });
+    } catch (e) {
+      tbody.innerHTML = `<tr><td colspan="3" style="text-align: center; padding: 20px; color: #ef4444;">Error al cargar: ${e.message}</td></tr>`;
+    }
+  };
+
+  const mktForm = document.getElementById("adminMarketingUserForm");
+  if (mktForm) {
+    mktForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const name = document.getElementById("mktUserName").value;
+      const username = document.getElementById("mktUserUsername").value;
+      const password = document.getElementById("mktUserPassword").value;
+      const resEl = document.getElementById("mktUserFormResult");
+      
+      resEl.textContent = "Creando...";
+      resEl.style.color = "#06b6d4";
+      
+      try {
+        const res = await fetch("/api/admin/marketing-users", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name, username, password }),
+          credentials: "include"
+        });
+        const data = await res.json();
+        if (res.ok) {
+          resEl.textContent = "Usuario creado exitosamente.";
+          resEl.style.color = "#10b981";
+          mktForm.reset();
+          loadMarketingUsers();
+        } else {
+          throw new Error(data.error);
+        }
+      } catch (err) {
+        resEl.textContent = err.message || "Error al crear usuario";
+        resEl.style.color = "#ef4444";
+      }
+    });
+  }
+
+  // Promotions Management (Admin/Marketing)
+  window.loadPromotionsAdmin = async () => {
+    const list = document.getElementById("promotionsListAdmin");
+    if (!list) return;
+    list.innerHTML = `<div style="color: rgba(255,255,255,0.5);">Cargando...</div>`;
+    
+    try {
+      const res = await fetch("/api/admin/promotions", { credentials: "include" });
+      const promos = await res.json();
+      
+      if (!res.ok) throw new Error(promos.error || "Error al cargar");
+      
+      if (promos.length === 0) {
+        list.innerHTML = `<div style="color: rgba(255,255,255,0.5);">No hay promociones activas.</div>`;
+        return;
+      }
+      
+      list.innerHTML = "";
+      promos.forEach(p => {
+        const card = document.createElement("div");
+        card.style.cssText = "background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; overflow: hidden; display: flex; flex-direction: column;";
+        
+        card.innerHTML = `
+          <div style="height: 150px; background: #000; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+            <img src="${p.imageBase64}" alt="${p.title}" style="width: 100%; height: 100%; object-fit: cover;">
+          </div>
+          <div style="padding: 15px; flex: 1; display: flex; flex-direction: column;">
+            <h4 style="margin: 0 0 5px 0; color: #fff; font-size: 16px;">${p.title}</h4>
+            <p style="margin: 0 0 15px 0; color: rgba(255,255,255,0.6); font-size: 13px; flex: 1;">${p.description || ""}</p>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="color: #06b6d4; font-weight: bold; font-size: 15px;">${p.pointsCost} Pts</span>
+              <button class="aBtn" style="background: rgba(239, 68, 68, 0.2); color: #ef4444; border: none; border-radius: 6px; padding: 6px 12px; font-size: 12px; cursor: pointer;">Eliminar</button>
+            </div>
+          </div>
+        `;
+        
+        const delBtn = card.querySelector("button");
+        delBtn.onclick = async () => {
+          if (!confirm("¿Eliminar esta promoción?")) return;
+          try {
+            await fetch(`/api/admin/promotions?id=${p.id}`, { method: "DELETE", credentials: "include" });
+            loadPromotionsAdmin();
+          } catch (e) {
+            alert("Error al eliminar");
+          }
+        };
+        list.appendChild(card);
+      });
+    } catch (e) {
+      list.innerHTML = `<div style="color: #ef4444;">Error: ${e.message}</div>`;
+    }
+  };
+
+  const promoForm = document.getElementById("adminPromotionForm");
+  if (promoForm) {
+    promoForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const title = document.getElementById("promoTitle").value;
+      const desc = document.getElementById("promoDescription").value;
+      const points = parseInt(document.getElementById("promoPoints").value, 10);
+      const fileInput = document.getElementById("promoImage");
+      const resEl = document.getElementById("promoFormResult");
+      
+      if (!fileInput.files[0]) return;
+      
+      resEl.textContent = "Procesando imagen...";
+      resEl.style.color = "#06b6d4";
+      
+      const file = fileInput.files[0];
+      const reader = new FileReader();
+      
+      reader.onload = async (ev) => {
+        const base64 = ev.target.result;
+        resEl.textContent = "Subiendo...";
+        try {
+          const res = await fetch("/api/admin/promotions", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              title,
+              description: desc,
+              pointsCost: points,
+              imageBase64: base64
+            }),
+            credentials: "include"
+          });
+          const data = await res.json();
+          if (res.ok) {
+            resEl.textContent = "Promoción creada exitosamente.";
+            resEl.style.color = "#10b981";
+            promoForm.reset();
+            loadPromotionsAdmin();
+          } else {
+            throw new Error(data.error);
+          }
+        } catch (err) {
+          resEl.textContent = err.message || "Error al subir";
+          resEl.style.color = "#ef4444";
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // Client Promotions Modal Logic
+  const profilePromocionesBtn = document.getElementById("profilePromocionesBtn");
+  const promotionsListModal = document.getElementById("promotionsListModal");
+  const promotionsListClose = document.getElementById("promotionsListClose");
+  const promotionsListBackdrop = document.getElementById("promotionsListBackdrop");
+  const promotionsListClientContainer = document.getElementById("promotionsListClientContainer");
+
+  const closePromotionsClientModal = () => {
+    if (!promotionsListModal) return;
+    promotionsListModal.classList.remove("profileMenu--active");
+    promotionsListModal.setAttribute("aria-hidden", "true");
+  };
+
+  if (profilePromocionesBtn && promotionsListModal && promotionsListClientContainer) {
+    profilePromocionesBtn.addEventListener("click", async () => {
+      // Cierra el menu principal del perfil si está abierto
+      const profileMenu = document.getElementById("profileMenu");
+      if (profileMenu && profileMenu.classList.contains("profileMenu--active")) {
+        profileMenu.classList.remove("profileMenu--active");
+        profileMenu.setAttribute("aria-hidden", "true");
+      }
+
+      promotionsListModal.classList.add("profileMenu--active");
+      promotionsListModal.setAttribute("aria-hidden", "false");
+      promotionsListClientContainer.innerHTML = `<div style="text-align: center; color: rgba(255,255,255,0.7); padding: 20px;">Cargando promociones...</div>`;
+
+      try {
+        const res = await fetch("/api/admin/promotions"); // public GET is allowed
+        const promos = await res.json();
+        
+        if (!res.ok) throw new Error(promos.error);
+        
+        if (promos.length === 0) {
+          promotionsListClientContainer.innerHTML = `<div style="text-align: center; color: rgba(255,255,255,0.7); padding: 20px;">No hay promociones activas por el momento. ¡Vuelve pronto!</div>`;
+          return;
+        }
+
+        promotionsListClientContainer.innerHTML = "";
+        promos.forEach(p => {
+          const item = document.createElement("div");
+          item.style.cssText = "background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; overflow: hidden; display: flex; align-items: center; padding: 10px; gap: 15px;";
+          
+          item.innerHTML = `
+            <div style="width: 80px; height: 80px; border-radius: 8px; overflow: hidden; flex-shrink: 0; background: #000;">
+              <img src="${p.imageBase64}" alt="${p.title}" style="width: 100%; height: 100%; object-fit: cover;">
+            </div>
+            <div style="flex: 1; min-width: 0;">
+              <h4 style="margin: 0 0 4px 0; color: #fff; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${p.title}</h4>
+              <p style="margin: 0 0 6px 0; color: rgba(255,255,255,0.6); font-size: 12px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${p.description || ""}</p>
+              <div style="color: #f43f5e; font-weight: bold; font-size: 14px;">${p.pointsCost} Puntos</div>
+            </div>
+          `;
+          promotionsListClientContainer.appendChild(item);
+        });
+        
+      } catch (err) {
+        promotionsListClientContainer.innerHTML = `<div style="text-align: center; color: #ef4444; padding: 20px;">Ocurrió un error al cargar las promociones.</div>`;
+      }
+    });
+
+    if (promotionsListClose) promotionsListClose.addEventListener("click", closePromotionsClientModal);
+    if (promotionsListBackdrop) promotionsListBackdrop.addEventListener("click", closePromotionsClientModal);
+  }
+
 });
