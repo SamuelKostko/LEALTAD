@@ -177,10 +177,20 @@ app.get('/login', (_req, res) => {
 });
 
 
+// ── LANDING PAGE ──────────────────────────────────────────────────────────────
+// Root '/' → Landing page informativa. The wallet is accessed via /card/:token
+app.get('/', (_req, res) => {
+    res.sendFile(path.join(__dirname, 'landing.html'));
+});
+
+// Alias for landing
+app.get('/landing', (_req, res) => {
+    res.sendFile(path.join(__dirname, 'landing.html'));
+});
+
 // PWA Routing (Vercel.json Rewrites)
 // Serve index.html for main PWA routes
 const pwaRoutes = [
-    '/',
     '/admin',
     '/card/:id',
     '/go/:token'

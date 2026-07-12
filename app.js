@@ -581,13 +581,7 @@ if (qrButton) {
     const navReferidos = document.getElementById("aNavReferidos");
     const mobNavReferidos = document.getElementById("aMobNavReferidos");
     
-    // Marketing & Promociones
-    const panelMarketing = document.getElementById("secMarketing");
-    const navMarketing = document.getElementById("aNavMarketing");
-    const mobNavMarketing = document.getElementById("aMobNavMarketing");
-    const panelPromociones = document.getElementById("secPromociones");
-    const navPromociones = document.getElementById("aNavPromociones");
-    const mobNavPromociones = document.getElementById("aMobNavPromociones");
+
     const reportRefresh = document.getElementById("adminReportRefresh");
     const reportDateInput = document.getElementById("adminReportDate");
     const reportSendEmailBtn = document.getElementById("adminReportSendEmailBtn");
@@ -797,8 +791,6 @@ if (qrButton) {
       if (panelSedes) panelSedes.hidden = panel !== "sedes";
       if (panelReportes) panelReportes.hidden = panel !== "reportes";
       if (panelReferidos) panelReferidos.hidden = panel !== "referidos";
-      if (panelMarketing) panelMarketing.hidden = panel !== "marketing";
-      if (panelPromociones) panelPromociones.hidden = panel !== "promociones";
       
       if (navClientes) navClientes.classList.toggle("is-active", panel === "clientes");
       if (navTx) navTx.classList.toggle("is-active", panel === "transacciones");
@@ -808,8 +800,7 @@ if (qrButton) {
       if (navSedes) navSedes.classList.toggle("is-active", panel === "sedes");
       if (navReportes) navReportes.classList.toggle("is-active", panel === "reportes");
       if (navReferidos) navReferidos.classList.toggle("is-active", panel === "referidos");
-      if (navMarketing) navMarketing.classList.toggle("is-active", panel === "marketing");
-      if (navPromociones) navPromociones.classList.toggle("is-active", panel === "promociones");
+
       
       const mobClientes = document.getElementById("aMobNavClientes");
       const mobTx = document.getElementById("aMobNavTx");
@@ -819,8 +810,7 @@ if (qrButton) {
       const mobSedes = document.getElementById("aMobNavSedes");
       const mobReportes = document.getElementById("aMobNavReportes");
       const mobReferidos = document.getElementById("aMobNavReferidos");
-      const mobMarketing = document.getElementById("aMobNavMarketing");
-      const mobPromociones = document.getElementById("aMobNavPromociones");
+
       if (mobClientes) mobClientes.classList.toggle("is-active", panel === "clientes");
       if (mobTx) mobTx.classList.toggle("is-active", panel === "transacciones");
       if (mobStats) mobStats.classList.toggle("is-active", panel === "metricas");
@@ -829,8 +819,7 @@ if (qrButton) {
       if (mobSedes) mobSedes.classList.toggle("is-active", panel === "sedes");
       if (mobReportes) mobReportes.classList.toggle("is-active", panel === "reportes");
       if (mobReferidos) mobReferidos.classList.toggle("is-active", panel === "referidos");
-      if (mobMarketing) mobMarketing.classList.toggle("is-active", panel === "marketing");
-      if (mobPromociones) mobPromociones.classList.toggle("is-active", panel === "promociones");
+
       const main = document.querySelector(".aDash__main");
       if (main) main.scrollTop = 0;
     };
@@ -864,19 +853,10 @@ if (qrButton) {
     if (navReferidos) navReferidos.addEventListener("click", () => {
       switchPanel("referidos");
     });
-    if (navMarketing) navMarketing.addEventListener("click", () => {
-      switchPanel("marketing");
-      loadMarketingUsers();
-    });
-    if (navPromociones) navPromociones.addEventListener("click", () => {
-      switchPanel("promociones");
-      loadPromotionsAdmin();
-    });
+
     const mobNavClientes = document.getElementById("aMobNavClientes");
     const mobNavTx = document.getElementById("aMobNavTx");
     const mobNavStats = document.getElementById("aMobNavStats");
-    const mobNavMarketing = document.getElementById("aMobNavMarketing");
-    const mobNavPromociones = document.getElementById("aMobNavPromociones");
     const mobNavCajerosLocal = document.getElementById("aMobNavCajeros");
     const mobNavLogout = document.getElementById("aMobNavLogout");
     if (mobNavClientes) mobNavClientes.addEventListener("click", () => switchPanel("clientes"));
@@ -910,14 +890,7 @@ if (qrButton) {
     if (mobNavReferidos) mobNavReferidos.addEventListener("click", () => {
       switchPanel("referidos");
     });
-    if (mobNavMarketing) mobNavMarketing.addEventListener("click", () => {
-      switchPanel("marketing");
-      loadMarketingUsers();
-    });
-    if (mobNavPromociones) mobNavPromociones.addEventListener("click", () => {
-      switchPanel("promociones");
-      loadPromotionsAdmin();
-    });
+
 
     if (goQrBtn) goQrBtn.addEventListener("click", () => {
       window.location.href = "/admin/qr";
@@ -2381,45 +2354,9 @@ Esto eliminará también sus transacciones.`
     const initAuthed = (role) => {
       showDash();
       
-      if (role === "marketing") {
-        // Ocultar paneles no permitidos para marketing
-        if (navClientes) navClientes.hidden = true;
-        if (navTx) navTx.hidden = true;
-        if (navStats) navStats.hidden = true;
-        if (navCajeros) navCajeros.hidden = true;
-        if (navComercios) navComercios.hidden = true;
-        if (navSedes) navSedes.hidden = true;
-        if (navReportes) navReportes.hidden = true;
-        if (navReferidos) navReferidos.hidden = true;
-        
-        const mobNavClientes = document.getElementById("aMobNavClientes");
-        const mobNavTx = document.getElementById("aMobNavTx");
-        const mobNavStats = document.getElementById("aMobNavStats");
-        const mobNavCajeros = document.getElementById("aMobNavCajeros");
-        const mobNavComercios = document.getElementById("aMobNavComercios");
-        const mobNavSedes = document.getElementById("aMobNavSedes");
-        const mobNavReportes = document.getElementById("aMobNavReportes");
-        const mobNavReferidos = document.getElementById("aMobNavReferidos");
-        
-        if (mobNavClientes) mobNavClientes.hidden = true;
-        if (mobNavTx) mobNavTx.hidden = true;
-        if (mobNavStats) mobNavStats.hidden = true;
-        if (mobNavCajeros) mobNavCajeros.hidden = true;
-        if (mobNavComercios) mobNavComercios.hidden = true;
-        if (mobNavSedes) mobNavSedes.hidden = true;
-        if (mobNavReportes) mobNavReportes.hidden = true;
-        if (mobNavReferidos) mobNavReferidos.hidden = true;
-        
-        // Hide config functions like reset txs
-        if (adminResetTxsBtn) adminResetTxsBtn.hidden = true;
-        
-        switchPanel("promociones");
-        loadPromotionsAdmin();
-      } else {
-        switchPanel("clientes");
-        loadClients();
-        if (adminResetTxsBtn) adminResetTxsBtn.hidden = false;
-      }
+      switchPanel("clientes");
+      loadClients();
+      if (adminResetTxsBtn) adminResetTxsBtn.hidden = false;
       
       // Ocultar botón de perfil en admin mode si así se requiere
       if (profileButton) profileButton.hidden = true;
