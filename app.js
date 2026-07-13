@@ -1121,9 +1121,15 @@ if (qrButton) {
           return;
         }
 
-        await loadClients();
+        // Actualizamos los datos localmente en lugar de recargar toda la lista (para no perder la búsqueda)
         const updated = allCards.find((c) => c.token === selectedToken);
-        if (updated) selectClient(updated);
+        if (updated) {
+          if (name) updated.name = name;
+          if (cedula) updated.cedula = cedula;
+          if (email) updated.email = email;
+          if (sede !== undefined) updated.sedes = sede;
+          selectClient(updated);
+        }
         setResult(clientsResult, "ok", "Datos actualizados.");
       } catch {
         setResult(clientsResult, "err", "Error de red al actualizar.");
