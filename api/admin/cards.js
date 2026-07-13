@@ -129,6 +129,11 @@ export default async function handler(req, res) {
 
       await ref.set(updateData, { merge: true });
 
+      // Actualizar el correo en la colección 'cards' también si fue proporcionado
+      if (email) {
+        await firestore.collection('cards').doc(token).set({ email }, { merge: true });
+      }
+
       sendJson(res, 200, { ok: true });
     } catch (err) {
       sendJson(res, 500, { ok: false, error: err?.message ?? String(err) });
