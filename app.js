@@ -3682,16 +3682,22 @@ document.addEventListener("DOMContentLoaded", () => {
     if (buyPointsInputUsd) buyPointsInputUsd.addEventListener("input", handleInputUsd);
     if (buyPointsInputBs) buyPointsInputBs.addEventListener("input", handleInputBs);
     
+    const bpvDot1 = document.getElementById("bpvDot1");
+    const bpvDot2 = document.getElementById("bpvDot2");
+    const bpvDot3 = document.getElementById("bpvDot3");
+
     buyPointsBtnNext1.addEventListener("click", () => {
       if (currentTotalPts <= 0) return;
       buyPointsDisplayTotalBs.textContent = currentTotalBs.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
       step1.style.display = "none";
       step2.style.display = "flex";
+      if (bpvDot2) bpvDot2.classList.add("bpv__step-dot--active");
     });
 
     buyPointsBtnNext2.addEventListener("click", () => {
       step2.style.display = "none";
       step3.style.display = "flex";
+      if (bpvDot3) bpvDot3.classList.add("bpv__step-dot--active");
     });
 
     if (buyPointsOriginBank) buyPointsOriginBank.addEventListener("input", validateBuyPointsStep3);
@@ -3744,23 +3750,45 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
 
-    // Lógica para botones de copiar
-    const copyBtns = document.querySelectorAll(".buyPointsView__copyBtn");
+    // Lógica para botones de copiar (individuales)
+    const copyBtns = document.querySelectorAll(".bpv__copy-btn");
     copyBtns.forEach(btn => {
       btn.addEventListener("click", () => {
         const targetId = btn.getAttribute("data-copy");
         const el = document.getElementById(targetId);
         if (el) {
           navigator.clipboard.writeText(el.textContent.trim()).then(() => {
-            const originalText = btn.textContent;
-            btn.textContent = "¡Copiado!";
+            const original = btn.innerHTML;
+            btn.textContent = "✓ Copiado";
+            btn.style.background = "rgba(16, 185, 129, 0.25)";
             setTimeout(() => {
-              btn.textContent = originalText;
+              btn.innerHTML = original;
+              btn.style.background = "";
             }, 2000);
           });
         }
       });
     });
+
+    // Copiar todo
+    const copyAllBtn = document.getElementById("copyAllPmBtn");
+    if (copyAllBtn) {
+      copyAllBtn.addEventListener("click", () => {
+        const bank = document.getElementById("pmBank")?.textContent.trim() || "";
+        const phone = document.getElementById("pmPhone")?.textContent.trim() || "";
+        const id = document.getElementById("pmId")?.textContent.trim() || "";
+        const text = `Banco: ${bank}\nTeléfono: ${phone}\nCédula/RIF: ${id}`;
+        navigator.clipboard.writeText(text).then(() => {
+          const original = copyAllBtn.innerHTML;
+          copyAllBtn.textContent = "✓ ¡Todo copiado!";
+          copyAllBtn.style.background = "rgba(16, 185, 129, 0.3)";
+          setTimeout(() => {
+            copyAllBtn.innerHTML = original;
+            copyAllBtn.style.background = "";
+          }, 2500);
+        });
+      });
+    }
   }
 
 });

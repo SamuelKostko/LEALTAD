@@ -4141,15 +4141,535 @@ body:has(.aDash:not([hidden])) {
   }
 }
 
-/* Pantalla de Comprar Puntos (Wizard) */
-.buyPointsView {
+/* ============================================
+   BPV — Buy Points View (Wizard)
+   Mobile-first, premium design
+   ============================================ */
+
+.bpv {
   position: fixed;
   inset: 0;
   z-index: 9999;
   background: var(--bg);
   display: flex;
   flex-direction: column;
+  font-family: inherit;
 }
+
+/* --- Header --- */
+.bpv__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: env(safe-area-inset-top, 0) 0 0;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+  min-height: 56px;
+  border-bottom: 1px solid var(--border-soft);
+  background: var(--bg);
+  flex-shrink: 0;
+}
+
+.bpv__back {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  border-radius: 50%;
+  transition: background 0.15s, color 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.bpv__back:active {
+  background: var(--glass);
+  color: var(--text);
+}
+
+.bpv__title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+
+.bpv__header-spacer {
+  width: 44px;
+}
+
+/* --- Step dots --- */
+.bpv__steps {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  padding: 0.875rem 2rem;
+  flex-shrink: 0;
+}
+
+.bpv__step-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 2px solid var(--border);
+  transition: background 0.3s, border-color 0.3s, transform 0.3s;
+}
+
+.bpv__step-dot--active {
+  background: var(--primary, #6366f1);
+  border-color: var(--primary, #6366f1);
+  transform: scale(1.2);
+}
+
+.bpv__step-line {
+  flex: 1;
+  max-width: 48px;
+  height: 2px;
+  background: var(--border);
+  margin: 0 4px;
+}
+
+/* --- Body scroll area --- */
+.bpv__body {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 1.25rem 1.25rem max(env(safe-area-inset-bottom, 0px), 1.25rem);
+  display: flex;
+  flex-direction: column;
+}
+
+/* --- Panes (steps) --- */
+.bpv__pane {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  animation: bpvSlideIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  flex: 1;
+}
+
+@keyframes bpvSlideIn {
+  from { opacity: 0; transform: translateX(16px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* --- Pane header --- */
+.bpv__pane-header {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+  padding-bottom: 0.5rem;
+}
+
+.bpv__pane-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: rgba(99, 102, 241, 0.15);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary, #6366f1);
+  margin-bottom: 0.5rem;
+}
+
+.bpv__pane-icon--pay {
+  background: rgba(16, 185, 129, 0.12);
+  border-color: rgba(16, 185, 129, 0.2);
+  color: #10b981;
+}
+
+.bpv__pane-icon--report {
+  background: rgba(245, 158, 11, 0.12);
+  border-color: rgba(245, 158, 11, 0.2);
+  color: #f59e0b;
+}
+
+.bpv__pane-title {
+  font-size: 1.375rem;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.bpv__pane-subtitle {
+  font-size: 0.875rem;
+  color: var(--muted);
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* --- Rate badge --- */
+.bpv__rate-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8125rem;
+  color: var(--muted);
+}
+
+.bpv__rate-badge strong {
+  color: var(--primary, #6366f1);
+}
+
+/* --- Calculator --- */
+.bpv__calc {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border: 1px solid var(--border-soft);
+  border-radius: 16px;
+  overflow: hidden;
+  background: rgba(255,255,255,0.02);
+}
+
+.bpv__calc-field {
+  padding: 1rem 1.125rem;
+  border-bottom: 1px solid var(--border-soft);
+  transition: background 0.15s;
+}
+.bpv__calc-field:last-child {
+  border-bottom: none;
+}
+.bpv__calc-field:focus-within {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.bpv__calc-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  margin-bottom: 0.5rem;
+}
+
+.bpv__calc-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+.bpv__calc-dot--pts { background: var(--primary, #6366f1); }
+.bpv__calc-dot--usd { background: #10b981; }
+.bpv__calc-dot--bs  { background: #3b82f6; }
+
+.bpv__calc-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.bpv__calc-prefix {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #10b981;
+  min-width: 1.5rem;
+  flex-shrink: 0;
+}
+.bpv__calc-prefix--bs {
+  color: #3b82f6;
+  font-size: 1rem;
+}
+
+.bpv__calc-input {
+  flex: 1;
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--text);
+  font-size: 1.625rem;
+  font-weight: 700;
+  font-family: inherit;
+  width: 100%;
+  letter-spacing: -0.02em;
+  -moz-appearance: textfield;
+}
+.bpv__calc-input::-webkit-outer-spin-button,
+.bpv__calc-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.bpv__calc-input--usd { color: #10b981; font-size: 1.375rem; }
+.bpv__calc-input--bs  { color: #3b82f6; font-size: 1.375rem; }
+
+.bpv__calc-unit {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+.bpv__calc-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0 1.125rem;
+}
+.bpv__calc-divider-line {
+  flex: 1;
+  height: 1px;
+  background: var(--border-soft);
+}
+.bpv__calc-divider-icon {
+  font-size: 1rem;
+  color: var(--muted2);
+  user-select: none;
+}
+
+/* --- Amount highlight --- */
+.bpv__amount-highlight {
+  color: #10b981;
+  font-size: 1.125rem;
+}
+
+/* --- Payment card --- */
+.bpv__pm-card {
+  background: rgba(16, 185, 129, 0.05);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.bpv__pm-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1rem;
+  background: rgba(16, 185, 129, 0.08);
+  border-bottom: 1px solid rgba(16, 185, 129, 0.12);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #10b981;
+}
+
+.bpv__copy-all-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: 7px;
+  padding: 0.3rem 0.6rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+}
+.bpv__copy-all-btn:active {
+  background: rgba(16, 185, 129, 0.28);
+  transform: scale(0.95);
+}
+
+.bpv__pm-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.875rem 1rem;
+  border-bottom: 1px solid rgba(16, 185, 129, 0.08);
+  gap: 0.75rem;
+}
+.bpv__pm-row:last-child {
+  border-bottom: none;
+}
+
+.bpv__pm-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.bpv__pm-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted2);
+}
+
+.bpv__pm-val {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bpv__copy-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  border-radius: 8px;
+  padding: 0.4rem 0.7rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+  flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+.bpv__copy-btn:active {
+  background: rgba(16, 185, 129, 0.2);
+  transform: scale(0.95);
+}
+
+/* --- Form (Step 3) --- */
+.bpv__form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+}
+
+.bpv__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.bpv__label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.bpv__input {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1.5px solid var(--border-soft);
+  border-radius: 12px;
+  padding: 0.875rem 1rem;
+  color: var(--text);
+  font-size: 1rem;
+  font-family: inherit;
+  font-weight: 500;
+  transition: border-color 0.2s, background 0.2s;
+  width: 100%;
+  -webkit-appearance: none;
+}
+
+.bpv__input::placeholder {
+  color: var(--muted2);
+}
+
+.bpv__input:focus {
+  outline: none;
+  border-color: var(--primary, #6366f1);
+  background: rgba(99, 102, 241, 0.04);
+}
+
+/* --- CTA Button --- */
+.bpv__cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 1rem;
+  background: var(--primary, #6366f1);
+  color: white;
+  border: none;
+  border-radius: 14px;
+  font-size: 1rem;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  letter-spacing: -0.01em;
+  transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
+  box-shadow: 0 4px 20px rgba(99, 102, 241, 0.3);
+  -webkit-tap-highlight-color: transparent;
+  margin-top: auto;
+}
+
+.bpv__cta:active:not(:disabled) {
+  transform: scale(0.97);
+  opacity: 0.9;
+}
+
+.bpv__cta:disabled {
+  background: var(--surface);
+  color: var(--muted2);
+  box-shadow: none;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.bpv__cta--confirm {
+  background: #10b981;
+  box-shadow: 0 4px 20px rgba(16, 185, 129, 0.3);
+}
+
+.bpv__cta--submit {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  box-shadow: 0 4px 20px rgba(139, 92, 246, 0.35);
+}
+
+/* --- Success screen --- */
+.bpv__pane--success {
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding-top: 2rem;
+  gap: 1rem;
+}
+
+.bpv__success-icon {
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #10b981, #059669);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 32px rgba(16, 185, 129, 0.4);
+  animation: bpvPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes bpvPop {
+  from { transform: scale(0.4); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+
+.bpv__success-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+.bpv__success-text {
+  font-size: 0.9375rem;
+  color: var(--muted);
+  line-height: 1.5;
+  margin: 0;
+  max-width: 280px;
+}
+
 
 .buyPointsView__header {
   display: flex;

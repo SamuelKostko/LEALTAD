@@ -1018,129 +1018,234 @@
   </div>
 
   <!-- Vista de Comprar Puntos (Wizard Completo) -->
-  <div class="buyPointsView" id="buyPointsView" aria-hidden="true" style="display: none;">
-    <header class="buyPointsView__header">
-      <button class="buyPointsView__back" id="buyPointsBackBtn" type="button" aria-label="Volver">
-        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <div class="bpv" id="buyPointsView" aria-hidden="true" style="display: none;">
+    
+    <!-- Header -->
+    <header class="bpv__header">
+      <button class="bpv__back" id="buyPointsBackBtn" type="button" aria-label="Volver">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
           <line x1="19" y1="12" x2="5" y2="12"></line>
           <polyline points="12 19 5 12 12 5"></polyline>
         </svg>
       </button>
-      <span class="buyPointsView__title">Comprar Puntos</span>
-      <div style="width: 24px;"></div> <!-- Spacer -->
+      <span class="bpv__title">Comprar Puntos</span>
+      <div class="bpv__header-spacer"></div>
     </header>
 
-    <div class="buyPointsView__body">
-      <!-- Paso 1: Monto -->
-      <div id="buyPointsStep1" class="buyPointsView__step">
-        <h2 style="margin: 0 0 1rem 0; font-size: 1.5rem;">Calculadora de Compra</h2>
-        <p class="buyPointsModal__info">Tasa BCV actual: <strong id="bcvRateDisplay">Cargando...</strong> Bs/USD</p>
-        <p class="buyPointsModal__info" style="font-size: 0.8rem; margin-top: 4px;">Valor del punto: 100 pts = 1$</p>
-        
-        <div style="display: flex; flex-direction: column; gap: 1rem; margin-top: 1.5rem;">
-          <div class="buyPointsModal__input-group">
-            <label for="buyPointsInputPts">Puntos a comprar:</label>
-            <input type="number" id="buyPointsInputPts" min="1" step="1" placeholder="0" style="font-size: 1.5rem; text-align: center; padding: 0.75rem;" />
-          </div>
+    <!-- Step indicator -->
+    <div class="bpv__steps">
+      <div class="bpv__step-dot bpv__step-dot--active" id="bpvDot1"></div>
+      <div class="bpv__step-line"></div>
+      <div class="bpv__step-dot" id="bpvDot2"></div>
+      <div class="bpv__step-line"></div>
+      <div class="bpv__step-dot" id="bpvDot3"></div>
+    </div>
 
-          <div style="display: flex; align-items: center; justify-content: center; color: var(--text-secondary);">
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="12" y1="5" x2="12" y2="19"></line>
-              <polyline points="19 12 12 19 5 12"></polyline>
+    <div class="bpv__body">
+
+      <!-- ======== PASO 1: Calculadora ======== -->
+      <div id="buyPointsStep1" class="bpv__pane">
+
+        <div class="bpv__pane-header">
+          <div class="bpv__pane-icon">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect>
+              <line x1="8" y1="6" x2="16" y2="6"></line>
+              <line x1="8" y1="10" x2="16" y2="10"></line>
+              <line x1="8" y1="14" x2="12" y2="14"></line>
             </svg>
           </div>
+          <h2 class="bpv__pane-title">Calculadora</h2>
+          <p class="bpv__pane-subtitle">Ingresa la cantidad en cualquier campo</p>
+        </div>
 
-          <div style="display: flex; gap: 1rem;">
-            <div class="buyPointsModal__input-group" style="flex: 1;">
-              <label for="buyPointsInputUsd">Total ($):</label>
-              <input type="number" id="buyPointsInputUsd" min="0.01" step="0.01" placeholder="0.00" style="font-size: 1.25rem; text-align: center; padding: 0.75rem; color: #10b981;" />
+        <div class="bpv__rate-badge">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+          <span>BCV: <strong id="bcvRateDisplay">Cargando...</strong> Bs/$ &nbsp;·&nbsp; 100 pts = 1$</span>
+        </div>
+
+        <div class="bpv__calc">
+
+          <!-- Input Puntos -->
+          <div class="bpv__calc-field bpv__calc-field--pts">
+            <div class="bpv__calc-label">
+              <div class="bpv__calc-dot bpv__calc-dot--pts"></div>
+              <span>Puntos</span>
             </div>
-            
-            <div class="buyPointsModal__input-group" style="flex: 1;">
-              <label for="buyPointsInputBs">Total (Bs):</label>
-              <input type="number" id="buyPointsInputBs" min="0.01" step="0.01" placeholder="0.00" style="font-size: 1.25rem; text-align: center; padding: 0.75rem; color: #3b82f6;" />
+            <div class="bpv__calc-input-wrap">
+              <input class="bpv__calc-input" type="number" id="buyPointsInputPts" min="1" step="1" inputmode="numeric" placeholder="0" />
+              <span class="bpv__calc-unit">pts</span>
             </div>
+          </div>
+
+          <div class="bpv__calc-divider">
+            <div class="bpv__calc-divider-line"></div>
+            <div class="bpv__calc-divider-icon">⇅</div>
+            <div class="bpv__calc-divider-line"></div>
+          </div>
+
+          <!-- Input USD -->
+          <div class="bpv__calc-field bpv__calc-field--usd">
+            <div class="bpv__calc-label">
+              <div class="bpv__calc-dot bpv__calc-dot--usd"></div>
+              <span>Dólares</span>
+            </div>
+            <div class="bpv__calc-input-wrap">
+              <span class="bpv__calc-prefix">$</span>
+              <input class="bpv__calc-input bpv__calc-input--usd" type="number" id="buyPointsInputUsd" min="0.01" step="0.01" inputmode="decimal" placeholder="0.00" />
+            </div>
+          </div>
+
+          <!-- Input Bs -->
+          <div class="bpv__calc-field bpv__calc-field--bs">
+            <div class="bpv__calc-label">
+              <div class="bpv__calc-dot bpv__calc-dot--bs"></div>
+              <span>Bolívares</span>
+            </div>
+            <div class="bpv__calc-input-wrap">
+              <span class="bpv__calc-prefix bpv__calc-prefix--bs">Bs</span>
+              <input class="bpv__calc-input bpv__calc-input--bs" type="number" id="buyPointsInputBs" min="0.01" step="0.01" inputmode="decimal" placeholder="0.00" />
+            </div>
+          </div>
+
+        </div>
+
+        <button class="bpv__cta" id="buyPointsBtnNext1" type="button" disabled>
+          Continuar
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+            <polyline points="12 5 19 12 12 19"></polyline>
+          </svg>
+        </button>
+      </div>
+
+      <!-- ======== PASO 2: Datos de pago ======== -->
+      <div id="buyPointsStep2" class="bpv__pane" style="display:none;">
+
+        <div class="bpv__pane-header">
+          <div class="bpv__pane-icon bpv__pane-icon--pay">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+              <line x1="1" y1="10" x2="23" y2="10"></line>
+            </svg>
+          </div>
+          <h2 class="bpv__pane-title">Realiza el pago</h2>
+          <p class="bpv__pane-subtitle">Transfiere exactamente <strong id="buyPointsDisplayTotalBs" class="bpv__amount-highlight"></strong> Bs</p>
+        </div>
+
+        <div class="bpv__pm-card">
+          <div class="bpv__pm-card-header">
+            <div style="display:flex; align-items:center; gap:0.5rem;">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.59 3.47 2 2 0 0 1 3.56 1.27h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.78a16 16 0 0 0 6.29 6.29l.88-.88a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21.72 16.92z"></path>
+              </svg>
+              <span>Pago Móvil a:</span>
+            </div>
+            <button class="bpv__copy-all-btn" id="copyAllPmBtn" type="button">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+              Copiar todo
+            </button>
+          </div>
+          <div class="bpv__pm-row">
+            <div class="bpv__pm-info">
+              <span class="bpv__pm-label">Banco</span>
+              <span class="bpv__pm-val" id="pmBank">[Banco a definir]</span>
+            </div>
+            <button class="bpv__copy-btn" type="button" data-copy="pmBank">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+              Copiar
+            </button>
+          </div>
+          <div class="bpv__pm-row">
+            <div class="bpv__pm-info">
+              <span class="bpv__pm-label">Teléfono</span>
+              <span class="bpv__pm-val" id="pmPhone">[Teléfono a definir]</span>
+            </div>
+            <button class="bpv__copy-btn" type="button" data-copy="pmPhone">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+              Copiar
+            </button>
+          </div>
+          <div class="bpv__pm-row">
+            <div class="bpv__pm-info">
+              <span class="bpv__pm-label">Cédula / RIF</span>
+              <span class="bpv__pm-val" id="pmId">[CI/RIF a definir]</span>
+            </div>
+            <button class="bpv__copy-btn" type="button" data-copy="pmId">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+              Copiar
+            </button>
           </div>
         </div>
 
-        <button class="buyPointsModal__submit" id="buyPointsBtnNext1" type="button" disabled style="margin-top: 2rem;">Continuar</button>
+        <button class="bpv__cta bpv__cta--confirm" id="buyPointsBtnNext2" type="button">
+          Ya realicé el pago
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        </button>
       </div>
 
-      <!-- Paso 2: Instrucciones -->
-      <div id="buyPointsStep2" class="buyPointsView__step" style="display: none;">
-        <h2 style="margin: 0 0 1rem 0; font-size: 1.5rem;">Realiza tu pago</h2>
-        <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">Por favor, transfiere <strong id="buyPointsDisplayTotalBs" style="color: #10b981;"></strong> Bs a la siguiente cuenta de Pago Móvil:</p>
-        
-        <div class="buyPointsView__pm-card">
-          <div class="buyPointsView__pm-row">
-            <div>
-              <span class="buyPointsView__pm-label">Banco</span>
-              <div class="buyPointsView__pm-val" id="pmBank">[Banco a definir]</div>
-            </div>
-            <button class="buyPointsView__copyBtn" type="button" data-copy="pmBank">Copiar</button>
+      <!-- ======== PASO 3: Formulario ======== -->
+      <div id="buyPointsStep3" class="bpv__pane" style="display:none;">
+
+        <div class="bpv__pane-header">
+          <div class="bpv__pane-icon bpv__pane-icon--report">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+            </svg>
           </div>
-          <div class="buyPointsView__pm-row">
-            <div>
-              <span class="buyPointsView__pm-label">Teléfono</span>
-              <div class="buyPointsView__pm-val" id="pmPhone">[Teléfono a definir]</div>
-            </div>
-            <button class="buyPointsView__copyBtn" type="button" data-copy="pmPhone">Copiar</button>
+          <h2 class="bpv__pane-title">Reportar pago</h2>
+          <p class="bpv__pane-subtitle">Ingresa los datos de tu cuenta de origen</p>
+        </div>
+
+        <div class="bpv__form">
+          <div class="bpv__field">
+            <label class="bpv__label" for="buyPointsOriginBank">Tu banco</label>
+            <input class="bpv__input" type="text" id="buyPointsOriginBank" placeholder="Ej: Banesco, Mercantil..." autocomplete="off" />
           </div>
-          <div class="buyPointsView__pm-row">
-            <div>
-              <span class="buyPointsView__pm-label">Cédula/RIF</span>
-              <div class="buyPointsView__pm-val" id="pmId">[CI/RIF a definir]</div>
-            </div>
-            <button class="buyPointsView__copyBtn" type="button" data-copy="pmId">Copiar</button>
+          <div class="bpv__field">
+            <label class="bpv__label" for="buyPointsOriginPhone">Teléfono de origen</label>
+            <input class="bpv__input" type="tel" id="buyPointsOriginPhone" placeholder="04141234567" inputmode="tel" />
+          </div>
+          <div class="bpv__field">
+            <label class="bpv__label" for="buyPointsOriginId">Cédula de origen</label>
+            <input class="bpv__input" type="text" id="buyPointsOriginId" placeholder="V12345678" inputmode="numeric" />
+          </div>
+          <div class="bpv__field">
+            <label class="bpv__label" for="buyPointsRef">Número de referencia</label>
+            <input class="bpv__input" type="text" id="buyPointsRef" placeholder="12345678" inputmode="numeric" />
           </div>
         </div>
 
-        <button class="buyPointsModal__submit" id="buyPointsBtnNext2" type="button" style="margin-top: 2rem;">Ya realicé el pago</button>
+        <button class="bpv__cta bpv__cta--submit" id="buyPointsSubmitBtn" type="button" disabled>
+          Notificar Pago
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="22" y1="2" x2="11" y2="13"></line>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+          </svg>
+        </button>
       </div>
 
-      <!-- Paso 3: Formulario -->
-      <div id="buyPointsStep3" class="buyPointsView__step" style="display: none;">
-        <h2 style="margin: 0 0 1rem 0; font-size: 1.5rem;">Reportar Pago</h2>
-        <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">Ingresa los datos desde donde realizaste el pago móvil para poder verificarlo.</p>
-
-        <div style="display: flex; flex-direction: column; gap: 1rem;">
-          <div class="buyPointsModal__input-group">
-            <label for="buyPointsOriginBank">Tu Banco (Origen):</label>
-            <input type="text" id="buyPointsOriginBank" placeholder="Ej. Banesco" />
-          </div>
-          
-          <div class="buyPointsModal__input-group">
-            <label for="buyPointsOriginPhone">Tu Teléfono (Origen):</label>
-            <input type="tel" id="buyPointsOriginPhone" placeholder="Ej. 04141234567" />
-          </div>
-          
-          <div class="buyPointsModal__input-group">
-            <label for="buyPointsOriginId">Tu Cédula (Origen):</label>
-            <input type="text" id="buyPointsOriginId" placeholder="Ej. V12345678" />
-          </div>
-
-          <div class="buyPointsModal__input-group">
-            <label for="buyPointsRef">Número de Referencia:</label>
-            <input type="text" id="buyPointsRef" placeholder="Ej. 12345678" />
-          </div>
+      <!-- ======== ÉXITO ======== -->
+      <div id="buyPointsStepSuccess" class="bpv__pane bpv__pane--success" style="display:none;">
+        <div class="bpv__success-icon">
+          <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
         </div>
-
-        <button class="buyPointsModal__submit" id="buyPointsSubmitBtn" type="button" disabled style="margin-top: 2rem;">Notificar Pago</button>
+        <h2 class="bpv__success-title">¡Pago reportado!</h2>
+        <p class="bpv__success-text">Un administrador verificará tu transferencia y acreditará los puntos a tu cuenta pronto.</p>
+        <button class="bpv__cta" id="buyPointsBtnDone" type="button">Volver al inicio</button>
       </div>
 
-      <!-- Éxito -->
-      <div id="buyPointsStepSuccess" class="buyPointsView__step" style="display: none; text-align: center; padding-top: 2rem;">
-        <svg viewBox="0 0 24 24" width="64" height="64" fill="none" style="color: #10b981; margin: 0 auto 1rem auto;">
-          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
-          <polyline points="22 4 12 14.01 9 11.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></polyline>
-        </svg>
-        <h2 style="margin: 0 0 1rem 0; font-size: 1.5rem;">¡Pago reportado!</h2>
-        <p style="color: var(--text-secondary); margin-bottom: 2rem;">Un administrador verificará el pago y acreditará tus puntos pronto.</p>
-        <button class="buyPointsModal__submit" id="buyPointsBtnDone" type="button">Volver a Mi Perfil</button>
-      </div>
-
-    </div>
-  </div>
+    </div><!-- /.bpv__body -->
+  </div><!-- /.bpv -->
 
   <!-- Modal de historial de transacciones -->
   <div class="historyModal" id="historyModal" aria-hidden="true" role="dialog" aria-modal="true"
