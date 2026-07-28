@@ -1551,7 +1551,7 @@ Esto eliminará también sus transacciones.`
       pendingPaymentsRefresh.addEventListener("click", loadPendingPayments);
     }
 
-    let currentTxLimit = 10;
+
     const loadAllTransactions = async (branch = selectedBranch) => {
       var _a;
       if (!txList) return;
