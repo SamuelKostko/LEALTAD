@@ -7,7 +7,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { cardNumber, amount, totalBs, originBank, originPhone, originId, reference, rate } = req.body;
+    const { cardNumber, clientName, amount, totalBs, originBank, originPhone, originId, reference, rate } = req.body;
 
     if (!cardNumber || !amount || !totalBs || !reference || !originBank || !originPhone || !originId) {
       return sendJson(res, 400, { error: 'Missing required fields' });
@@ -18,6 +18,7 @@ export default async function handler(req, res) {
 
     const newPurchase = {
       cardNumber: String(cardNumber),
+      clientName: clientName ? String(clientName) : 'Desconocido',
       amount: Number(amount),
       totalBs: String(totalBs),
       originBank: String(originBank),

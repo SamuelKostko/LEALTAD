@@ -1482,7 +1482,7 @@ Esto eliminará también sus transacciones.`
               <div class="aTxItem__type">Pago Móvil Ref: <strong style="color:var(--primary);">${p.reference || 'N/A'}</strong></div>
               <div class="aTxItem__date">${new Date(p.createdAt).toLocaleString("es-VE")}</div>
               <div class="aTxItem__desc" style="margin-top: 4px; font-size: 0.85rem;">
-                <strong>Cliente:</strong> ${p.cardNumber}<br>
+                <strong>Cliente:</strong> <span style="color:var(--primary);">${p.clientName || 'Desconocido'}</span> (Tarjeta: ${p.cardNumber})<br>
                 <strong>Banco Origen:</strong> ${p.originBank || 'N/A'}<br>
                 <strong>Teléfono Origen:</strong> ${p.originPhone || 'N/A'}<br>
                 <strong>CI Origen:</strong> ${p.originId || 'N/A'}<br>
@@ -3566,6 +3566,7 @@ document.addEventListener("DOMContentLoaded", () => {
       profileMenu.setAttribute("aria-hidden", "true");
     }
     resetBuyPointsWizard();
+
     buyPointsView.style.display = "flex";
     buyPointsView.setAttribute("aria-hidden", "false");
     fetchBcvRate();
@@ -3659,11 +3660,15 @@ document.addEventListener("DOMContentLoaded", () => {
       buyPointsSubmitBtn.textContent = "Enviando...";
 
       try {
+        const nameEl = document.getElementById("clientName");
+        const clientName = nameEl ? nameEl.textContent : "Desconocido";
+
         const res = await fetch("/api/buy-points", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             cardNumber: currentCardNumber, // Usamos la variable global
+            clientName: clientName,
             amount,
             totalBs: totalBsText,
             originBank: bank,

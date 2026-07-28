@@ -4146,7 +4146,7 @@ body:has(.aDash:not([hidden])) {
   position: fixed;
   inset: 0;
   z-index: 9999;
-  background: var(--surface);
+  background: var(--bg);
   display: flex;
   flex-direction: column;
 }
