@@ -1017,58 +1017,110 @@
     </div>
   </div>
 
-  <!-- Modal de Comprar Puntos -->
-  <div class="buyPointsModal" id="buyPointsModal" aria-hidden="true" role="dialog" aria-modal="true" aria-label="Comprar Puntos">
-    <div class="buyPointsModal__backdrop" id="buyPointsModalBackdrop"></div>
-    <div class="buyPointsModal__frame">
-      <header class="buyPointsModal__header">
-        <span class="buyPointsModal__title">Comprar Puntos</span>
-        <button class="buyPointsModal__close" id="buyPointsCloseBtn" type="button" aria-label="Cerrar">✕</button>
-      </header>
-      <div class="buyPointsModal__body" style="max-height: 80vh; overflow-y: auto;">
+  <!-- Vista de Comprar Puntos (Wizard Completo) -->
+  <div class="buyPointsView" id="buyPointsView" aria-hidden="true" style="display: none;">
+    <header class="buyPointsView__header">
+      <button class="buyPointsView__back" id="buyPointsBackBtn" type="button" aria-label="Volver">
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="19" y1="12" x2="5" y2="12"></line>
+          <polyline points="12 19 5 12 12 5"></polyline>
+        </svg>
+      </button>
+      <span class="buyPointsView__title">Comprar Puntos</span>
+      <div style="width: 24px;"></div> <!-- Spacer -->
+    </header>
+
+    <div class="buyPointsView__body">
+      <!-- Paso 1: Monto -->
+      <div id="buyPointsStep1" class="buyPointsView__step">
+        <h2 style="margin: 0 0 1rem 0; font-size: 1.5rem;">¿Cuántos puntos deseas?</h2>
         <p class="buyPointsModal__info">Tasa BCV actual: <strong id="bcvRateDisplay">Cargando...</strong> Bs/USD</p>
         
-        <div class="buyPointsModal__input-group">
-          <label for="buyPointsAmount">Puntos a comprar:</label>
-          <input type="number" id="buyPointsAmount" min="1" step="1" placeholder="Ej. 10" />
+        <div class="buyPointsModal__input-group" style="margin-top: 1.5rem;">
+          <input type="number" id="buyPointsAmount" min="1" step="1" placeholder="Ej. 100" style="font-size: 2rem; text-align: center; padding: 1rem;" />
         </div>
 
-        <div class="buyPointsModal__total">
+        <div class="buyPointsModal__total" style="margin-top: 1.5rem;">
           <span>Total a pagar (Bs):</span>
           <strong id="buyPointsTotalBs">0.00</strong>
         </div>
 
-        <div class="buyPointsModal__payment-info" style="background: rgba(255,255,255,0.05); padding: 1rem; border-radius: 12px; margin-top: 0.5rem; font-size: 0.875rem; color: var(--text-secondary);">
-          <strong style="color: var(--text-primary); display: block; margin-bottom: 0.5rem;">Por favor, realiza tu pago móvil a:</strong>
-          <p style="margin: 0 0 0.25rem 0;">Banco: <span id="pmBank">[Banco a definir]</span></p>
-          <p style="margin: 0 0 0.25rem 0;">Teléfono: <span id="pmPhone">[Teléfono a definir]</span></p>
-          <p style="margin: 0;">Cédula/RIF: <span id="pmId">[CI/RIF a definir]</span></p>
-        </div>
-
-        <strong style="color: var(--text-primary); font-size: 0.95rem; margin-top: 0.5rem;">Reportar Pago Realizado</strong>
-        
-        <div class="buyPointsModal__input-group">
-          <label for="buyPointsOriginBank">Banco de origen:</label>
-          <input type="text" id="buyPointsOriginBank" placeholder="Ej. Banesco" />
-        </div>
-        
-        <div class="buyPointsModal__input-group">
-          <label for="buyPointsOriginPhone">Teléfono de origen:</label>
-          <input type="tel" id="buyPointsOriginPhone" placeholder="Ej. 04141234567" />
-        </div>
-        
-        <div class="buyPointsModal__input-group">
-          <label for="buyPointsOriginId">Cédula de origen:</label>
-          <input type="text" id="buyPointsOriginId" placeholder="Ej. V12345678" />
-        </div>
-
-        <div class="buyPointsModal__input-group">
-          <label for="buyPointsRef">Número de Referencia:</label>
-          <input type="text" id="buyPointsRef" placeholder="Ej. 12345678" />
-        </div>
-
-        <button class="buyPointsModal__submit" id="buyPointsSubmitBtn" type="button" disabled>Notificar Pago</button>
+        <button class="buyPointsModal__submit" id="buyPointsBtnNext1" type="button" disabled style="margin-top: 2rem;">Continuar</button>
       </div>
+
+      <!-- Paso 2: Instrucciones -->
+      <div id="buyPointsStep2" class="buyPointsView__step" style="display: none;">
+        <h2 style="margin: 0 0 1rem 0; font-size: 1.5rem;">Realiza tu pago</h2>
+        <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">Por favor, transfiere <strong id="buyPointsDisplayTotalBs" style="color: #10b981;"></strong> Bs a la siguiente cuenta de Pago Móvil:</p>
+        
+        <div class="buyPointsView__pm-card">
+          <div class="buyPointsView__pm-row">
+            <div>
+              <span class="buyPointsView__pm-label">Banco</span>
+              <div class="buyPointsView__pm-val" id="pmBank">[Banco a definir]</div>
+            </div>
+            <button class="buyPointsView__copyBtn" type="button" data-copy="pmBank">Copiar</button>
+          </div>
+          <div class="buyPointsView__pm-row">
+            <div>
+              <span class="buyPointsView__pm-label">Teléfono</span>
+              <div class="buyPointsView__pm-val" id="pmPhone">[Teléfono a definir]</div>
+            </div>
+            <button class="buyPointsView__copyBtn" type="button" data-copy="pmPhone">Copiar</button>
+          </div>
+          <div class="buyPointsView__pm-row">
+            <div>
+              <span class="buyPointsView__pm-label">Cédula/RIF</span>
+              <div class="buyPointsView__pm-val" id="pmId">[CI/RIF a definir]</div>
+            </div>
+            <button class="buyPointsView__copyBtn" type="button" data-copy="pmId">Copiar</button>
+          </div>
+        </div>
+
+        <button class="buyPointsModal__submit" id="buyPointsBtnNext2" type="button" style="margin-top: 2rem;">Ya realicé el pago</button>
+      </div>
+
+      <!-- Paso 3: Formulario -->
+      <div id="buyPointsStep3" class="buyPointsView__step" style="display: none;">
+        <h2 style="margin: 0 0 1rem 0; font-size: 1.5rem;">Reportar Pago</h2>
+        <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">Ingresa los datos desde donde realizaste el pago móvil para poder verificarlo.</p>
+
+        <div style="display: flex; flex-direction: column; gap: 1rem;">
+          <div class="buyPointsModal__input-group">
+            <label for="buyPointsOriginBank">Tu Banco (Origen):</label>
+            <input type="text" id="buyPointsOriginBank" placeholder="Ej. Banesco" />
+          </div>
+          
+          <div class="buyPointsModal__input-group">
+            <label for="buyPointsOriginPhone">Tu Teléfono (Origen):</label>
+            <input type="tel" id="buyPointsOriginPhone" placeholder="Ej. 04141234567" />
+          </div>
+          
+          <div class="buyPointsModal__input-group">
+            <label for="buyPointsOriginId">Tu Cédula (Origen):</label>
+            <input type="text" id="buyPointsOriginId" placeholder="Ej. V12345678" />
+          </div>
+
+          <div class="buyPointsModal__input-group">
+            <label for="buyPointsRef">Número de Referencia:</label>
+            <input type="text" id="buyPointsRef" placeholder="Ej. 12345678" />
+          </div>
+        </div>
+
+        <button class="buyPointsModal__submit" id="buyPointsSubmitBtn" type="button" disabled style="margin-top: 2rem;">Notificar Pago</button>
+      </div>
+
+      <!-- Éxito -->
+      <div id="buyPointsStepSuccess" class="buyPointsView__step" style="display: none; text-align: center; padding-top: 2rem;">
+        <svg viewBox="0 0 24 24" width="64" height="64" fill="none" style="color: #10b981; margin: 0 auto 1rem auto;">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+          <polyline points="22 4 12 14.01 9 11.01" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></polyline>
+        </svg>
+        <h2 style="margin: 0 0 1rem 0; font-size: 1.5rem;">¡Pago reportado!</h2>
+        <p style="color: var(--text-secondary); margin-bottom: 2rem;">Un administrador verificará el pago y acreditará tus puntos pronto.</p>
+        <button class="buyPointsModal__submit" id="buyPointsBtnDone" type="button">Volver a Mi Perfil</button>
+      </div>
+
     </div>
   </div>
 

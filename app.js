@@ -3513,38 +3513,67 @@ document.addEventListener("DOMContentLoaded", () => {
     if (promotionsListBackdrop) promotionsListBackdrop.addEventListener("click", closePromotionsClientModal);
   }
 
-  // Lógica para Comprar Puntos
+  // Lógica para Comprar Puntos (Wizard)
   const profileBuyPointsBtn = document.getElementById("profileBuyPointsBtn");
-  const buyPointsModal = document.getElementById("buyPointsModal");
-  const buyPointsCloseBtn = document.getElementById("buyPointsCloseBtn");
-  const buyPointsModalBackdrop = document.getElementById("buyPointsModalBackdrop");
+  const buyPointsView = document.getElementById("buyPointsView");
+  const buyPointsBackBtn = document.getElementById("buyPointsBackBtn");
   
+  const step1 = document.getElementById("buyPointsStep1");
+  const step2 = document.getElementById("buyPointsStep2");
+  const step3 = document.getElementById("buyPointsStep3");
+  const stepSuccess = document.getElementById("buyPointsStepSuccess");
+
   const bcvRateDisplay = document.getElementById("bcvRateDisplay");
   const buyPointsAmount = document.getElementById("buyPointsAmount");
+  const buyPointsTotalBs = document.getElementById("buyPointsTotalBs");
+  const buyPointsBtnNext1 = document.getElementById("buyPointsBtnNext1");
+  
+  const buyPointsDisplayTotalBs = document.getElementById("buyPointsDisplayTotalBs");
+  const buyPointsBtnNext2 = document.getElementById("buyPointsBtnNext2");
   
   const buyPointsOriginBank = document.getElementById("buyPointsOriginBank");
   const buyPointsOriginPhone = document.getElementById("buyPointsOriginPhone");
   const buyPointsOriginId = document.getElementById("buyPointsOriginId");
   const buyPointsRef = document.getElementById("buyPointsRef");
-  
-  const buyPointsTotalBs = document.getElementById("buyPointsTotalBs");
   const buyPointsSubmitBtn = document.getElementById("buyPointsSubmitBtn");
+  const buyPointsBtnDone = document.getElementById("buyPointsBtnDone");
 
   let currentBcvRate = null;
+  let currentTotalBs = 0;
 
-  function closeBuyPointsModal() {
-    if (buyPointsModal) {
-      buyPointsModal.classList.remove("buyPointsModal--active");
-      buyPointsModal.setAttribute("aria-hidden", "true");
-      buyPointsAmount.value = "";
-      if (buyPointsOriginBank) buyPointsOriginBank.value = "";
-      if (buyPointsOriginPhone) buyPointsOriginPhone.value = "";
-      if (buyPointsOriginId) buyPointsOriginId.value = "";
-      if (buyPointsRef) buyPointsRef.value = "";
-      buyPointsTotalBs.textContent = "0.00";
-      buyPointsSubmitBtn.disabled = true;
-      buyPointsSubmitBtn.textContent = "Notificar Pago";
+  function resetBuyPointsWizard() {
+    step1.style.display = "flex";
+    step2.style.display = "none";
+    step3.style.display = "none";
+    stepSuccess.style.display = "none";
+    
+    buyPointsAmount.value = "";
+    if (buyPointsOriginBank) buyPointsOriginBank.value = "";
+    if (buyPointsOriginPhone) buyPointsOriginPhone.value = "";
+    if (buyPointsOriginId) buyPointsOriginId.value = "";
+    if (buyPointsRef) buyPointsRef.value = "";
+    
+    buyPointsTotalBs.textContent = "0.00";
+    buyPointsBtnNext1.disabled = true;
+    buyPointsSubmitBtn.disabled = true;
+    buyPointsSubmitBtn.textContent = "Notificar Pago";
+  }
+
+  function showBuyPointsView() {
+    const profileMenu = document.getElementById("profileMenu");
+    if (profileMenu) {
+      profileMenu.classList.remove("profileMenu--active");
+      profileMenu.setAttribute("aria-hidden", "true");
     }
+    resetBuyPointsWizard();
+    buyPointsView.style.display = "flex";
+    buyPointsView.setAttribute("aria-hidden", "false");
+    fetchBcvRate();
+  }
+
+  function hideBuyPointsView() {
+    buyPointsView.style.display = "none";
+    buyPointsView.setAttribute("aria-hidden", "true");
   }
 
   async function fetchBcvRate() {
@@ -3555,7 +3584,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (data && data.promedio) {
         currentBcvRate = parseFloat(data.promedio);
         bcvRateDisplay.textContent = currentBcvRate.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        validateBuyPointsForm();
+        validateBuyPointsStep1();
       } else {
         bcvRateDisplay.textContent = "Error";
       }
@@ -3565,21 +3594,26 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
   
-  function validateBuyPointsForm() {
+  function validateBuyPointsStep1() {
     const amount = parseFloat(buyPointsAmount.value);
+    
+    if (isNaN(amount) || amount <= 0 || !currentBcvRate) {
+      buyPointsTotalBs.textContent = "0.00";
+      buyPointsBtnNext1.disabled = true;
+      currentTotalBs = 0;
+      return;
+    }
+    
+    currentTotalBs = amount * currentBcvRate;
+    buyPointsTotalBs.textContent = currentTotalBs.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    buyPointsBtnNext1.disabled = false;
+  }
+
+  function validateBuyPointsStep3() {
     const bank = buyPointsOriginBank ? buyPointsOriginBank.value.trim() : "";
     const phone = buyPointsOriginPhone ? buyPointsOriginPhone.value.trim() : "";
     const idNum = buyPointsOriginId ? buyPointsOriginId.value.trim() : "";
     const ref = buyPointsRef ? buyPointsRef.value.trim() : "";
-    
-    if (isNaN(amount) || amount <= 0 || !currentBcvRate) {
-      buyPointsTotalBs.textContent = "0.00";
-      buyPointsSubmitBtn.disabled = true;
-      return;
-    }
-    
-    const totalBs = amount * currentBcvRate;
-    buyPointsTotalBs.textContent = totalBs.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     
     if (bank.length > 2 && phone.length > 8 && idNum.length > 5 && ref.length > 3) {
       buyPointsSubmitBtn.disabled = false;
@@ -3588,28 +3622,28 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  if (profileBuyPointsBtn && buyPointsModal) {
-    profileBuyPointsBtn.addEventListener("click", () => {
-      // Close profile menu if it's open
-      const profileMenu = document.getElementById("profileMenu");
-      if (profileMenu) {
-        profileMenu.classList.remove("profileMenu--active");
-        profileMenu.setAttribute("aria-hidden", "true");
-      }
-      
-      buyPointsModal.classList.add("buyPointsModal--active");
-      buyPointsModal.setAttribute("aria-hidden", "false");
-      fetchBcvRate();
+  if (profileBuyPointsBtn && buyPointsView) {
+    profileBuyPointsBtn.addEventListener("click", showBuyPointsView);
+    buyPointsBackBtn.addEventListener("click", hideBuyPointsView);
+    buyPointsBtnDone.addEventListener("click", hideBuyPointsView);
+
+    buyPointsAmount.addEventListener("input", validateBuyPointsStep1);
+    
+    buyPointsBtnNext1.addEventListener("click", () => {
+      buyPointsDisplayTotalBs.textContent = currentTotalBs.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      step1.style.display = "none";
+      step2.style.display = "flex";
     });
 
-    buyPointsCloseBtn.addEventListener("click", closeBuyPointsModal);
-    buyPointsModalBackdrop.addEventListener("click", closeBuyPointsModal);
+    buyPointsBtnNext2.addEventListener("click", () => {
+      step2.style.display = "none";
+      step3.style.display = "flex";
+    });
 
-    buyPointsAmount.addEventListener("input", validateBuyPointsForm);
-    if (buyPointsOriginBank) buyPointsOriginBank.addEventListener("input", validateBuyPointsForm);
-    if (buyPointsOriginPhone) buyPointsOriginPhone.addEventListener("input", validateBuyPointsForm);
-    if (buyPointsOriginId) buyPointsOriginId.addEventListener("input", validateBuyPointsForm);
-    if (buyPointsRef) buyPointsRef.addEventListener("input", validateBuyPointsForm);
+    if (buyPointsOriginBank) buyPointsOriginBank.addEventListener("input", validateBuyPointsStep3);
+    if (buyPointsOriginPhone) buyPointsOriginPhone.addEventListener("input", validateBuyPointsStep3);
+    if (buyPointsOriginId) buyPointsOriginId.addEventListener("input", validateBuyPointsStep3);
+    if (buyPointsRef) buyPointsRef.addEventListener("input", validateBuyPointsStep3);
 
     buyPointsSubmitBtn.addEventListener("click", async () => {
       const amount = parseInt(buyPointsAmount.value, 10);
@@ -3642,14 +3676,32 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (!res.ok) throw new Error("Error al notificar");
 
-        alert(`¡Pago notificado con éxito!\n\nHas reportado la compra de ${amount} puntos.\nReferencia: ${ref}\n\nUn administrador revisará el pago y liberará los puntos en breve.`);
-        closeBuyPointsModal();
+        step3.style.display = "none";
+        stepSuccess.style.display = "block";
       } catch (err) {
         console.error(err);
         alert("Ocurrió un error al notificar el pago. Por favor, intenta de nuevo.");
         buyPointsSubmitBtn.disabled = false;
         buyPointsSubmitBtn.textContent = "Notificar Pago";
       }
+    });
+
+    // Lógica para botones de copiar
+    const copyBtns = document.querySelectorAll(".buyPointsView__copyBtn");
+    copyBtns.forEach(btn => {
+      btn.addEventListener("click", () => {
+        const targetId = btn.getAttribute("data-copy");
+        const el = document.getElementById(targetId);
+        if (el) {
+          navigator.clipboard.writeText(el.textContent.trim()).then(() => {
+            const originalText = btn.textContent;
+            btn.textContent = "¡Copiado!";
+            setTimeout(() => {
+              btn.textContent = originalText;
+            }, 2000);
+          });
+        }
+      });
     });
   }
 
