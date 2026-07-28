@@ -529,10 +529,14 @@ if (qrButton) {
     const adminCreateMerchantBtn = document.getElementById("adminCreateMerchantBtn");
     const panelClientes = document.getElementById("aPanelClientes");
     const panelTx = document.getElementById("aPanelTx");
+    const panelPendingPayments = document.getElementById("aPanelPendingPayments");
     const panelStats = document.getElementById("aPanelStats");
+    
     const navClientes = document.getElementById("aNavClientes");
     const navTx = document.getElementById("aNavTx");
+    const navPendingPayments = document.getElementById("aNavPendingPayments");
     const navStats = document.getElementById("aNavStats");
+    
     const searchInput = document.getElementById("adminClientSearch");
     const dropdown = document.getElementById("adminSearchDropdown");
     const clientCard = document.getElementById("aClientCard");
@@ -554,6 +558,11 @@ if (qrButton) {
     const txList = document.getElementById("adminTxList");
     const txResult = document.getElementById("adminTxResult");
     const adminTxLoadMore = document.getElementById("adminTxLoadMore");
+    
+    const pendingPaymentsRefresh = document.getElementById("adminPendingPaymentsRefresh");
+    const pendingPaymentsList = document.getElementById("adminPendingPaymentsList");
+    const pendingPaymentsResult = document.getElementById("adminPendingPaymentsResult");
+    
     const panelCajeros = document.getElementById("aPanelCajeros");
     const navCajeros = document.getElementById("aNavCajeros");
     const cajerosList = document.getElementById("adminCajerosList");
@@ -785,15 +794,17 @@ if (qrButton) {
     const switchPanel = (panel) => {
       if (panelClientes) panelClientes.hidden = panel !== "clientes";
       if (panelTx) panelTx.hidden = panel !== "transacciones";
+      if (panelPendingPayments) panelPendingPayments.hidden = panel !== "pendientes";
       if (panelStats) panelStats.hidden = panel !== "metricas";
       if (panelCajeros) panelCajeros.hidden = panel !== "cajeros";
       if (panelComercios) panelComercios.hidden = panel !== "comercios";
       if (panelSedes) panelSedes.hidden = panel !== "sedes";
       if (panelReportes) panelReportes.hidden = panel !== "reportes";
       if (panelReferidos) panelReferidos.hidden = panel !== "referidos";
-      
+
       if (navClientes) navClientes.classList.toggle("is-active", panel === "clientes");
       if (navTx) navTx.classList.toggle("is-active", panel === "transacciones");
+      if (navPendingPayments) navPendingPayments.classList.toggle("is-active", panel === "pendientes");
       if (navStats) navStats.classList.toggle("is-active", panel === "metricas");
       if (navCajeros) navCajeros.classList.toggle("is-active", panel === "cajeros");
       if (navComercios) navComercios.classList.toggle("is-active", panel === "comercios");
@@ -804,6 +815,7 @@ if (qrButton) {
       
       const mobClientes = document.getElementById("aMobNavClientes");
       const mobTx = document.getElementById("aMobNavTx");
+      const mobPendingPayments = document.getElementById("aMobNavPendingPayments");
       const mobStats = document.getElementById("aMobNavStats");
       const mobCajeros = document.getElementById("aMobNavCajeros");
       const mobComercios2 = document.getElementById("aMobNavComercios");
@@ -813,6 +825,7 @@ if (qrButton) {
 
       if (mobClientes) mobClientes.classList.toggle("is-active", panel === "clientes");
       if (mobTx) mobTx.classList.toggle("is-active", panel === "transacciones");
+      if (mobPendingPayments) mobPendingPayments.classList.toggle("is-active", panel === "pendientes");
       if (mobStats) mobStats.classList.toggle("is-active", panel === "metricas");
       if (mobCajeros) mobCajeros.classList.toggle("is-active", panel === "cajeros");
       if (mobComercios2) mobComercios2.classList.toggle("is-active", panel === "comercios");
@@ -828,6 +841,10 @@ if (qrButton) {
       switchPanel("transacciones");
       currentTxLimit = 10;
       loadAllTransactions("");
+    });
+    if (navPendingPayments) navPendingPayments.addEventListener("click", () => {
+      switchPanel("pendientes");
+      loadPendingPayments();
     });
     if (navStats) navStats.addEventListener("click", () => {
       switchPanel("metricas");
@@ -1437,6 +1454,104 @@ Esto eliminará también sus transacciones.`
       }
     };
 
+    const loadPendingPayments = async () => {
+      if (!pendingPaymentsList) return;
+      pendingPaymentsList.innerHTML = `<div class="aStatLoader">Cargando pagos pendientes...</div>`;
+      if (pendingPaymentsResult) pendingPaymentsResult.textContent = "";
+
+      try {
+        const data = await apiGet("/api/admin/pending-purchases");
+        if (!data || !data.pending) throw new Error("Error obteniendo pagos.");
+        
+        pendingPaymentsList.innerHTML = "";
+        
+        if (data.pending.length === 0) {
+          pendingPaymentsList.innerHTML = `<div class="aStatLoader" style="color:var(--text-secondary);">No hay pagos pendientes por revisar.</div>`;
+          return;
+        }
+
+        data.pending.forEach(p => {
+          const item = document.createElement("div");
+          item.className = "aTxItem";
+          item.style.cssText = "display: flex; flex-direction: column; gap: 10px; align-items: stretch;";
+          
+          const header = document.createElement("div");
+          header.style.cssText = "display: flex; justify-content: space-between; align-items: flex-start;";
+          header.innerHTML = `
+            <div>
+              <div class="aTxItem__type">Pago Móvil Ref: <strong style="color:var(--primary);">${p.reference || 'N/A'}</strong></div>
+              <div class="aTxItem__date">${new Date(p.createdAt).toLocaleString("es-VE")}</div>
+              <div class="aTxItem__desc" style="margin-top: 4px; font-size: 0.85rem;">
+                <strong>Cliente:</strong> ${p.cardNumber}<br>
+                <strong>Banco Origen:</strong> ${p.originBank || 'N/A'}<br>
+                <strong>Teléfono Origen:</strong> ${p.originPhone || 'N/A'}<br>
+                <strong>CI Origen:</strong> ${p.originId || 'N/A'}<br>
+                <strong>Monto Bs:</strong> ${p.totalBs || 'N/A'} (Tasa: ${p.rate || 'N/A'})
+              </div>
+            </div>
+            <div class="aTxItem__points" style="color: #10b981;">+${p.amount} pts</div>
+          `;
+
+          const actions = document.createElement("div");
+          actions.style.cssText = "display: flex; gap: 10px; margin-top: 5px;";
+          
+          const approveBtn = document.createElement("button");
+          approveBtn.className = "aBtn aBtn--primary";
+          approveBtn.style.cssText = "padding: 6px 12px; font-size: 0.85rem; flex: 1;";
+          approveBtn.textContent = "Aprobar";
+          approveBtn.onclick = () => resolvePurchase(p.id, 'approve');
+
+          const rejectBtn = document.createElement("button");
+          rejectBtn.className = "aBtn aBtn--danger";
+          rejectBtn.style.cssText = "padding: 6px 12px; font-size: 0.85rem; flex: 1;";
+          rejectBtn.textContent = "Rechazar";
+          rejectBtn.onclick = () => resolvePurchase(p.id, 'reject');
+
+          actions.appendChild(approveBtn);
+          actions.appendChild(rejectBtn);
+
+          item.appendChild(header);
+          item.appendChild(actions);
+          pendingPaymentsList.appendChild(item);
+        });
+
+      } catch (err) {
+        pendingPaymentsList.innerHTML = `<div class="aStatLoader" style="color:#ef4444;">Error al cargar.</div>`;
+      }
+    };
+
+    const resolvePurchase = async (id, action) => {
+      if (!confirm(`¿Estás seguro de que deseas ${action === 'approve' ? 'aprobar' : 'rechazar'} este pago?`)) return;
+      
+      try {
+        if (pendingPaymentsResult) {
+          pendingPaymentsResult.style.color = "var(--text-primary)";
+          pendingPaymentsResult.textContent = "Procesando...";
+        }
+        
+        const response = await apiPost("/api/admin/resolve-purchase", { id, action });
+        if (response && response.ok) {
+          if (pendingPaymentsResult) {
+            pendingPaymentsResult.style.color = "#10b981";
+            pendingPaymentsResult.textContent = response.message || "Pago procesado.";
+          }
+          loadPendingPayments();
+        } else {
+          throw new Error(response.error || "Error al procesar el pago");
+        }
+      } catch (err) {
+        if (pendingPaymentsResult) {
+          pendingPaymentsResult.style.color = "#ef4444";
+          pendingPaymentsResult.textContent = String(err.message || err);
+        }
+      }
+    };
+
+    if (pendingPaymentsRefresh) {
+      pendingPaymentsRefresh.addEventListener("click", loadPendingPayments);
+    }
+
+    let currentTxLimit = 10;
     const loadAllTransactions = async (branch = selectedBranch) => {
       var _a;
       if (!txList) return;
@@ -3396,6 +3511,146 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (promotionsListClose) promotionsListClose.addEventListener("click", closePromotionsClientModal);
     if (promotionsListBackdrop) promotionsListBackdrop.addEventListener("click", closePromotionsClientModal);
+  }
+
+  // Lógica para Comprar Puntos
+  const profileBuyPointsBtn = document.getElementById("profileBuyPointsBtn");
+  const buyPointsModal = document.getElementById("buyPointsModal");
+  const buyPointsCloseBtn = document.getElementById("buyPointsCloseBtn");
+  const buyPointsModalBackdrop = document.getElementById("buyPointsModalBackdrop");
+  
+  const bcvRateDisplay = document.getElementById("bcvRateDisplay");
+  const buyPointsAmount = document.getElementById("buyPointsAmount");
+  
+  const buyPointsOriginBank = document.getElementById("buyPointsOriginBank");
+  const buyPointsOriginPhone = document.getElementById("buyPointsOriginPhone");
+  const buyPointsOriginId = document.getElementById("buyPointsOriginId");
+  const buyPointsRef = document.getElementById("buyPointsRef");
+  
+  const buyPointsTotalBs = document.getElementById("buyPointsTotalBs");
+  const buyPointsSubmitBtn = document.getElementById("buyPointsSubmitBtn");
+
+  let currentBcvRate = null;
+
+  function closeBuyPointsModal() {
+    if (buyPointsModal) {
+      buyPointsModal.classList.remove("buyPointsModal--active");
+      buyPointsModal.setAttribute("aria-hidden", "true");
+      buyPointsAmount.value = "";
+      if (buyPointsOriginBank) buyPointsOriginBank.value = "";
+      if (buyPointsOriginPhone) buyPointsOriginPhone.value = "";
+      if (buyPointsOriginId) buyPointsOriginId.value = "";
+      if (buyPointsRef) buyPointsRef.value = "";
+      buyPointsTotalBs.textContent = "0.00";
+      buyPointsSubmitBtn.disabled = true;
+      buyPointsSubmitBtn.textContent = "Notificar Pago";
+    }
+  }
+
+  async function fetchBcvRate() {
+    try {
+      bcvRateDisplay.textContent = "Cargando...";
+      const response = await fetch("https://ve.dolarapi.com/v1/dolares/oficial");
+      const data = await response.json();
+      if (data && data.promedio) {
+        currentBcvRate = parseFloat(data.promedio);
+        bcvRateDisplay.textContent = currentBcvRate.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        validateBuyPointsForm();
+      } else {
+        bcvRateDisplay.textContent = "Error";
+      }
+    } catch (err) {
+      console.error("Error fetching BCV rate:", err);
+      bcvRateDisplay.textContent = "Error";
+    }
+  }
+  
+  function validateBuyPointsForm() {
+    const amount = parseFloat(buyPointsAmount.value);
+    const bank = buyPointsOriginBank ? buyPointsOriginBank.value.trim() : "";
+    const phone = buyPointsOriginPhone ? buyPointsOriginPhone.value.trim() : "";
+    const idNum = buyPointsOriginId ? buyPointsOriginId.value.trim() : "";
+    const ref = buyPointsRef ? buyPointsRef.value.trim() : "";
+    
+    if (isNaN(amount) || amount <= 0 || !currentBcvRate) {
+      buyPointsTotalBs.textContent = "0.00";
+      buyPointsSubmitBtn.disabled = true;
+      return;
+    }
+    
+    const totalBs = amount * currentBcvRate;
+    buyPointsTotalBs.textContent = totalBs.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    
+    if (bank.length > 2 && phone.length > 8 && idNum.length > 5 && ref.length > 3) {
+      buyPointsSubmitBtn.disabled = false;
+    } else {
+      buyPointsSubmitBtn.disabled = true;
+    }
+  }
+
+  if (profileBuyPointsBtn && buyPointsModal) {
+    profileBuyPointsBtn.addEventListener("click", () => {
+      // Close profile menu if it's open
+      const profileMenu = document.getElementById("profileMenu");
+      if (profileMenu) {
+        profileMenu.classList.remove("profileMenu--active");
+        profileMenu.setAttribute("aria-hidden", "true");
+      }
+      
+      buyPointsModal.classList.add("buyPointsModal--active");
+      buyPointsModal.setAttribute("aria-hidden", "false");
+      fetchBcvRate();
+    });
+
+    buyPointsCloseBtn.addEventListener("click", closeBuyPointsModal);
+    buyPointsModalBackdrop.addEventListener("click", closeBuyPointsModal);
+
+    buyPointsAmount.addEventListener("input", validateBuyPointsForm);
+    if (buyPointsOriginBank) buyPointsOriginBank.addEventListener("input", validateBuyPointsForm);
+    if (buyPointsOriginPhone) buyPointsOriginPhone.addEventListener("input", validateBuyPointsForm);
+    if (buyPointsOriginId) buyPointsOriginId.addEventListener("input", validateBuyPointsForm);
+    if (buyPointsRef) buyPointsRef.addEventListener("input", validateBuyPointsForm);
+
+    buyPointsSubmitBtn.addEventListener("click", async () => {
+      const amount = parseInt(buyPointsAmount.value, 10);
+      const bank = buyPointsOriginBank.value.trim();
+      const phone = buyPointsOriginPhone.value.trim();
+      const idNum = buyPointsOriginId.value.trim();
+      const ref = buyPointsRef.value.trim();
+      const totalBsText = buyPointsTotalBs.textContent;
+      
+      if (isNaN(amount) || amount <= 0 || bank.length <= 2 || phone.length <= 8 || idNum.length <= 5 || ref.length <= 3) return;
+      
+      buyPointsSubmitBtn.disabled = true;
+      buyPointsSubmitBtn.textContent = "Enviando...";
+
+      try {
+        const res = await fetch("/api/buy-points", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            cardNumber: currentCardNumber, // Usamos la variable global
+            amount,
+            totalBs: totalBsText,
+            originBank: bank,
+            originPhone: phone,
+            originId: idNum,
+            reference: ref,
+            rate: currentBcvRate
+          })
+        });
+
+        if (!res.ok) throw new Error("Error al notificar");
+
+        alert(`¡Pago notificado con éxito!\n\nHas reportado la compra de ${amount} puntos.\nReferencia: ${ref}\n\nUn administrador revisará el pago y liberará los puntos en breve.`);
+        closeBuyPointsModal();
+      } catch (err) {
+        console.error(err);
+        alert("Ocurrió un error al notificar el pago. Por favor, intenta de nuevo.");
+        buyPointsSubmitBtn.disabled = false;
+        buyPointsSubmitBtn.textContent = "Notificar Pago";
+      }
+    });
   }
 
 });
