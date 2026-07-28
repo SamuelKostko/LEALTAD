@@ -3524,8 +3524,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const stepSuccess = document.getElementById("buyPointsStepSuccess");
 
   const bcvRateDisplay = document.getElementById("bcvRateDisplay");
-  const buyPointsAmount = document.getElementById("buyPointsAmount");
-  const buyPointsTotalBs = document.getElementById("buyPointsTotalBs");
+  
+  const buyPointsInputPts = document.getElementById("buyPointsInputPts");
+  const buyPointsInputUsd = document.getElementById("buyPointsInputUsd");
+  const buyPointsInputBs = document.getElementById("buyPointsInputBs");
   const buyPointsBtnNext1 = document.getElementById("buyPointsBtnNext1");
   
   const buyPointsDisplayTotalBs = document.getElementById("buyPointsDisplayTotalBs");
@@ -3540,6 +3542,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   let currentBcvRate = null;
   let currentTotalBs = 0;
+  let currentTotalPts = 0;
+  const PTS_PER_USD = 100;
 
   function resetBuyPointsWizard() {
     step1.style.display = "flex";
@@ -3547,13 +3551,15 @@ document.addEventListener("DOMContentLoaded", () => {
     step3.style.display = "none";
     stepSuccess.style.display = "none";
     
-    buyPointsAmount.value = "";
+    if (buyPointsInputPts) buyPointsInputPts.value = "";
+    if (buyPointsInputUsd) buyPointsInputUsd.value = "";
+    if (buyPointsInputBs) buyPointsInputBs.value = "";
+    
     if (buyPointsOriginBank) buyPointsOriginBank.value = "";
     if (buyPointsOriginPhone) buyPointsOriginPhone.value = "";
     if (buyPointsOriginId) buyPointsOriginId.value = "";
     if (buyPointsRef) buyPointsRef.value = "";
     
-    buyPointsTotalBs.textContent = "0.00";
     buyPointsBtnNext1.disabled = true;
     buyPointsSubmitBtn.disabled = true;
     buyPointsSubmitBtn.textContent = "Notificar Pago";
@@ -3585,7 +3591,6 @@ document.addEventListener("DOMContentLoaded", () => {
       if (data && data.promedio) {
         currentBcvRate = parseFloat(data.promedio);
         bcvRateDisplay.textContent = currentBcvRate.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        validateBuyPointsStep1();
       } else {
         bcvRateDisplay.textContent = "Error";
       }
@@ -3595,18 +3600,63 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
   
-  function validateBuyPointsStep1() {
-    const amount = parseFloat(buyPointsAmount.value);
-    
-    if (isNaN(amount) || amount <= 0 || !currentBcvRate) {
-      buyPointsTotalBs.textContent = "0.00";
+  function handleInputPts() {
+    if (!currentBcvRate) return;
+    const pts = parseFloat(buyPointsInputPts.value);
+    if (isNaN(pts) || pts <= 0) {
+      buyPointsInputUsd.value = "";
+      buyPointsInputBs.value = "";
       buyPointsBtnNext1.disabled = true;
-      currentTotalBs = 0;
       return;
     }
+    const usd = pts / PTS_PER_USD;
+    const bs = usd * currentBcvRate;
     
-    currentTotalBs = amount * currentBcvRate;
-    buyPointsTotalBs.textContent = currentTotalBs.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    buyPointsInputUsd.value = usd.toFixed(2);
+    buyPointsInputBs.value = bs.toFixed(2);
+    
+    currentTotalPts = Math.round(pts);
+    currentTotalBs = bs;
+    buyPointsBtnNext1.disabled = false;
+  }
+
+  function handleInputUsd() {
+    if (!currentBcvRate) return;
+    const usd = parseFloat(buyPointsInputUsd.value);
+    if (isNaN(usd) || usd <= 0) {
+      buyPointsInputPts.value = "";
+      buyPointsInputBs.value = "";
+      buyPointsBtnNext1.disabled = true;
+      return;
+    }
+    const pts = Math.round(usd * PTS_PER_USD);
+    const bs = usd * currentBcvRate;
+    
+    buyPointsInputPts.value = pts;
+    buyPointsInputBs.value = bs.toFixed(2);
+    
+    currentTotalPts = pts;
+    currentTotalBs = bs;
+    buyPointsBtnNext1.disabled = false;
+  }
+
+  function handleInputBs() {
+    if (!currentBcvRate) return;
+    const bs = parseFloat(buyPointsInputBs.value);
+    if (isNaN(bs) || bs <= 0) {
+      buyPointsInputPts.value = "";
+      buyPointsInputUsd.value = "";
+      buyPointsBtnNext1.disabled = true;
+      return;
+    }
+    const usd = bs / currentBcvRate;
+    const pts = Math.round(usd * PTS_PER_USD);
+    
+    buyPointsInputUsd.value = usd.toFixed(2);
+    buyPointsInputPts.value = pts;
+    
+    currentTotalPts = pts;
+    currentTotalBs = bs;
     buyPointsBtnNext1.disabled = false;
   }
 
@@ -3628,9 +3678,12 @@ document.addEventListener("DOMContentLoaded", () => {
     buyPointsBackBtn.addEventListener("click", hideBuyPointsView);
     buyPointsBtnDone.addEventListener("click", hideBuyPointsView);
 
-    buyPointsAmount.addEventListener("input", validateBuyPointsStep1);
+    if (buyPointsInputPts) buyPointsInputPts.addEventListener("input", handleInputPts);
+    if (buyPointsInputUsd) buyPointsInputUsd.addEventListener("input", handleInputUsd);
+    if (buyPointsInputBs) buyPointsInputBs.addEventListener("input", handleInputBs);
     
     buyPointsBtnNext1.addEventListener("click", () => {
+      if (currentTotalPts <= 0) return;
       buyPointsDisplayTotalBs.textContent = currentTotalBs.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
       step1.style.display = "none";
       step2.style.display = "flex";
@@ -3647,12 +3700,12 @@ document.addEventListener("DOMContentLoaded", () => {
     if (buyPointsRef) buyPointsRef.addEventListener("input", validateBuyPointsStep3);
 
     buyPointsSubmitBtn.addEventListener("click", async () => {
-      const amount = parseInt(buyPointsAmount.value, 10);
+      const amount = currentTotalPts;
       const bank = buyPointsOriginBank.value.trim();
       const phone = buyPointsOriginPhone.value.trim();
       const idNum = buyPointsOriginId.value.trim();
       const ref = buyPointsRef.value.trim();
-      const totalBsText = buyPointsTotalBs.textContent;
+      const totalBsText = currentTotalBs.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
       
       if (isNaN(amount) || amount <= 0 || bank.length <= 2 || phone.length <= 8 || idNum.length <= 5 || ref.length <= 3) return;
       
