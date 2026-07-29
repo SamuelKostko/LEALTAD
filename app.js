@@ -3473,40 +3473,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       promotionsListModal.classList.add("profileMenu--active");
       promotionsListModal.setAttribute("aria-hidden", "false");
-      promotionsListClientContainer.innerHTML = `<div style="text-align: center; color: rgba(255,255,255,0.7); padding: 20px;">Cargando promociones...</div>`;
-
-      try {
-        const res = await fetch("/api/admin/promotions"); // public GET is allowed
-        const promos = await res.json();
-        
-        if (!res.ok) throw new Error(promos.error);
-        
-        if (promos.length === 0) {
-          promotionsListClientContainer.innerHTML = `<div style="text-align: center; color: rgba(255,255,255,0.7); padding: 20px;">No hay promociones activas por el momento. ¡Vuelve pronto!</div>`;
-          return;
-        }
-
-        promotionsListClientContainer.innerHTML = "";
-        promos.forEach(p => {
-          const item = document.createElement("div");
-          item.style.cssText = "background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; overflow: hidden; display: flex; align-items: center; padding: 10px; gap: 15px;";
-          
-          item.innerHTML = `
-            <div style="width: 80px; height: 80px; border-radius: 8px; overflow: hidden; flex-shrink: 0; background: #000;">
-              <img src="${p.imageBase64}" alt="${p.title}" style="width: 100%; height: 100%; object-fit: cover;">
-            </div>
-            <div style="flex: 1; min-width: 0;">
-              <h4 style="margin: 0 0 4px 0; color: #fff; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${p.title}</h4>
-              <p style="margin: 0 0 6px 0; color: rgba(255,255,255,0.6); font-size: 12px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${p.description || ""}</p>
-              <div style="color: #f43f5e; font-weight: bold; font-size: 14px;">${p.pointsCost} Puntos</div>
-            </div>
-          `;
-          promotionsListClientContainer.appendChild(item);
-        });
-        
-      } catch (err) {
-        promotionsListClientContainer.innerHTML = `<div style="text-align: center; color: #ef4444; padding: 20px;">Ocurrió un error al cargar las promociones.</div>`;
-      }
+      promotionsListClientContainer.innerHTML = `<div style="text-align: center; color: rgba(255,255,255,0.7); padding: 40px 20px; font-size: 1.1rem; font-weight: 500;">DISPONIBLE MUY PRONTO</div>`;
     });
 
     if (promotionsListClose) promotionsListClose.addEventListener("click", closePromotionsClientModal);
