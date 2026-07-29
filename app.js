@@ -3724,12 +3724,21 @@ document.addEventListener("DOMContentLoaded", () => {
       try {
         const nameEl = document.getElementById("clientName");
         const clientName = nameEl ? nameEl.textContent : "Desconocido";
+        
+        let clientToken = "";
+        try {
+          const url = new URL(window.location.href);
+          clientToken = (url.searchParams.get("token") || url.searchParams.get("t") || "").trim();
+          if (!clientToken && url.pathname.startsWith("/card/")) {
+            clientToken = decodeURIComponent(url.pathname.slice("/card/".length)).trim();
+          }
+        } catch(e) {}
 
         const res = await fetch("/api/buy-points", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            cardNumber: new URLSearchParams(window.location.search).get('token'), // Usamos el token de la URL
+            cardNumber: clientToken, // Token extraído correctamente
             clientName: clientName,
             amount,
             totalBs: totalBsText,
