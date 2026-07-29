@@ -3574,7 +3574,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     resetBuyPointsWizard();
 
-    buyPointsView.style.display = "flex";
+        buyPointsView.style.display = "flex";
     buyPointsView.setAttribute("aria-hidden", "false");
     fetchBcvRate();
   }
@@ -3587,10 +3587,10 @@ document.addEventListener("DOMContentLoaded", () => {
   async function fetchBcvRate() {
     try {
       bcvRateDisplay.textContent = "Cargando...";
-      const response = await fetch("https://ve.dolarapi.com/v1/dolares/oficial");
+      const response = await fetch("/api/bcv-rate");
       const data = await response.json();
-      if (data && data.promedio) {
-        currentBcvRate = parseFloat(data.promedio);
+      if (data && data.rate) {
+        currentBcvRate = parseFloat(data.rate);
         bcvRateDisplay.textContent = currentBcvRate.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
       } else {
         bcvRateDisplay.textContent = "Error";

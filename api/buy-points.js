@@ -1,5 +1,5 @@
 import { getFirestoreDb } from './_lib/firestore.js';
-import { sendJson } from './_lib/http.js';
+import { sendJson, readJsonBody } from './_lib/http.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -7,9 +7,11 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { cardNumber, clientName, amount, totalBs, originBank, originPhone, originId, reference, rate } = req.body;
+    const body = await readJsonBody(req);
+    const { cardNumber, clientName, amount, totalBs, originBank, originPhone, originId, reference, rate } = body || {};
 
     if (!cardNumber || !amount || !totalBs || !reference || !originBank || !originPhone || !originId) {
+      console.error('buy-points validation error:', body);
       return sendJson(res, 400, { error: 'Missing required fields' });
     }
 
