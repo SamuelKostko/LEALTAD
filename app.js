@@ -3729,7 +3729,7 @@ document.addEventListener("DOMContentLoaded", () => {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            cardNumber: currentCardNumber, // Usamos la variable global
+            cardNumber: new URLSearchParams(window.location.search).get('token'), // Usamos el token de la URL
             clientName: clientName,
             amount,
             totalBs: totalBsText,
