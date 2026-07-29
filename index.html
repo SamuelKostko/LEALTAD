@@ -1207,11 +1207,41 @@
         <div class="bpv__form">
           <div class="bpv__field">
             <label class="bpv__label" for="buyPointsOriginBank">Tu banco</label>
-            <input class="bpv__input" type="text" id="buyPointsOriginBank" placeholder="Ej: Banesco, Mercantil..." autocomplete="off" />
+            <select class="bpv__input" id="buyPointsOriginBank">
+              <option value="">Selecciona tu banco</option>
+              <option value="Banesco">Banesco</option>
+              <option value="Mercantil">Mercantil</option>
+              <option value="Provincial">Provincial</option>
+              <option value="BNC">BNC</option>
+              <option value="Venezuela">Venezuela</option>
+              <option value="Bicentenario">Bicentenario</option>
+              <option value="Bancaribe">Bancaribe</option>
+              <option value="Exterior">Exterior</option>
+              <option value="Tesoro">Tesoro</option>
+              <option value="Activo">Activo</option>
+              <option value="Banplus">Banplus</option>
+              <option value="Fondo Común">Fondo Común</option>
+              <option value="100% Banco">100% Banco</option>
+              <option value="Del Sur">Del Sur</option>
+              <option value="Caroní">Caroní</option>
+              <option value="Plaza">Plaza</option>
+              <option value="Mi Banco">Mi Banco</option>
+              <option value="Bancamiga">Bancamiga</option>
+              <option value="Venezolano de Crédito">Venezolano de Crédito</option>
+            </select>
           </div>
           <div class="bpv__field">
-            <label class="bpv__label" for="buyPointsOriginPhone">Teléfono de origen</label>
-            <input class="bpv__input" type="tel" id="buyPointsOriginPhone" placeholder="04141234567" inputmode="tel" />
+            <label class="bpv__label" for="buyPointsOriginPhoneNum">Teléfono de origen</label>
+            <div style="display: flex; gap: 0.5rem;">
+              <select class="bpv__input" id="buyPointsOriginPhoneCode" style="width: 35%; padding: 0.875rem 0.5rem; text-align: center;">
+                <option value="0412">0412</option>
+                <option value="0414">0414</option>
+                <option value="0424">0424</option>
+                <option value="0416">0416</option>
+                <option value="0426">0426</option>
+              </select>
+              <input class="bpv__input" type="tel" id="buyPointsOriginPhoneNum" placeholder="1234567" inputmode="tel" maxlength="7" style="flex: 1;" />
+            </div>
           </div>
           <div class="bpv__field">
             <label class="bpv__label" for="buyPointsOriginId">Cédula de origen</label>
@@ -1240,7 +1270,11 @@
           </svg>
         </div>
         <h2 class="bpv__success-title">¡Pago reportado!</h2>
-        <p class="bpv__success-text">Un administrador verificará tu transferencia y acreditará los puntos a tu cuenta pronto.</p>
+        <p class="bpv__success-text">Un administrador verificará tu transferencia pronto.</p>
+        <div style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.2); padding: 1rem; border-radius: 8px; margin: 0.5rem 0;">
+          <p style="margin: 0; font-size: 0.875rem; color: #f59e0b; font-weight: 600;">Importante:</p>
+          <p style="margin: 0.25rem 0 0; font-size: 0.8125rem; color: var(--muted); line-height: 1.4;">Los puntos serán utilizables <strong>10 días después</strong> de que la compra sea verificada y aceptada.</p>
+        </div>
         <button class="bpv__cta" id="buyPointsBtnDone" type="button">Volver al inicio</button>
       </div>
 

@@ -1,4 +1,5 @@
 import { getFirestoreDb } from './_lib/firestore.js';
+import { resolveScheduledPoints } from './_lib/points.js';
 import { sendJson } from './_lib/http.js';
 
 function clampInt(value, { min, max, fallback }) {
@@ -142,7 +143,10 @@ export default async function handler(req, res) {
     }
 
     const doc = snap.docs[0];
-    const data = doc.data();
+    let data = doc.data();
+
+    // Resolve any scheduled points that have matured
+    data = await resolveScheduledPoints(doc, data);
     
     // Evalúa exactamente que no existan esos campos en la base de datos
     const isFirstOpen = (data.firstOpenedAt === undefined) && (data.lastOpenedAt === undefined);

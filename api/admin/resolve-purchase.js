@@ -81,26 +81,36 @@ export default async function handler(req, res) {
 
     const clientData = clientDoc.data();
     const currentBalance = Number(clientData?.totalPoints || 0);
-    const newBalance = currentBalance + points;
 
-    // Update client balance
+    // Calculate availableAt (10 days from now)
+    const availableAtDate = new Date();
+    availableAtDate.setDate(availableAtDate.getDate() + 10);
+    const availableAtStr = availableAtDate.toISOString();
+
+    // Add to scheduledPoints instead of totalPoints
     batch.update(clientRef, {
-      totalPoints: newBalance,
+      scheduledPoints: FieldValue.arrayUnion({
+        amount: points,
+        availableAt: availableAtStr,
+        source: 'purchase',
+        reference: purchaseData.reference || ''
+      }),
       updatedAt: FieldValue.serverTimestamp()
     });
 
-    // Log transaction
+    // Log transaction (pending status for now, since points aren't fully usable yet)
     const txRef = firestore.collection('transactions').doc();
     batch.set(txRef, {
       type: 'buy_points',
-      status: 'completed',
+      status: 'pending_schedule',
       token: token,
       points: points,
       balanceBefore: currentBalance,
-      balanceAfter: newBalance,
-      description: `Compra de ${points} puntos vía Pago Móvil (Ref: ${purchaseData.reference})`,
+      balanceAfter: currentBalance, // balance hasn't changed yet
+      description: `Compra de ${points} puntos (Disponibles el ${availableAtDate.toLocaleDateString()})`,
       createdAt: FieldValue.serverTimestamp(),
-      processedAt: FieldValue.serverTimestamp()
+      processedAt: FieldValue.serverTimestamp(),
+      availableAt: availableAtStr
     });
 
     // Update purchase status
@@ -111,7 +121,54 @@ export default async function handler(req, res) {
 
     await batch.commit();
 
-    sendJson(res, 200, { ok: true, message: `Se han acreditado ${points} puntos exitosamente.` });
+    // Send email notification to client
+    const email = String(clientData?.email || '').trim();
+    if (email && email.includes('@')) {
+      const mailerSendApiKey = process.env.MAILERSEND_API_KEY;
+      const mailerSendSender = process.env.MAILERSEND_SENDER_EMAIL || 'no-reply@vmaspuntos.com';
+
+      if (mailerSendApiKey) {
+        const htmlContent = `
+          <div style="font-family: sans-serif; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #eaeaea; border-radius: 8px; padding: 20px;">
+            <h2 style="color: #10b981; text-align: center;">¡Pago Aceptado!</h2>
+            <p style="font-size: 16px;">Hola <strong>${clientData.clientName || 'Cliente'}</strong>,</p>
+            <p style="font-size: 16px;">Nos complace informarte que tu compra de <strong>${points} puntos</strong> ha sido verificada y aprobada exitosamente.</p>
+            <div style="background: #f3f4f6; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #6366f1;">
+              <p style="margin: 0; font-size: 15px; font-weight: bold; color: #4b5563;">
+                Aviso importante:
+              </p>
+              <p style="margin: 5px 0 0; font-size: 15px; color: #4b5563;">
+                Tus puntos serán acreditados a tu saldo y serán <strong>utilizables en 10 días</strong> a partir de esta confirmación (aprox. el ${availableAtDate.toLocaleDateString()}).
+              </p>
+            </div>
+            <p style="font-size: 14px; color: #666; text-align: center; margin-top: 30px;">
+              Gracias por preferir V+ Puntos.
+            </p>
+          </div>
+        `;
+
+        try {
+          await fetch('https://api.mailersend.com/v1/email', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Requested-With': 'XMLHttpRequest',
+              'Authorization': `Bearer ${mailerSendApiKey}`
+            },
+            body: JSON.stringify({
+              from: { email: mailerSendSender, name: "V+ Puntos" },
+              to: [{ email: email }],
+              subject: "Confirmación de Compra de Puntos - V+ Puntos",
+              html: htmlContent
+            })
+          });
+        } catch (e) {
+          console.error("Error enviando correo de confirmación:", e);
+        }
+      }
+    }
+
+    sendJson(res, 200, { ok: true, message: `Se han programado ${points} puntos exitosamente (disponibles en 10 días).` });
   } catch (err) {
     console.error('Error resolving purchase:', err);
     sendJson(res, 500, { ok: false, error: err?.message || String(err) });

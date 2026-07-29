@@ -3534,7 +3534,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const buyPointsBtnNext2 = document.getElementById("buyPointsBtnNext2");
   
   const buyPointsOriginBank = document.getElementById("buyPointsOriginBank");
-  const buyPointsOriginPhone = document.getElementById("buyPointsOriginPhone");
+  const buyPointsOriginPhoneCode = document.getElementById("buyPointsOriginPhoneCode");
+  const buyPointsOriginPhoneNum = document.getElementById("buyPointsOriginPhoneNum");
   const buyPointsOriginId = document.getElementById("buyPointsOriginId");
   const buyPointsRef = document.getElementById("buyPointsRef");
   const buyPointsSubmitBtn = document.getElementById("buyPointsSubmitBtn");
@@ -3556,7 +3557,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (buyPointsInputBs) buyPointsInputBs.value = "";
     
     if (buyPointsOriginBank) buyPointsOriginBank.value = "";
-    if (buyPointsOriginPhone) buyPointsOriginPhone.value = "";
+    if (buyPointsOriginPhoneNum) buyPointsOriginPhoneNum.value = "";
     if (buyPointsOriginId) buyPointsOriginId.value = "";
     if (buyPointsRef) buyPointsRef.value = "";
     
@@ -3661,12 +3662,12 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function validateBuyPointsStep3() {
-    const bank = buyPointsOriginBank ? buyPointsOriginBank.value.trim() : "";
-    const phone = buyPointsOriginPhone ? buyPointsOriginPhone.value.trim() : "";
-    const idNum = buyPointsOriginId ? buyPointsOriginId.value.trim() : "";
-    const ref = buyPointsRef ? buyPointsRef.value.trim() : "";
+    const bank = buyPointsOriginBank.value.trim();
+    const phoneNum = buyPointsOriginPhoneNum.value.trim();
+    const idNum = buyPointsOriginId.value.trim();
+    const ref = buyPointsRef.value.trim();
     
-    if (bank.length > 2 && phone.length > 8 && idNum.length > 5 && ref.length > 3) {
+    if (bank.length > 2 && phoneNum.length === 7 && idNum.length > 5 && ref.length >= 4) {
       buyPointsSubmitBtn.disabled = false;
     } else {
       buyPointsSubmitBtn.disabled = true;
@@ -3700,20 +3701,22 @@ document.addEventListener("DOMContentLoaded", () => {
       if (bpvDot3) bpvDot3.classList.add("bpv__step-dot--active");
     });
 
-    if (buyPointsOriginBank) buyPointsOriginBank.addEventListener("input", validateBuyPointsStep3);
-    if (buyPointsOriginPhone) buyPointsOriginPhone.addEventListener("input", validateBuyPointsStep3);
+    if (buyPointsOriginBank) buyPointsOriginBank.addEventListener("change", validateBuyPointsStep3);
+    if (buyPointsOriginPhoneNum) buyPointsOriginPhoneNum.addEventListener("input", validateBuyPointsStep3);
     if (buyPointsOriginId) buyPointsOriginId.addEventListener("input", validateBuyPointsStep3);
     if (buyPointsRef) buyPointsRef.addEventListener("input", validateBuyPointsStep3);
 
     buyPointsSubmitBtn.addEventListener("click", async () => {
       const amount = currentTotalPts;
       const bank = buyPointsOriginBank.value.trim();
-      const phone = buyPointsOriginPhone.value.trim();
+      const phoneNum = buyPointsOriginPhoneNum.value.trim();
+      const phoneCode = buyPointsOriginPhoneCode.value;
+      const phone = phoneCode + phoneNum;
       const idNum = buyPointsOriginId.value.trim();
       const ref = buyPointsRef.value.trim();
       const totalBsText = currentTotalBs.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
       
-      if (isNaN(amount) || amount <= 0 || bank.length <= 2 || phone.length <= 8 || idNum.length <= 5 || ref.length <= 3) return;
+      if (isNaN(amount) || amount <= 0 || bank.length <= 2 || phoneNum.length !== 7 || idNum.length <= 5 || ref.length < 4) return;
       
       buyPointsSubmitBtn.disabled = true;
       buyPointsSubmitBtn.textContent = "Enviando...";
