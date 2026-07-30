@@ -387,8 +387,8 @@ if (qrButton) {
           const promoModal = document.getElementById("promoModal");
           const promoImg = document.getElementById("promoModalImage");
           if (promoModal && promoImg) {
-            // Selección aleatoria entre publi1 y publi2
-            const chosenImg = Math.random() < 0.5 ? "/images/publi1.jpeg" : "/images/publi2.jpeg";
+            // Imagen única de promoción
+            const chosenImg = "/images/publi3.jpeg";
             promoImg.src = chosenImg;
 
             setTimeout(() => {
