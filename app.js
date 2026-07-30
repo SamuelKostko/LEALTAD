@@ -3574,7 +3574,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (isNaN(pts) || pts <= 0) {
       buyPointsInputUsd.value = "";
       buyPointsInputBs.value = "";
-      buyPointsBtnNext1.disabled = true;
+      validateBuyPointsStep1();
       return;
     }
     const usd = pts / PTS_PER_USD;
@@ -3585,7 +3585,7 @@ document.addEventListener("DOMContentLoaded", () => {
     
     currentTotalPts = Math.round(pts);
     currentTotalBs = bs;
-    buyPointsBtnNext1.disabled = false;
+    validateBuyPointsStep1();
   }
 
   function handleInputUsd() {
@@ -3594,7 +3594,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (isNaN(usd) || usd <= 0) {
       buyPointsInputPts.value = "";
       buyPointsInputBs.value = "";
-      buyPointsBtnNext1.disabled = true;
+      validateBuyPointsStep1();
       return;
     }
     const pts = Math.round(usd * PTS_PER_USD);
@@ -3605,7 +3605,7 @@ document.addEventListener("DOMContentLoaded", () => {
     
     currentTotalPts = pts;
     currentTotalBs = bs;
-    buyPointsBtnNext1.disabled = false;
+    validateBuyPointsStep1();
   }
 
   function handleInputBs() {
@@ -3614,7 +3614,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (isNaN(bs) || bs <= 0) {
       buyPointsInputPts.value = "";
       buyPointsInputUsd.value = "";
-      buyPointsBtnNext1.disabled = true;
+      validateBuyPointsStep1();
       return;
     }
     const usd = bs / currentBcvRate;
@@ -3625,7 +3625,19 @@ document.addEventListener("DOMContentLoaded", () => {
     
     currentTotalPts = pts;
     currentTotalBs = bs;
-    buyPointsBtnNext1.disabled = false;
+    validateBuyPointsStep1();
+  }
+
+  function validateBuyPointsStep1() {
+    const term1 = document.getElementById("bpvTerm1")?.checked;
+    const term2 = document.getElementById("bpvTerm2")?.checked;
+    const pts = parseFloat(buyPointsInputPts.value);
+
+    if (term1 && term2 && !isNaN(pts) && pts > 0) {
+      buyPointsBtnNext1.disabled = false;
+    } else {
+      buyPointsBtnNext1.disabled = true;
+    }
   }
 
   function validateBuyPointsStep3() {
@@ -3672,6 +3684,11 @@ document.addEventListener("DOMContentLoaded", () => {
     if (buyPointsOriginPhoneNum) buyPointsOriginPhoneNum.addEventListener("input", validateBuyPointsStep3);
     if (buyPointsOriginId) buyPointsOriginId.addEventListener("input", validateBuyPointsStep3);
     if (buyPointsRef) buyPointsRef.addEventListener("input", validateBuyPointsStep3);
+
+    const term1 = document.getElementById("bpvTerm1");
+    const term2 = document.getElementById("bpvTerm2");
+    if (term1) term1.addEventListener("change", validateBuyPointsStep1);
+    if (term2) term2.addEventListener("change", validateBuyPointsStep1);
 
     buyPointsSubmitBtn.addEventListener("click", async () => {
       const amount = currentTotalPts;
