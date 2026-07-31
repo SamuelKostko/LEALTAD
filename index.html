@@ -215,6 +215,12 @@
               </svg>
               Referidos
             </button>
+            <button class="aSidebar__navItem" id="aNavMarketing" type="button" data-panel="marketing">
+              <svg viewBox="0 0 24 24" width="17" height="17" fill="none">
+                <path d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+              Promotores
+            </button>
 
           </nav>
           <div class="aSidebar__bottom">
@@ -736,6 +742,78 @@
                 </div>
                 <div class="aResult" id="adminReferralConfigResult" aria-live="polite" style="font-size: 13px; font-weight: 500;"></div>
               </form>
+            </div>
+          </section>
+
+          <section class="adminSection" id="secMarketing" hidden>
+            <div class="aSectionHeader">
+              <h2>Administradores de Promociones</h2>
+            </div>
+            
+            <!-- Invite Form -->
+            <div class="aCard" style="margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 25px;">
+              <h3 style="font-size: 16px; font-weight: 600; color: #fff; margin-top: 0; margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M22 16c0-5.523-4.477-10-10-10S2 10.477 2 16" stroke-linecap="round" stroke-linejoin="round"/>
+                  <circle cx="12" cy="7" r="4" />
+                </svg>
+                Invitar nuevo administrador
+              </h3>
+              <p style="font-size: 13px; color: rgba(255,255,255,0.6); margin-bottom: 16px;">
+                Enviaremos un correo de invitación para que el nuevo promotor configure su usuario y contraseña.
+              </p>
+              
+              <form id="adminMarketingUserForm" style="display: flex; flex-direction: column; gap: 16px; max-width: 600px;">
+                <div style="display: flex; flex-direction: column; gap: 6px;">
+                  <label for="mktUserName" style="font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.8);">Nombre</label>
+                  <input type="text" id="mktUserName" placeholder="Ej: Juan Pérez" required
+                    style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 9px 14px; border-radius: 8px; font-family: inherit; font-size: 14px; outline: none; transition: border-color 0.2s;"
+                    onfocus="this.style.borderColor='rgba(6,182,212,0.5)'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'">
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 6px;">
+                  <label for="mktUserEmail" style="font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.8);">Correo Electrónico</label>
+                  <input type="email" id="mktUserEmail" placeholder="correo@ejemplo.com" required
+                    style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 9px 14px; border-radius: 8px; font-family: inherit; font-size: 14px; outline: none; transition: border-color 0.2s;"
+                    onfocus="this.style.borderColor='rgba(6,182,212,0.5)'" onblur="this.style.borderColor='rgba(255,255,255,0.1)'">
+                </div>
+                
+                <div style="display: flex; gap: 10px; width: 100%;">
+                  <button class="aBtn" type="submit" style="background: #06b6d4; color: #fff; padding: 10px 20px; font-weight: 600; border-radius: 8px; cursor: pointer; border: none; font-size: 14px; transition: transform 0.1s, opacity 0.2s;">
+                    Enviar Invitación
+                  </button>
+                </div>
+                <div class="aResult" id="mktUserFormResult" aria-live="polite" style="font-size: 13px; font-weight: 500;"></div>
+              </form>
+            </div>
+
+            <!-- List of Marketing Users -->
+            <div class="aCard" style="margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 25px;">
+              <h3 style="font-size: 16px; font-weight: 600; color: #fff; margin-top: 0; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <circle cx="9" cy="7" r="4" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Promotores Activos
+              </h3>
+              
+              <div style="overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; min-width: 400px;">
+                  <thead>
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.1); text-align: left; color: rgba(255,255,255,0.5); font-size: 12px; text-transform: uppercase;">
+                      <th style="padding: 12px; font-weight: 600;">Nombre</th>
+                      <th style="padding: 12px; font-weight: 600;">Usuario</th>
+                      <th style="padding: 12px; font-weight: 600; text-align: right;">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody id="marketingUsersTableBody">
+                    <tr>
+                      <td colspan="3" style="text-align: center; padding: 20px; color: rgba(255,255,255,0.5);">Cargando...</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
             </div>
           </section>
 

@@ -153,6 +153,8 @@ app.use(express.static(__dirname, {
          path.endsWith('styles.css') ||
          path.endsWith('admin-qr.html') ||
          path.endsWith('admin-qr.js') ||
+         path.endsWith('admin-promotions.html') ||
+         path.endsWith('admin-promotions.js') ||
          path.endsWith('merchant-qr.html') ||
          path.endsWith('merchant-qr.js')
       ) {
@@ -164,6 +166,11 @@ app.use(express.static(__dirname, {
 // Dedicated page for QR admin flow (matches vercel.json rewrite).
 app.get('/admin/qr', (_req, res) => {
    res.sendFile(path.join(__dirname, 'admin-qr.html'));
+});
+
+// Dedicated page for admin promotions flow.
+app.get('/admin/promotions', (_req, res) => {
+   res.sendFile(path.join(__dirname, 'admin-promotions.html'));
 });
 
 // Dedicated page for merchant QR flow.

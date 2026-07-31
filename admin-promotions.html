@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+
+  <title>Admin · Promociones</title>
+
+  <meta name="theme-color" content="#09090b" id="themeColor" />
+  <meta name="color-scheme" content="dark" />
+  <meta name="description" content="Gestor de Promociones V+puntos" />
+
+  <link rel="icon" href="/icons/icon-v2.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+
+<body class="mode-admin">
+  <div class="bg" aria-hidden="true" style="opacity: 0.3;">
+    <div class="bg__orb" style="top:-20%; left:-10%;"></div>
+    <div class="bg__orb bg__orb--b" style="bottom:-20%; right:-10%;"></div>
+  </div>
+
+  <div class="aQrPage">
+    <!-- Top bar -->
+    <header class="aQrPage__header">
+      <a href="/admin" class="aQrPage__back" aria-label="Volver al Panel">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none">
+          <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+            stroke-linejoin="round" />
+        </svg>
+        Panel
+      </a>
+      <span class="aQrPage__title">Promociones</span>
+      <div style="width:60px;"></div><!-- Balance spacer -->
+    </header>
+
+    <!-- Scrollable body -->
+    <main class="aQrPage__body">
+
+      <!-- Login Card -->
+      <div class="aLogin__card aQrPage__card" id="loginCard">
+        <div class="aLogin__logo" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="none">
+            <rect x="3" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.8" />
+            <rect x="14" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.8" />
+            <rect x="3" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.8" />
+            <path d="M14 14h2v2h-2zM18 14h3v3h-3zM14 18h3v3h-3zM18 19h3v2h-3z" fill="currentColor" />
+          </svg>
+        </div>
+        <h1 class="aLogin__title">Acceso Admin</h1>
+        <p class="aLogin__sub">Inicia sesión para gestionar promociones</p>
+
+        <form class="aLogin__form" id="loginForm">
+          <div class="aField">
+            <label class="aField__label" for="adminEmail">Correo</label>
+            <input class="aField__input" id="adminEmail" name="email" type="email" autocomplete="username"
+              placeholder="correo@ejemplo.com" required />
+          </div>
+          <div class="aField">
+            <label class="aField__label" for="adminPassword">Contraseña</label>
+            <input class="aField__input" id="adminPassword" name="password" type="password"
+              autocomplete="current-password" placeholder="••••••••" required />
+          </div>
+          <button class="aBtn aBtn--primary" id="loginBtn" type="submit">Entrar</button>
+          <div class="aResult" id="loginResult" aria-live="polite"></div>
+        </form>
+      </div>
+
+      <!-- Main Dashboard -->
+      <div id="promoSection" hidden>
+        <!-- Formulario para Crear Promoción -->
+        <div class="aLogin__card aQrPage__card" style="margin-bottom: 24px;">
+          <h1 class="aLogin__title" style="margin-bottom: 8px;">Subir Promoción</h1>
+          <p class="aLogin__sub">Añade una nueva oferta al catálogo</p>
+
+          <form class="aLogin__form" id="promoForm">
+            <div class="aField">
+              <label class="aField__label" for="promoImage">Imagen (Max 2MB)</label>
+              <input class="aField__input" id="promoImage" type="file" accept="image/*" required style="padding: 10px;" />
+            </div>
+
+            <div class="aField">
+              <label class="aField__label" for="promoTitle">Título del Producto</label>
+              <input class="aField__input" id="promoTitle" type="text" autocomplete="off"
+                placeholder="Ej: Combo Hamburguesa" required />
+            </div>
+
+            <div class="aField">
+              <label class="aField__label" for="promoDesc">Descripción (Opcional)</label>
+              <input class="aField__input" id="promoDesc" type="text" autocomplete="off"
+                placeholder="Ej: Incluye papas y refresco" />
+            </div>
+
+            <div class="aField">
+              <label class="aField__label" for="promoPoints">Costo en Puntos</label>
+              <input class="aField__input" id="promoPoints" type="number" inputmode="numeric" min="1" step="1"
+                placeholder="Ej: 500" required />
+            </div>
+
+            <button class="aBtn aBtn--primary" id="createPromoBtn" type="submit" style="margin-top: 16px;">
+              Crear Promoción
+            </button>
+            <div class="aResult" id="promoResult" aria-live="polite"></div>
+          </form>
+        </div>
+
+        <!-- Lista de Promociones -->
+        <div class="aLogin__card aQrPage__card">
+          <h2 class="aLogin__title" style="margin-bottom: 16px; font-size: 1.25rem;">Promociones Activas</h2>
+          <div id="promoListContainer" style="display: flex; flex-direction: column; gap: 16px;">
+            <div style="text-align: center; color: rgba(255,255,255,0.5);">Cargando...</div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <style>
+    /* Override global body overflow so aQrPage can scroll */
+    body.mode-admin {
+      overflow: hidden !important;
+    }
+  </style>
+
+  <script src="/admin-promotions.js" defer></script>
+</body>
+
+</html>

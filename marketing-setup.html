@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+
+  <title>Configuración de Promotor · V+ Puntos</title>
+
+  <meta name="theme-color" content="#09090b" />
+  <meta name="color-scheme" content="dark" />
+  <meta name="description" content="Registro para nuevos promotores en V+ Puntos" />
+  <meta name="robots" content="noindex, nofollow" />
+
+  <link rel="icon" href="/icons/icon-v2.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="/styles.css" />
+
+  <style>
+    html,
+    body {
+      height: 100%;
+      overflow: hidden;
+      background: #09090b;
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    .loginPage {
+      position: fixed;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      padding: 18px;
+      background:
+        radial-gradient(ellipse 60% 50% at 20% 30%, rgba(99, 102, 241, 0.12) 0%, transparent 70%),
+        radial-gradient(ellipse 55% 45% at 80% 70%, rgba(139, 92, 246, 0.10) 0%, transparent 70%),
+        #09090b;
+    }
+
+    .loginCard {
+      width: min(420px, 100%);
+      background: #111113;
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      border-radius: 24px;
+      padding: 40px 32px 44px;
+      box-shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.04),
+        0 32px 80px rgba(0, 0, 0, 0.7),
+        0 4px 16px rgba(0, 0, 0, 0.4);
+      animation: cardIn 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+      position: relative;
+    }
+
+    @keyframes cardIn {
+      from { opacity: 0; transform: translateY(18px) scale(0.97); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .loginCard__logo {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 28px;
+    }
+
+    .loginCard__logoCircle {
+      width: 56px;
+      height: 56px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.22) 0%, rgba(139, 92, 246, 0.15) 100%);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      display: grid;
+      place-items: center;
+      box-shadow: 0 0 24px rgba(99, 102, 241, 0.2);
+    }
+
+    .loginCard__title {
+      margin: 0 0 4px;
+      font-size: 24px;
+      font-weight: 700;
+      color: #fff;
+      text-align: center;
+      letter-spacing: -0.4px;
+    }
+
+    .loginCard__sub {
+      margin: 0 0 32px;
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.38);
+      text-align: center;
+    }
+
+    .loginForm {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .loginField {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .loginField__label {
+      font-size: 13px;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    .loginField__input {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: #fff;
+      font-size: 15px;
+      padding: 12px 16px;
+      border-radius: 12px;
+      transition: border-color 0.2s, background 0.2s;
+      outline: none;
+    }
+
+    .loginField__input:focus {
+      border-color: rgba(99, 102, 241, 0.5);
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    .loginBtn {
+      background: #4f46e5;
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      padding: 14px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 8px;
+      transition: background 0.2s, transform 0.1s;
+    }
+
+    .loginBtn:active {
+      transform: scale(0.98);
+    }
+
+    .loginBtn[disabled] {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .loginResult {
+      margin-top: 16px;
+      font-size: 13.5px;
+      text-align: center;
+      min-height: 20px;
+      font-weight: 500;
+    }
+
+    .loginResult.err {
+      color: #f87171;
+    }
+
+    .loginResult.ok {
+      color: #4ade80;
+    }
+
+    .loginResult.info {
+      color: #a5b4fc;
+    }
+
+    #loadingView, #errorView, #successView {
+      text-align: center;
+    }
+
+    .loader {
+      width: 24px;
+      height: 24px;
+      border: 3px solid rgba(255,255,255,0.1);
+      border-top-color: #4f46e5;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 16px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="loginPage">
+    <div class="loginCard">
+      <div class="loginCard__logo">
+        <div class="loginCard__logoCircle">
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="none" style="color: #a5b4fc;">
+            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- Initial Loading -->
+      <div id="loadingView">
+        <div class="loader"></div>
+        <p style="color: rgba(255,255,255,0.6); font-size: 14px;">Verificando invitación...</p>
+      </div>
+
+      <!-- Invalid Token / Error -->
+      <div id="errorView" hidden>
+        <h1 class="loginCard__title">Invitación no válida</h1>
+        <p class="loginCard__sub" id="errorMessage" style="color: #f87171; margin-bottom: 24px;">El enlace ha expirado o no existe.</p>
+      </div>
+
+      <!-- Setup Form -->
+      <div id="setupFormView" hidden>
+        <h1 class="loginCard__title">Configura tu acceso</h1>
+        <p class="loginCard__sub">Hola <strong id="inviteNameDisplay" style="color: #fff;"></strong>, crea tus credenciales para administrar promociones.</p>
+
+        <form class="loginForm" id="setupForm">
+          <div class="loginField">
+            <label class="loginField__label" for="username">Usuario</label>
+            <input class="loginField__input" id="username" type="text" autocomplete="off" placeholder="ej: mipromotor" required minlength="3" maxlength="30" pattern="^[a-z0-9_]+$" title="Solo minúsculas, números y guiones bajos" />
+            <div style="font-size: 11px; color: rgba(255,255,255,0.3); margin-top: 4px;">Este será tu usuario para iniciar sesión.</div>
+          </div>
+          <div class="loginField">
+            <label class="loginField__label" for="password">Contraseña</label>
+            <input class="loginField__input" id="password" type="password" autocomplete="new-password" placeholder="••••••••" required minlength="6" />
+          </div>
+          <button class="loginBtn" id="setupBtn" type="submit">Crear cuenta</button>
+          <div class="loginResult" id="setupResult"></div>
+        </form>
+      </div>
+
+      <!-- Success View -->
+      <div id="successView" hidden>
+        <div style="width: 64px; height: 64px; border-radius: 50%; background: rgba(74, 222, 128, 0.15); display: flex; align-items: center; justify-content: center; margin: 0 auto 24px;">
+          <svg viewBox="0 0 24 24" width="32" height="32" fill="none" style="color: #4ade80;">
+            <path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <h1 class="loginCard__title">¡Cuenta creada!</h1>
+        <p class="loginCard__sub" style="margin-bottom: 32px;">Tu cuenta de promotor ha sido configurada exitosamente.</p>
+        <a href="/login" class="loginBtn" style="display: block; text-decoration: none; text-align: center;">Ir a Iniciar Sesión</a>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", async () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const token = urlParams.get("token");
+
+      const loadingView = document.getElementById("loadingView");
+      const errorView = document.getElementById("errorView");
+      const errorMessage = document.getElementById("errorMessage");
+      const setupFormView = document.getElementById("setupFormView");
+      const setupForm = document.getElementById("setupForm");
+      const successView = document.getElementById("successView");
+      const inviteNameDisplay = document.getElementById("inviteNameDisplay");
+      const setupBtn = document.getElementById("setupBtn");
+      const setupResult = document.getElementById("setupResult");
+
+      if (!token) {
+        loadingView.hidden = true;
+        errorView.hidden = false;
+        errorMessage.textContent = "Falta el token de invitación en la URL.";
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/admin/marketing-setup?token=${encodeURIComponent(token)}`);
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || "Error verificando invitación.");
+        }
+
+        loadingView.hidden = true;
+        setupFormView.hidden = false;
+        inviteNameDisplay.textContent = data.name;
+
+      } catch (err) {
+        loadingView.hidden = true;
+        errorView.hidden = false;
+        errorMessage.textContent = err.message;
+      }
+
+      setupForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const username = document.getElementById("username").value.trim();
+        const password = document.getElementById("password").value.trim();
+
+        if (!username || !password) return;
+
+        setupBtn.disabled = true;
+        setupResult.className = "loginResult info";
+        setupResult.textContent = "Creando cuenta...";
+
+        try {
+          const res = await fetch("/api/admin/marketing-setup", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              action: "complete_setup",
+              token,
+              username,
+              password
+            })
+          });
+
+          const data = await res.json();
+
+          if (!res.ok) {
+            throw new Error(data.error || "Error al crear la cuenta.");
+          }
+
+          setupFormView.hidden = true;
+          successView.hidden = false;
+
+        } catch (err) {
+          setupBtn.disabled = false;
+          setupResult.className = "loginResult err";
+          setupResult.textContent = err.message;
+        }
+      });
+    });
+  </script>
+</body>
+
+</html>

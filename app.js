@@ -589,6 +589,8 @@ if (qrButton) {
     const panelReferidos = document.getElementById("secReferidos");
     const navReferidos = document.getElementById("aNavReferidos");
     const mobNavReferidos = document.getElementById("aMobNavReferidos");
+    const panelMarketing = document.getElementById("secMarketing");
+    const navMarketing = document.getElementById("aNavMarketing");
     
 
     const reportRefresh = document.getElementById("adminReportRefresh");
@@ -801,6 +803,7 @@ if (qrButton) {
       if (panelSedes) panelSedes.hidden = panel !== "sedes";
       if (panelReportes) panelReportes.hidden = panel !== "reportes";
       if (panelReferidos) panelReferidos.hidden = panel !== "referidos";
+      if (panelMarketing) panelMarketing.hidden = panel !== "marketing";
 
       if (navClientes) navClientes.classList.toggle("is-active", panel === "clientes");
       if (navTx) navTx.classList.toggle("is-active", panel === "transacciones");
@@ -811,6 +814,7 @@ if (qrButton) {
       if (navSedes) navSedes.classList.toggle("is-active", panel === "sedes");
       if (navReportes) navReportes.classList.toggle("is-active", panel === "reportes");
       if (navReferidos) navReferidos.classList.toggle("is-active", panel === "referidos");
+      if (navMarketing) navMarketing.classList.toggle("is-active", panel === "marketing");
 
       
       const mobClientes = document.getElementById("aMobNavClientes");
@@ -869,6 +873,10 @@ if (qrButton) {
     });
     if (navReferidos) navReferidos.addEventListener("click", () => {
       switchPanel("referidos");
+    });
+    if (navMarketing) navMarketing.addEventListener("click", () => {
+      switchPanel("marketing");
+      loadMarketingUsers();
     });
 
     const mobNavClientes = document.getElementById("aMobNavClientes");
@@ -3315,31 +3323,29 @@ document.addEventListener("DOMContentLoaded", () => {
     mktForm.addEventListener("submit", async (e) => {
       e.preventDefault();
       const name = document.getElementById("mktUserName").value;
-      const username = document.getElementById("mktUserUsername").value;
-      const password = document.getElementById("mktUserPassword").value;
+      const email = document.getElementById("mktUserEmail").value;
       const resEl = document.getElementById("mktUserFormResult");
       
-      resEl.textContent = "Creando...";
+      resEl.textContent = "Enviando invitación...";
       resEl.style.color = "#06b6d4";
       
       try {
-        const res = await fetch("/api/admin/marketing-users", {
+        const res = await fetch("/api/admin/invite-marketing", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name, username, password }),
+          body: JSON.stringify({ name, email }),
           credentials: "include"
         });
         const data = await res.json();
         if (res.ok) {
-          resEl.textContent = "Usuario creado exitosamente.";
+          resEl.textContent = "Invitación enviada exitosamente.";
           resEl.style.color = "#10b981";
           mktForm.reset();
-          loadMarketingUsers();
         } else {
           throw new Error(data.error);
         }
       } catch (err) {
-        resEl.textContent = err.message || "Error al crear usuario";
+        resEl.textContent = err.message || "Error al invitar";
         resEl.style.color = "#ef4444";
       }
     });
@@ -3478,12 +3484,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
       try {
         const res = await fetch("/api/admin/promotions");
-        const promos = await res.json();
+        const resData = await res.json();
         
-        if (!res.ok) throw new Error(promos.error);
+        if (!res.ok) throw new Error(resData.error);
+        
+        const promos = resData.promotions || [];
         
         if (promos.length === 0) {
-          promotionsListClientContainer.innerHTML = `<div style="text-align: center; color: rgba(255,255,255,0.7); padding: 40px 20px; font-size: 1.1rem; font-weight: 500;">No hay promociones activas por el momento. ¡Vuelve pronto!</div>`;
+          promotionsListClientContainer.innerHTML = `<div style="text-align: center; color: rgba(255,255,255,0.7); padding: 40px 20px; font-size: 1.1rem; font-weight: 500;">Por el momento no hay promociones disponibles. ¡Vuelve pronto!</div>`;
           return;
         }
 
@@ -3494,12 +3502,12 @@ document.addEventListener("DOMContentLoaded", () => {
           
           item.innerHTML = `
             <div style="width: 80px; height: 80px; border-radius: 8px; overflow: hidden; flex-shrink: 0; background: #000;">
-              <img src="${p.imageBase64}" alt="${p.title}" style="width: 100%; height: 100%; object-fit: cover;">
+              <img src="${p.image}" alt="${p.title}" style="width: 100%; height: 100%; object-fit: cover;">
             </div>
             <div style="flex: 1; min-width: 0;">
               <h4 style="margin: 0 0 4px 0; color: #fff; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${p.title}</h4>
               <p style="margin: 0 0 6px 0; color: rgba(255,255,255,0.6); font-size: 12px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${p.description || ""}</p>
-              <div style="color: #f43f5e; font-weight: bold; font-size: 14px;">${p.pointsCost} Puntos</div>
+              <div style="color: #f43f5e; font-weight: bold; font-size: 14px;">${p.points} Puntos</div>
             </div>
           `;
           promotionsListClientContainer.appendChild(item);
