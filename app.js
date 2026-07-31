@@ -3494,34 +3494,42 @@ document.addEventListener("DOMContentLoaded", () => {
     card.style.cssText = [
       "background: rgba(255,255,255,0.04)",
       "border: 1px solid rgba(255,255,255,0.1)",
-      "border-radius: 20px",
+      "border-radius: 16px",
       "overflow: hidden",
       "display: flex",
       "flex-direction: column",
-      "transition: transform 0.2s, box-shadow 0.2s"
+      "transition: transform 0.2s",
+      "break-inside: avoid",
+      "margin-bottom: 12px"
     ].join(";");
 
     const hasExpiry = Boolean(p.expiresAt);
     const countdownId = `promo-cd-${p.id}`;
 
+    // Generar alturas variables aleatorias de forma consistente basada en el ID
+    const charCode = (p.id || "a").charCodeAt(0);
+    const heights = ["140px", "180px", "220px"];
+    const imgHeight = heights[charCode % heights.length];
+
     card.innerHTML = `
-      <div style="position:relative; height: 200px; background: #000; overflow: hidden;">
+      <div style="position:relative; height: ${imgHeight}; background: #000; overflow: hidden;">
         <img src="${p.image}" alt="${p.title}"
           style="width:100%; height:100%; object-fit:cover; display:block; transition: transform 0.4s;"
           loading="lazy"
-          onmouseover="this.style.transform='scale(1.04)'" onmouseout="this.style.transform='scale(1)'"
         />
-        <div style="position:absolute; inset:0; background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 55%);"></div>
-        <div style="position:absolute; bottom:12px; left:14px; right:14px; display:flex; justify-content:space-between; align-items:flex-end;">
-          <span style="font-size:22px; font-weight:900; color:#fff; letter-spacing:-0.02em; line-height:1.1; text-shadow:0 2px 8px rgba(0,0,0,0.5);">${p.title}</span>
-          <span style="background: linear-gradient(135deg,#0891b2,#7c3aed); color:#fff; font-weight:800; font-size:13px; padding:5px 11px; border-radius:20px; white-space:nowrap; flex-shrink:0; margin-left:10px;">
+        <div style="position:absolute; inset:0; background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 60%);"></div>
+        <div style="position:absolute; bottom:10px; left:12px; right:12px;">
+          <span style="font-size:16px; font-weight:800; color:#fff; line-height:1.1; text-shadow:0 2px 8px rgba(0,0,0,0.6); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${p.title}</span>
+        </div>
+        <div style="position:absolute; top:8px; right:8px;">
+          <span style="background: rgba(9,9,11,0.7); backdrop-filter: blur(4px); color:#06b6d4; font-weight:800; font-size:11px; padding:4px 8px; border-radius:12px; white-space:nowrap;">
             ${Number(p.points).toLocaleString("es-VE")} Pts
           </span>
         </div>
       </div>
-      <div style="padding: 14px 16px 16px; display:flex; flex-direction:column; gap:8px;">
-        ${p.description ? `<p style="margin:0; font-size:13px; color:rgba(255,255,255,0.6); line-height:1.5;">${p.description}</p>` : ""}
-        ${hasExpiry ? `<div id="${countdownId}" style="font-size:12px; font-weight:700; letter-spacing:0.03em;"></div>` : ""}
+      <div style="padding: 12px; display:flex; flex-direction:column; gap:6px;">
+        ${p.description ? `<p style="margin:0; font-size:11px; color:rgba(255,255,255,0.6); line-height:1.4; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">${p.description}</p>` : ""}
+        ${hasExpiry ? `<div id="${countdownId}" style="font-size:11px; font-weight:700; letter-spacing:0.03em;"></div>` : ""}
       </div>
     `;
 
