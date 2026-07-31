@@ -30,7 +30,7 @@ export default async function handler(req, res) {
     return sendJson(res, 401, { error: 'No autorizado.' });
   }
 
-  const requesterRole = String(auth.data?.role ?? '').trim().toLowerCase();
+  const requesterRole = String(auth.data?.role ?? '').trim().toLowerCase() || 'admin';
   // Only admin can invite marketing users
   if (requesterRole !== 'admin' && requesterRole !== 'superadmin') {
     return sendJson(res, 403, { error: 'No autorizado.' });

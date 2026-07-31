@@ -3280,16 +3280,17 @@ document.addEventListener("DOMContentLoaded", () => {
     tbody.innerHTML = `<tr><td colspan="3" style="text-align: center; padding: 20px; color: rgba(255,255,255,0.5);">Cargando...</td></tr>`;
     try {
       const res = await fetch("/api/admin/marketing-users", { credentials: "include" });
-      const users = await res.json();
-      if (!res.ok) throw new Error(users.error || "Error al cargar");
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Error al cargar");
       
-      if (users.length === 0) {
+      const usersList = data.marketingUsers || [];
+      if (usersList.length === 0) {
         tbody.innerHTML = `<tr><td colspan="3" style="text-align: center; padding: 20px; color: rgba(255,255,255,0.5);">No hay usuarios de marketing</td></tr>`;
         return;
       }
       
       tbody.innerHTML = "";
-      users.forEach(u => {
+      usersList.forEach(u => {
         const tr = document.createElement("tr");
         tr.style.borderBottom = "1px solid rgba(255,255,255,0.05)";
         
