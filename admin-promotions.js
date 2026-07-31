@@ -32,11 +32,33 @@ const setAuthenticated = (authenticated) => {
   if (promoSection) promoSection.hidden = !authenticated;
 };
 
-const fileToBase64 = (file) => {
+const compressImageToBase64 = (file, maxWidth = 1080, quality = 0.7) => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.readAsDataURL(file);
-    reader.onload = () => resolve(reader.result);
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target.result;
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        let width = img.width;
+        let height = img.height;
+
+        if (width > maxWidth) {
+          height = Math.round((height * maxWidth) / width);
+          width = maxWidth;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, width, height);
+
+        // Compress to WebP (better compression than JPEG)
+        resolve(canvas.toDataURL("image/webp", quality));
+      };
+      img.onerror = error => reject(error);
+    };
     reader.onerror = error => reject(error);
   });
 };
@@ -155,8 +177,8 @@ if (promoForm) {
       return;
     }
     
-    if (file.size > 2 * 1024 * 1024) {
-      setPromoResult("adminResult--err", "La imagen no debe superar los 2MB");
+    if (file.size > 15 * 1024 * 1024) {
+      setPromoResult("adminResult--err", "La imagen no debe superar los 15MB");
       return;
     }
     
@@ -173,7 +195,7 @@ if (promoForm) {
     setPromoResult("adminResult--info", "Procesando imagen y subiendo...");
     
     try {
-      const base64Image = await fileToBase64(file);
+      const base64Image = await compressImageToBase64(file);
       
       const res = await fetch("/api/admin/promotions", {
         method: "POST",
