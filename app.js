@@ -2504,6 +2504,10 @@ Esto eliminará también sus transacciones.`
             window.location.replace("/comercio/qr");
             return;
           }
+          if (role === "marketing") {
+            window.location.replace("/admin/promotions");
+            return;
+          }
           initAuthed(role);
         } else {
           // No session → redirect to shared login page
