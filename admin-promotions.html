@@ -4,127 +4,246 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-
   <title>Admin · Promociones</title>
-
-  <meta name="theme-color" content="#09090b" id="themeColor" />
+  <meta name="theme-color" content="#09090b" />
   <meta name="color-scheme" content="dark" />
   <meta name="description" content="Gestor de Promociones V+puntos" />
-
   <link rel="icon" href="/icons/icon-v2.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="/styles.css" />
+  <style>
+    body.mode-admin { overflow: hidden !important; }
+
+    .ap-layout { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; }
+    .ap-header {
+      display: flex; align-items: center; gap: 12px; padding: 14px 20px;
+      border-bottom: 1px solid rgba(255,255,255,0.08); flex-shrink: 0;
+      background: rgba(9,9,11,0.95); backdrop-filter: blur(12px);
+    }
+    .ap-header a { display: flex; align-items: center; gap: 6px; color: rgba(255,255,255,0.6); text-decoration: none; font-size: 14px; }
+    .ap-header a:hover { color: #fff; }
+    .ap-header__title { font-size: 17px; font-weight: 700; color: #fff; flex: 1; text-align: center; }
+
+    .ap-body { flex: 1; overflow-y: auto; padding: 20px 16px 40px; display: flex; flex-direction: column; gap: 20px; max-width: 680px; margin: 0 auto; width: 100%; }
+
+    /* Cards */
+    .ap-card {
+      background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.09);
+      border-radius: 16px; padding: 20px;
+    }
+    .ap-card__title { font-size: 16px; font-weight: 700; color: #fff; margin: 0 0 4px; }
+    .ap-card__sub { font-size: 13px; color: rgba(255,255,255,0.45); margin: 0 0 18px; }
+
+    /* Form */
+    .ap-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+    .ap-field label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: rgba(255,255,255,0.5); }
+    .ap-field input, .ap-field textarea {
+      background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 10px; padding: 11px 14px; color: #fff; font-size: 14px; outline: none;
+      transition: border-color 0.2s;
+      font-family: inherit;
+    }
+    .ap-field input:focus, .ap-field textarea:focus { border-color: rgba(6,182,212,0.6); }
+    .ap-field textarea { resize: vertical; min-height: 70px; }
+    .ap-field input[type="file"] { padding: 9px 12px; cursor: pointer; }
+    .ap-field input[type="file"]::-webkit-file-upload-button {
+      background: rgba(6,182,212,0.15); border: 1px solid rgba(6,182,212,0.3);
+      border-radius: 6px; color: #06b6d4; padding: 4px 10px; font-size: 12px; cursor: pointer;
+      margin-right: 10px;
+    }
+
+    /* Buttons */
+    .ap-btn {
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      padding: 12px 20px; border-radius: 10px; font-size: 14px; font-weight: 600;
+      border: none; cursor: pointer; transition: all 0.2s; width: 100%;
+    }
+    .ap-btn--primary { background: linear-gradient(135deg, #0891b2, #7c3aed); color: #fff; }
+    .ap-btn--primary:hover { opacity: 0.9; transform: translateY(-1px); }
+    .ap-btn--primary:disabled { opacity: 0.5; transform: none; cursor: not-allowed; }
+
+    /* Result */
+    .ap-result { font-size: 13px; text-align: center; padding: 8px 0 0; min-height: 22px; }
+    .ap-result--ok { color: #10b981; }
+    .ap-result--err { color: #ef4444; }
+    .ap-result--info { color: #06b6d4; }
+
+    /* Promo list grid */
+    .ap-promo-grid { display: flex; flex-direction: column; gap: 12px; }
+
+    .ap-promo-item {
+      background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 14px; overflow: hidden; display: flex; gap: 0;
+    }
+    .ap-promo-item__thumb {
+      width: 90px; min-width: 90px; background: #000;
+    }
+    .ap-promo-item__thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .ap-promo-item__info { flex: 1; padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+    .ap-promo-item__title { font-size: 14px; font-weight: 700; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .ap-promo-item__desc { font-size: 12px; color: rgba(255,255,255,0.5); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; }
+    .ap-promo-item__pts { font-size: 13px; font-weight: 700; color: #06b6d4; }
+    .ap-promo-item__expires { font-size: 11px; color: rgba(251,191,36,0.9); display: flex; align-items: center; gap: 4px; }
+    .ap-promo-item__actions { display: flex; gap: 6px; margin-top: 8px; }
+    .ap-promo-action {
+      flex: 1; padding: 6px 0; border-radius: 7px; border: none; cursor: pointer;
+      font-size: 12px; font-weight: 600; transition: all 0.15s;
+    }
+    .ap-promo-action--edit { background: rgba(6,182,212,0.12); color: #06b6d4; }
+    .ap-promo-action--edit:hover { background: rgba(6,182,212,0.25); }
+    .ap-promo-action--del { background: rgba(239,68,68,0.12); color: #ef4444; }
+    .ap-promo-action--del:hover { background: rgba(239,68,68,0.25); }
+
+    /* Edit modal */
+    .ap-modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 200;
+      display: flex; align-items: flex-end; justify-content: center;
+      opacity: 0; pointer-events: none; transition: opacity 0.25s;
+    }
+    .ap-modal-overlay.is-open { opacity: 1; pointer-events: all; }
+    .ap-modal {
+      background: #111; border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 20px 20px 0 0; padding: 24px 20px 36px;
+      width: 100%; max-width: 500px; max-height: 90dvh; overflow-y: auto;
+      transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    .ap-modal-overlay.is-open .ap-modal { transform: translateY(0); }
+    .ap-modal__header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+    .ap-modal__title { font-size: 18px; font-weight: 700; color: #fff; }
+    .ap-modal__close { background: rgba(255,255,255,0.1); border: none; color: #fff; width: 32px; height: 32px; border-radius: 50%; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+
+    .ap-img-preview { width: 100%; height: 140px; border-radius: 10px; object-fit: cover; margin-bottom: 12px; display: none; border: 1px solid rgba(255,255,255,0.12); }
+    .ap-img-preview.is-visible { display: block; }
+  </style>
 </head>
 
 <body class="mode-admin">
-  <div class="bg" aria-hidden="true" style="opacity: 0.3;">
+  <div class="bg" aria-hidden="true" style="opacity: 0.25;">
     <div class="bg__orb" style="top:-20%; left:-10%;"></div>
     <div class="bg__orb bg__orb--b" style="bottom:-20%; right:-10%;"></div>
   </div>
 
-  <div class="aQrPage">
-    <!-- Top bar -->
-    <header class="aQrPage__header">
-      <a href="/admin" class="aQrPage__back" aria-label="Volver al Panel">
+  <div class="ap-layout">
+    <!-- Header -->
+    <header class="ap-header">
+      <a href="/admin" id="backLink">
         <svg viewBox="0 0 24 24" width="18" height="18" fill="none">
-          <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
-            stroke-linejoin="round" />
+          <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
         Panel
       </a>
-      <span class="aQrPage__title">Promociones</span>
-      <div style="width:60px;"></div><!-- Balance spacer -->
+      <span class="ap-header__title">Promociones</span>
+      <div style="width:60px;"></div>
     </header>
 
-    <!-- Scrollable body -->
-    <main class="aQrPage__body">
+    <div class="ap-body">
 
       <!-- Login Card -->
-      <div class="aLogin__card aQrPage__card" id="loginCard">
-        <div class="aLogin__logo" aria-hidden="true">
-          <svg viewBox="0 0 24 24" width="28" height="28" fill="none">
-            <rect x="3" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.8" />
-            <rect x="14" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.8" />
-            <rect x="3" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.8" />
-            <path d="M14 14h2v2h-2zM18 14h3v3h-3zM14 18h3v3h-3zM18 19h3v2h-3z" fill="currentColor" />
-          </svg>
-        </div>
-        <h1 class="aLogin__title">Acceso Admin</h1>
-        <p class="aLogin__sub">Inicia sesión para gestionar promociones</p>
-
-        <form class="aLogin__form" id="loginForm">
-          <div class="aField">
-            <label class="aField__label" for="adminEmail">Correo</label>
-            <input class="aField__input" id="adminEmail" name="email" type="email" autocomplete="username"
-              placeholder="correo@ejemplo.com" required />
+      <div class="ap-card" id="loginCard">
+        <p class="ap-card__title">Acceso Admin</p>
+        <p class="ap-card__sub">Inicia sesión para gestionar promociones</p>
+        <form id="loginForm">
+          <div class="ap-field">
+            <label for="adminEmail">Correo / Usuario</label>
+            <input id="adminEmail" type="text" autocomplete="username" placeholder="correo@ejemplo.com" required />
           </div>
-          <div class="aField">
-            <label class="aField__label" for="adminPassword">Contraseña</label>
-            <input class="aField__input" id="adminPassword" name="password" type="password"
-              autocomplete="current-password" placeholder="••••••••" required />
+          <div class="ap-field">
+            <label for="adminPassword">Contraseña</label>
+            <input id="adminPassword" type="password" autocomplete="current-password" placeholder="••••••••" required />
           </div>
-          <button class="aBtn aBtn--primary" id="loginBtn" type="submit">Entrar</button>
-          <div class="aResult" id="loginResult" aria-live="polite"></div>
+          <button class="ap-btn ap-btn--primary" type="submit">Entrar</button>
+          <div class="ap-result" id="loginResult"></div>
         </form>
       </div>
 
-      <!-- Main Dashboard -->
+      <!-- Dashboard -->
       <div id="promoSection" hidden>
-        <!-- Formulario para Crear Promoción -->
-        <div class="aLogin__card aQrPage__card" style="margin-bottom: 24px;">
-          <h1 class="aLogin__title" style="margin-bottom: 8px;">Subir Promoción</h1>
-          <p class="aLogin__sub">Añade una nueva oferta al catálogo</p>
-
-          <form class="aLogin__form" id="promoForm">
-            <div class="aField">
-              <label class="aField__label" for="promoImage">Imagen (Max 2MB)</label>
-              <input class="aField__input" id="promoImage" type="file" accept="image/*" required style="padding: 10px;" />
+        <!-- Upload form -->
+        <div class="ap-card">
+          <p class="ap-card__title">✦ Subir Promoción</p>
+          <p class="ap-card__sub">Añade una nueva oferta al catálogo</p>
+          <form id="promoForm">
+            <div class="ap-field">
+              <label for="promoImage">Imagen (Max 15 MB)</label>
+              <input id="promoImage" type="file" accept="image/*" required />
             </div>
+            <img id="promoImagePreview" class="ap-img-preview" alt="Vista previa" />
 
-            <div class="aField">
-              <label class="aField__label" for="promoTitle">Título del Producto</label>
-              <input class="aField__input" id="promoTitle" type="text" autocomplete="off"
-                placeholder="Ej: Combo Hamburguesa" required />
+            <div class="ap-field">
+              <label for="promoTitle">Título del Producto</label>
+              <input id="promoTitle" type="text" autocomplete="off" placeholder="Ej: Televisor 43 pulgadas" required />
             </div>
-
-            <div class="aField">
-              <label class="aField__label" for="promoDesc">Descripción (Opcional)</label>
-              <input class="aField__input" id="promoDesc" type="text" autocomplete="off"
-                placeholder="Ej: Incluye papas y refresco" />
+            <div class="ap-field">
+              <label for="promoDesc">Descripción (Opcional)</label>
+              <textarea id="promoDesc" placeholder="Ej: Incluye garantía de 1 año"></textarea>
             </div>
-
-            <div class="aField">
-              <label class="aField__label" for="promoPoints">Costo en Puntos</label>
-              <input class="aField__input" id="promoPoints" type="number" inputmode="numeric" min="1" step="1"
-                placeholder="Ej: 500" required />
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+              <div class="ap-field" style="margin-bottom:0">
+                <label for="promoPoints">Costo en Puntos</label>
+                <input id="promoPoints" type="number" inputmode="numeric" min="1" step="1" placeholder="Ej: 24500" required />
+              </div>
+              <div class="ap-field" style="margin-bottom:0">
+                <label for="promoExpires">Fecha Límite (opcional)</label>
+                <input id="promoExpires" type="date" />
+              </div>
             </div>
-
-            <button class="aBtn aBtn--primary" id="createPromoBtn" type="submit" style="margin-top: 16px;">
+            <br/>
+            <button class="ap-btn ap-btn--primary" id="createPromoBtn" type="submit">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
               Crear Promoción
             </button>
-            <div class="aResult" id="promoResult" aria-live="polite"></div>
+            <div class="ap-result" id="promoResult"></div>
           </form>
         </div>
 
-        <!-- Lista de Promociones -->
-        <div class="aLogin__card aQrPage__card">
-          <h2 class="aLogin__title" style="margin-bottom: 16px; font-size: 1.25rem;">Promociones Activas</h2>
-          <div id="promoListContainer" style="display: flex; flex-direction: column; gap: 16px;">
-            <div style="text-align: center; color: rgba(255,255,255,0.5);">Cargando...</div>
-          </div>
+        <!-- List -->
+        <div class="ap-card">
+          <p class="ap-card__title">Promociones Activas</p>
+          <p class="ap-card__sub" id="promosCountLabel">Cargando...</p>
+          <div class="ap-promo-grid" id="promoListContainer"></div>
         </div>
       </div>
-
-    </main>
+    </div>
   </div>
 
-  <style>
-    /* Override global body overflow so aQrPage can scroll */
-    body.mode-admin {
-      overflow: hidden !important;
-    }
-  </style>
+  <!-- Edit Modal -->
+  <div class="ap-modal-overlay" id="editModalOverlay">
+    <div class="ap-modal">
+      <div class="ap-modal__header">
+        <span class="ap-modal__title">Editar Promoción</span>
+        <button class="ap-modal__close" id="editModalClose">✕</button>
+      </div>
+      <form id="editPromoForm">
+        <input type="hidden" id="editPromoId" />
+        <div class="ap-field">
+          <label for="editPromoImage">Nueva Imagen (opcional)</label>
+          <input id="editPromoImage" type="file" accept="image/*" />
+        </div>
+        <img id="editPromoImagePreview" class="ap-img-preview" alt="Vista previa" />
+        <div class="ap-field">
+          <label for="editPromoTitle">Título</label>
+          <input id="editPromoTitle" type="text" required />
+        </div>
+        <div class="ap-field">
+          <label for="editPromoDesc">Descripción</label>
+          <textarea id="editPromoDesc"></textarea>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="ap-field" style="margin-bottom:0">
+            <label for="editPromoPoints">Puntos</label>
+            <input id="editPromoPoints" type="number" min="1" required />
+          </div>
+          <div class="ap-field" style="margin-bottom:0">
+            <label for="editPromoExpires">Fecha Límite</label>
+            <input id="editPromoExpires" type="date" />
+          </div>
+        </div>
+        <br/>
+        <button class="ap-btn ap-btn--primary" id="saveEditBtn" type="submit">Guardar Cambios</button>
+        <div class="ap-result" id="editPromoResult"></div>
+      </form>
+    </div>
+  </div>
 
   <script src="/admin-promotions.js" defer></script>
 </body>
-
 </html>

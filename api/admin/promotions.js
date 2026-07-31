@@ -1,6 +1,6 @@
 import { getFirestoreDb } from '../_lib/firestore.js';
 import { readJsonBody, sendJson } from '../_lib/http.js';
-import { requireAdminOrMarketing, isStaffRequest } from '../_lib/adminAuth.js';
+import { requireAdminOrMarketing } from '../_lib/adminAuth.js';
 import crypto from 'node:crypto';
 
 export default async function handler(req, res) {
@@ -8,21 +8,25 @@ export default async function handler(req, res) {
   const collection = db.collection('promotions');
 
   try {
-    // GET is public for the client app, but we can secure it if needed.
-    // The user requested them to be visible to clients.
+    // GET is public for the client app
     if (req.method === 'GET') {
+      const now = Date.now();
       const snap = await collection.orderBy('createdAt', 'desc').get();
-      const promos = snap.docs.map(doc => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          title: data.title || '',
-          description: data.description || '',
-          points: data.points || 0,
-          image: data.image || '', // Base64 string or URL
-          createdAt: data.createdAt || null
-        };
-      });
+      const promos = snap.docs
+        .map(doc => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            title: data.title || '',
+            description: data.description || '',
+            points: data.points || 0,
+            image: data.image || '',
+            expiresAt: data.expiresAt || null,
+            createdAt: data.createdAt || null
+          };
+        })
+        // Filter out expired promotions
+        .filter(p => !p.expiresAt || p.expiresAt > now);
       sendJson(res, 200, { promotions: promos });
       return;
     }
@@ -36,6 +40,7 @@ export default async function handler(req, res) {
       const description = String(body?.description || '').trim();
       const points = Number(body?.points || 0);
       const image = String(body?.image || '').trim();
+      const expiresAt = body?.expiresAt ? Number(body.expiresAt) : null;
 
       if (!title || !image) {
         sendJson(res, 400, { error: 'El título y la imagen son requeridos' });
@@ -43,14 +48,16 @@ export default async function handler(req, res) {
       }
 
       const id = crypto.randomUUID();
-      await collection.doc(id).set({
+      const docData = {
         title,
         description,
         points,
         image,
         createdAt: Date.now()
-      });
+      };
+      if (expiresAt) docData.expiresAt = expiresAt;
 
+      await collection.doc(id).set(docData);
       sendJson(res, 200, { ok: true, id });
       return;
     }
@@ -68,6 +75,7 @@ export default async function handler(req, res) {
       if (body.description !== undefined) updates.description = String(body.description).trim();
       if (body.points !== undefined) updates.points = Number(body.points);
       if (body.image) updates.image = String(body.image).trim();
+      if (body.expiresAt !== undefined) updates.expiresAt = body.expiresAt ? Number(body.expiresAt) : null;
       
       if (Object.keys(updates).length > 0) {
         await collection.doc(id).update(updates);

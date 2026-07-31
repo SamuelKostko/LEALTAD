@@ -3466,16 +3466,85 @@ document.addEventListener("DOMContentLoaded", () => {
   const promotionsBackBtn = document.getElementById("promotionsBackBtn");
   const promotionsListClientContainer = document.getElementById("promotionsListClientContainer");
 
+  // Track countdown intervals so we can clear them
+  let promoCountdownIntervals = [];
+
   const closePromotionsView = () => {
     if (!promotionsView) return;
+    promoCountdownIntervals.forEach(id => clearInterval(id));
+    promoCountdownIntervals = [];
     promotionsView.style.display = "none";
     promotionsView.setAttribute("aria-hidden", "true");
     document.body.style.overflow = "";
   };
 
+  const formatCountdown = (ms) => {
+    if (ms <= 0) return { label: "Expirado", cls: "promo-expired" };
+    const d = Math.floor(ms / 86400000);
+    const h = Math.floor((ms % 86400000) / 3600000);
+    const m = Math.floor((ms % 3600000) / 60000);
+    const s = Math.floor((ms % 60000) / 1000);
+    if (d > 0) return { label: `⏱ ${d}d ${h}h ${m}m`, cls: d < 2 ? "promo-urgent" : "promo-soon" };
+    if (h > 0) return { label: `⏱ ${h}h ${m}m ${s}s`, cls: "promo-urgent" };
+    return { label: `⏱ ${m}m ${s}s`, cls: "promo-critical" };
+  };
+
+  const renderPromotionCard = (p, container) => {
+    const card = document.createElement("div");
+    card.style.cssText = [
+      "background: rgba(255,255,255,0.04)",
+      "border: 1px solid rgba(255,255,255,0.1)",
+      "border-radius: 20px",
+      "overflow: hidden",
+      "display: flex",
+      "flex-direction: column",
+      "transition: transform 0.2s, box-shadow 0.2s"
+    ].join(";");
+
+    const hasExpiry = Boolean(p.expiresAt);
+    const countdownId = `promo-cd-${p.id}`;
+
+    card.innerHTML = `
+      <div style="position:relative; height: 200px; background: #000; overflow: hidden;">
+        <img src="${p.image}" alt="${p.title}"
+          style="width:100%; height:100%; object-fit:cover; display:block; transition: transform 0.4s;"
+          loading="lazy"
+          onmouseover="this.style.transform='scale(1.04)'" onmouseout="this.style.transform='scale(1)'"
+        />
+        <div style="position:absolute; inset:0; background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 55%);"></div>
+        <div style="position:absolute; bottom:12px; left:14px; right:14px; display:flex; justify-content:space-between; align-items:flex-end;">
+          <span style="font-size:22px; font-weight:900; color:#fff; letter-spacing:-0.02em; line-height:1.1; text-shadow:0 2px 8px rgba(0,0,0,0.5);">${p.title}</span>
+          <span style="background: linear-gradient(135deg,#0891b2,#7c3aed); color:#fff; font-weight:800; font-size:13px; padding:5px 11px; border-radius:20px; white-space:nowrap; flex-shrink:0; margin-left:10px;">
+            ${Number(p.points).toLocaleString("es-VE")} Pts
+          </span>
+        </div>
+      </div>
+      <div style="padding: 14px 16px 16px; display:flex; flex-direction:column; gap:8px;">
+        ${p.description ? `<p style="margin:0; font-size:13px; color:rgba(255,255,255,0.6); line-height:1.5;">${p.description}</p>` : ""}
+        ${hasExpiry ? `<div id="${countdownId}" style="font-size:12px; font-weight:700; letter-spacing:0.03em;"></div>` : ""}
+      </div>
+    `;
+
+    container.appendChild(card);
+
+    // Start live countdown
+    if (hasExpiry) {
+      const el = document.getElementById(countdownId);
+      const tick = () => {
+        const { label, cls } = formatCountdown(p.expiresAt - Date.now());
+        el.textContent = label;
+        el.style.color = cls === "promo-critical" ? "#ef4444"
+          : cls === "promo-urgent" ? "#f59e0b"
+          : cls === "promo-soon" ? "#fbbf24"
+          : "rgba(255,255,255,0.3)";
+      };
+      tick();
+      promoCountdownIntervals.push(setInterval(tick, 1000));
+    }
+  };
+
   if (profilePromocionesBtn && promotionsView && promotionsListClientContainer) {
     profilePromocionesBtn.addEventListener("click", async () => {
-      // Cierra el menu principal del perfil si está abierto
       const profileMenu = document.getElementById("profileMenu");
       if (profileMenu && profileMenu.classList.contains("profileMenu--active")) {
         profileMenu.classList.remove("profileMenu--active");
@@ -3485,46 +3554,38 @@ document.addEventListener("DOMContentLoaded", () => {
       document.body.style.overflow = "hidden";
       promotionsView.style.display = "flex";
       promotionsView.setAttribute("aria-hidden", "false");
-      promotionsListClientContainer.innerHTML = `<div style="text-align: center; color: rgba(255,255,255,0.7); padding: 40px 20px; font-size: 1.1rem; font-weight: 500;">Cargando promociones...</div>`;
+      promotionsListClientContainer.innerHTML = `<div style="text-align: center; color: rgba(255,255,255,0.5); padding: 60px 20px; font-size: 1rem;">Cargando promociones...</div>`;
 
       try {
         const res = await fetch("/api/admin/promotions");
         const resData = await res.json();
-        
         if (!res.ok) throw new Error(resData.error);
-        
+
         const promos = resData.promotions || [];
-        
+
         if (promos.length === 0) {
-          promotionsListClientContainer.innerHTML = `<div style="text-align: center; color: rgba(255,255,255,0.7); padding: 40px 20px; font-size: 1.1rem; font-weight: 500;">Por el momento no hay promociones disponibles. ¡Vuelve pronto!</div>`;
+          promotionsListClientContainer.innerHTML = `
+            <div style="text-align: center; padding: 60px 20px;">
+              <div style="font-size: 48px; margin-bottom: 16px;">🏷️</div>
+              <p style="font-size: 16px; font-weight: 700; color: rgba(255,255,255,0.8); margin: 0 0 8px;">Por el momento no hay promociones</p>
+              <p style="font-size: 13px; color: rgba(255,255,255,0.4); margin: 0;">¡Vuelve pronto para ver las novedades!</p>
+            </div>`;
           return;
         }
 
+        promoCountdownIntervals.forEach(id => clearInterval(id));
+        promoCountdownIntervals = [];
         promotionsListClientContainer.innerHTML = "";
-        promos.forEach(p => {
-          const item = document.createElement("div");
-          item.style.cssText = "background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; overflow: hidden; display: flex; align-items: center; padding: 10px; gap: 15px;";
-          
-          item.innerHTML = `
-            <div style="width: 80px; height: 80px; border-radius: 8px; overflow: hidden; flex-shrink: 0; background: #000;">
-              <img src="${p.image}" alt="${p.title}" style="width: 100%; height: 100%; object-fit: cover;">
-            </div>
-            <div style="flex: 1; min-width: 0;">
-              <h4 style="margin: 0 0 4px 0; color: #fff; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${p.title}</h4>
-              <p style="margin: 0 0 6px 0; color: rgba(255,255,255,0.6); font-size: 12px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${p.description || ""}</p>
-              <div style="color: #f43f5e; font-weight: bold; font-size: 14px;">${p.points} Puntos</div>
-            </div>
-          `;
-          promotionsListClientContainer.appendChild(item);
-        });
-        
+        promos.forEach(p => renderPromotionCard(p, promotionsListClientContainer));
+
       } catch (err) {
-        promotionsListClientContainer.innerHTML = `<div style="text-align: center; color: #ef4444; padding: 40px 20px; font-size: 1.1rem; font-weight: 500;">Ocurrió un error al cargar las promociones.</div>`;
+        promotionsListClientContainer.innerHTML = `<div style="text-align: center; color: #ef4444; padding: 40px 20px;">Error al cargar las promociones.</div>`;
       }
     });
 
     if (promotionsBackBtn) promotionsBackBtn.addEventListener("click", closePromotionsView);
   }
+
 
   // Lógica para Comprar Puntos (Wizard)
   const profileBuyPointsBtn = document.getElementById("profileBuyPointsBtn");

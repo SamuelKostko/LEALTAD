@@ -1,228 +1,331 @@
-const loginForm = document.getElementById("loginForm");
-const adminEmailEl = document.getElementById("adminEmail");
-const adminPasswordEl = document.getElementById("adminPassword");
-const loginResultEl = document.getElementById("loginResult");
-const promoSection = document.getElementById("promoSection");
-const promoForm = document.getElementById("promoForm");
-const promoImageEl = document.getElementById("promoImage");
-const promoTitleEl = document.getElementById("promoTitle");
-const promoDescEl = document.getElementById("promoDesc");
-const promoPointsEl = document.getElementById("promoPoints");
-const promoResultEl = document.getElementById("promoResult");
-const promoListContainer = document.getElementById("promoListContainer");
-const createPromoBtn = document.getElementById("createPromoBtn");
+/* ─── Helpers ─────────────────────────────────────────────────────────────── */
 
-const setLoginResult = (type, message) => {
-  if (!loginResultEl) return;
-  loginResultEl.classList.remove("adminResult--ok", "adminResult--err", "adminResult--info");
-  if (type) loginResultEl.classList.add(type);
-  loginResultEl.textContent = message;
+const $ = id => document.getElementById(id);
+
+const setResult = (el, type, msg) => {
+  if (!el) return;
+  el.className = 'ap-result' + (type ? ` ap-result--${type}` : '');
+  el.textContent = msg;
 };
 
-const setPromoResult = (type, message) => {
-  if (!promoResultEl) return;
-  promoResultEl.classList.remove("adminResult--ok", "adminResult--err", "adminResult--info");
-  if (type) promoResultEl.classList.add(type);
-  promoResultEl.textContent = message;
-};
-
-const setAuthenticated = (authenticated) => {
-  const loginCard = document.getElementById("loginCard");
-  if (loginCard) loginCard.hidden = authenticated;
-  if (promoSection) promoSection.hidden = !authenticated;
-};
-
-const compressImageToBase64 = (file, maxWidth = 1080, quality = 0.7) => {
-  return new Promise((resolve, reject) => {
+const compressImageToBase64 = (file, maxWidth = 1080, quality = 0.75) =>
+  new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.readAsDataURL(file);
-    reader.onload = (event) => {
+    reader.onload = event => {
       const img = new Image();
       img.src = event.target.result;
       img.onload = () => {
-        const canvas = document.createElement("canvas");
-        let width = img.width;
-        let height = img.height;
-
-        if (width > maxWidth) {
-          height = Math.round((height * maxWidth) / width);
-          width = maxWidth;
-        }
-
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext("2d");
-        ctx.drawImage(img, 0, 0, width, height);
-
-        // Compress to WebP (better compression than JPEG)
-        resolve(canvas.toDataURL("image/webp", quality));
+        const canvas = document.createElement('canvas');
+        let w = img.width, h = img.height;
+        if (w > maxWidth) { h = Math.round(h * maxWidth / w); w = maxWidth; }
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/webp', quality));
       };
-      img.onerror = error => reject(error);
+      img.onerror = reject;
     };
-    reader.onerror = error => reject(error);
+    reader.onerror = reject;
   });
+
+const dateToTimestamp = (dateStr) => {
+  if (!dateStr) return null;
+  // Set to end of the chosen day in local time
+  const d = new Date(dateStr + 'T23:59:59');
+  return d.getTime();
 };
 
-const fetchPromotions = async () => {
-  if (!promoListContainer) return;
-  promoListContainer.innerHTML = '<div style="text-align: center; color: rgba(255,255,255,0.5);">Cargando...</div>';
-  
+const timestampToDateInput = (ts) => {
+  if (!ts) return '';
+  const d = new Date(ts);
+  return d.toISOString().slice(0, 10);
+};
+
+const formatExpiry = (ts) => {
+  if (!ts) return null;
+  const diff = ts - Date.now();
+  if (diff <= 0) return 'Expirado';
+  const days = Math.floor(diff / 86400000);
+  const hours = Math.floor((diff % 86400000) / 3600000);
+  if (days > 0) return `⏱ Vence en ${days}d ${hours}h`;
+  const mins = Math.floor((diff % 3600000) / 60000);
+  return `⏱ Vence en ${hours}h ${mins}m`;
+};
+
+/* ─── Auth ────────────────────────────────────────────────────────────────── */
+
+const setAuthenticated = (ok) => {
+  const loginCard = $('loginCard');
+  const promoSection = $('promoSection');
+  if (loginCard) loginCard.hidden = ok;
+  if (promoSection) promoSection.hidden = !ok;
+};
+
+const checkAuth = async () => {
   try {
-    const res = await fetch("/api/admin/promotions");
+    const res = await fetch('/api/admin/me', { credentials: 'include' });
+    if (res.ok) {
+      const data = await res.json();
+      if (data?.authenticated) {
+        setAuthenticated(true);
+        fetchPromotions();
+        return;
+      }
+    }
+  } catch { /* ignore */ }
+  setAuthenticated(false);
+};
+
+const loginForm = $('loginForm');
+if (loginForm) {
+  loginForm.addEventListener('submit', async e => {
+    e.preventDefault();
+    const loginResult = $('loginResult');
+    setResult(loginResult, 'info', 'Iniciando sesión...');
+    const email = $('adminEmail').value.trim();
+    const password = $('adminPassword').value.trim();
+    if (!email || !password) return;
+    try {
+      const res = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: email, password }),
+        credentials: 'include'
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setResult(loginResult, '', '');
+        setAuthenticated(true);
+        fetchPromotions();
+      } else {
+        setResult(loginResult, 'err', data.error || 'Error de credenciales');
+      }
+    } catch {
+      setResult($('loginResult'), 'err', 'Error de red');
+    }
+  });
+}
+
+/* ─── Fetch & Render list ─────────────────────────────────────────────────── */
+
+const fetchPromotions = async () => {
+  const container = $('promoListContainer');
+  const countLabel = $('promosCountLabel');
+  if (!container) return;
+  container.innerHTML = '<div style="color: rgba(255,255,255,0.4); font-size:13px; text-align:center; padding:20px 0">Cargando...</div>';
+
+  try {
+    // Admin view: fetch all including expired (bypass filter by adding ?admin=1)
+    const res = await fetch('/api/admin/promotions?admin=1', { credentials: 'include' });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || "Error al cargar promociones");
-    
+    if (!res.ok) throw new Error(data.error || 'Error al cargar promociones');
+
     const promos = data.promotions || [];
+    if (countLabel) countLabel.textContent = promos.length === 0 ? 'Sin promociones' : `${promos.length} promoción${promos.length !== 1 ? 'es' : ''}`;
+
     if (promos.length === 0) {
-      promoListContainer.innerHTML = '<div style="text-align: center; color: rgba(255,255,255,0.5);">No hay promociones activas.</div>';
+      container.innerHTML = '<div style="color: rgba(255,255,255,0.4); font-size:13px; text-align:center; padding:20px 0">No hay promociones. ¡Crea la primera!</div>';
       return;
     }
-    
-    promoListContainer.innerHTML = "";
+
+    container.innerHTML = '';
     promos.forEach(p => {
-      const card = document.createElement("div");
-      card.style.cssText = "background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 12px; display: flex; gap: 16px; align-items: center;";
-      
+      const expiryText = formatExpiry(p.expiresAt);
+      const card = document.createElement('div');
+      card.className = 'ap-promo-item';
       card.innerHTML = `
-        <div style="width: 80px; height: 80px; border-radius: 8px; overflow: hidden; flex-shrink: 0; background: #000;">
-          <img src="${p.image}" alt="${p.title}" style="width: 100%; height: 100%; object-fit: cover;">
+        <div class="ap-promo-item__thumb">
+          <img src="${p.image}" alt="${p.title}" loading="lazy" />
         </div>
-        <div style="flex: 1; min-width: 0;">
-          <h4 style="margin: 0 0 4px 0; color: #fff; font-size: 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${p.title}</h4>
-          <p style="margin: 0 0 6px 0; color: rgba(255,255,255,0.6); font-size: 13px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${p.description || ""}</p>
-          <div style="color: #f43f5e; font-weight: bold; font-size: 14px;">${p.points} Puntos</div>
+        <div class="ap-promo-item__info">
+          <div class="ap-promo-item__title">${p.title}</div>
+          ${p.description ? `<div class="ap-promo-item__desc">${p.description}</div>` : ''}
+          <div class="ap-promo-item__pts">${p.points.toLocaleString('es-VE')} Pts</div>
+          ${expiryText ? `<div class="ap-promo-item__expires">${expiryText}</div>` : ''}
+          <div class="ap-promo-item__actions">
+            <button class="ap-promo-action ap-promo-action--edit" data-id="${p.id}">✎ Editar</button>
+            <button class="ap-promo-action ap-promo-action--del" data-id="${p.id}">✕ Eliminar</button>
+          </div>
         </div>
-        <button class="aBtn" style="background: rgba(239,68,68,0.1); color: #ef4444; border: 1px solid rgba(239,68,68,0.2); padding: 8px 16px; width: auto;" data-id="${p.id}">
-          Eliminar
-        </button>
       `;
-      
-      const delBtn = card.querySelector("button");
-      delBtn.addEventListener("click", () => deletePromotion(p.id));
-      
-      promoListContainer.appendChild(card);
+
+      card.querySelector('.ap-promo-action--edit').addEventListener('click', () => openEditModal(p));
+      card.querySelector('.ap-promo-action--del').addEventListener('click', () => deletePromotion(p.id));
+      container.appendChild(card);
     });
-    
+
   } catch (err) {
-    promoListContainer.innerHTML = `<div style="text-align: center; color: #ef4444;">${err.message}</div>`;
+    container.innerHTML = `<div style="color:#ef4444; font-size:13px; text-align:center;">${err.message}</div>`;
   }
 };
 
+/* ─── Delete ──────────────────────────────────────────────────────────────── */
+
 const deletePromotion = async (id) => {
-  if (!confirm("¿Seguro que deseas eliminar esta promoción?")) return;
-  
+  if (!confirm('¿Eliminar esta promoción? Esta acción no se puede deshacer.')) return;
   try {
-    const res = await fetch("/api/admin/promotions", {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id })
+    const res = await fetch('/api/admin/promotions', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+      credentials: 'include'
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || "Error al eliminar");
-    
+    if (!res.ok) throw new Error(data.error || 'Error al eliminar');
     fetchPromotions();
   } catch (err) {
     alert(err.message);
   }
 };
 
-const checkAuth = async () => {
-  try {
-    const res = await fetch("/api/admin/me");
-    if (res.ok) {
-      setAuthenticated(true);
-      fetchPromotions();
-    } else {
-      setAuthenticated(false);
+/* ─── Create form ─────────────────────────────────────────────────────────── */
+
+// Image preview on select
+const promoImageInput = $('promoImage');
+const promoImagePreview = $('promoImagePreview');
+if (promoImageInput && promoImagePreview) {
+  promoImageInput.addEventListener('change', () => {
+    const file = promoImageInput.files[0];
+    if (!file) { promoImagePreview.classList.remove('is-visible'); return; }
+    promoImagePreview.src = URL.createObjectURL(file);
+    promoImagePreview.classList.add('is-visible');
+  });
+}
+
+const promoForm = $('promoForm');
+if (promoForm) {
+  promoForm.addEventListener('submit', async e => {
+    e.preventDefault();
+    const file = $('promoImage').files[0];
+    const promoResult = $('promoResult');
+    if (!file) { setResult(promoResult, 'err', 'Selecciona una imagen'); return; }
+    if (file.size > 15 * 1024 * 1024) { setResult(promoResult, 'err', 'La imagen no debe superar 15 MB'); return; }
+
+    const title = $('promoTitle').value.trim();
+    const description = $('promoDesc').value.trim();
+    const points = parseInt($('promoPoints').value, 10);
+    const expiresAt = dateToTimestamp($('promoExpires').value);
+
+    if (!title || !points || points <= 0) {
+      setResult(promoResult, 'err', 'Completa los campos obligatorios');
+      return;
     }
-  } catch (err) {
-    setAuthenticated(false);
+
+    const btn = $('createPromoBtn');
+    btn.disabled = true;
+    setResult(promoResult, 'info', 'Comprimiendo imagen...');
+
+    try {
+      const image = await compressImageToBase64(file);
+      setResult(promoResult, 'info', 'Subiendo promoción...');
+
+      const res = await fetch('/api/admin/promotions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, description, points, image, expiresAt }),
+        credentials: 'include'
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error al crear la promoción');
+
+      setResult(promoResult, 'ok', '¡Promoción creada exitosamente!');
+      promoForm.reset();
+      if (promoImagePreview) promoImagePreview.classList.remove('is-visible');
+      fetchPromotions();
+      setTimeout(() => setResult(promoResult, '', ''), 3500);
+    } catch (err) {
+      setResult(promoResult, 'err', err.message);
+    } finally {
+      btn.disabled = false;
+    }
+  });
+}
+
+/* ─── Edit Modal ──────────────────────────────────────────────────────────── */
+
+const overlay = $('editModalOverlay');
+const editForm = $('editPromoForm');
+const editImageInput = $('editPromoImage');
+const editImagePreview = $('editPromoImagePreview');
+
+const openEditModal = (promo) => {
+  $('editPromoId').value = promo.id;
+  $('editPromoTitle').value = promo.title;
+  $('editPromoDesc').value = promo.description || '';
+  $('editPromoPoints').value = promo.points;
+  $('editPromoExpires').value = timestampToDateInput(promo.expiresAt);
+  if (editImagePreview) {
+    editImagePreview.src = promo.image;
+    editImagePreview.classList.add('is-visible');
   }
+  setResult($('editPromoResult'), '', '');
+  overlay.classList.add('is-open');
 };
 
-if (loginForm) {
-  loginForm.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    setLoginResult("adminResult--info", "Iniciando sesión...");
-    const email = adminEmailEl.value.trim();
-    const password = adminPasswordEl.value.trim();
-    if (!email || !password) return;
-    try {
-      const res = await fetch("/api/admin/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password })
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setLoginResult("", "");
-        setAuthenticated(true);
-        fetchPromotions();
-      } else {
-        setLoginResult("adminResult--err", data.error || "Error de credenciales");
-      }
-    } catch (err) {
-      setLoginResult("adminResult--err", "Error de red");
-    }
+const closeEditModal = () => {
+  overlay.classList.remove('is-open');
+  if (editImageInput) editImageInput.value = '';
+};
+
+if ($('editModalClose')) $('editModalClose').addEventListener('click', closeEditModal);
+if (overlay) overlay.addEventListener('click', e => { if (e.target === overlay) closeEditModal(); });
+
+// Edit image preview
+if (editImageInput && editImagePreview) {
+  editImageInput.addEventListener('change', () => {
+    const file = editImageInput.files[0];
+    if (!file) return;
+    editImagePreview.src = URL.createObjectURL(file);
+    editImagePreview.classList.add('is-visible');
   });
 }
 
-if (promoForm) {
-  promoForm.addEventListener("submit", async (e) => {
+if (editForm) {
+  editForm.addEventListener('submit', async e => {
     e.preventDefault();
-    
-    const file = promoImageEl.files[0];
-    if (!file) {
-      setPromoResult("adminResult--err", "Por favor selecciona una imagen");
-      return;
-    }
-    
-    if (file.size > 15 * 1024 * 1024) {
-      setPromoResult("adminResult--err", "La imagen no debe superar los 15MB");
-      return;
-    }
-    
-    const title = promoTitleEl.value.trim();
-    const description = promoDescEl.value.trim();
-    const points = parseInt(promoPointsEl.value, 10);
-    
+    const id = $('editPromoId').value;
+    const title = $('editPromoTitle').value.trim();
+    const description = $('editPromoDesc').value.trim();
+    const points = parseInt($('editPromoPoints').value, 10);
+    const expiresAt = dateToTimestamp($('editPromoExpires').value);
+    const editResult = $('editPromoResult');
+
     if (!title || !points || points <= 0) {
-      setPromoResult("adminResult--err", "Completa los campos obligatorios");
+      setResult(editResult, 'err', 'Completa los campos obligatorios');
       return;
     }
 
-    createPromoBtn.disabled = true;
-    setPromoResult("adminResult--info", "Procesando imagen y subiendo...");
-    
+    const btn = $('saveEditBtn');
+    btn.disabled = true;
+    setResult(editResult, 'info', 'Guardando...');
+
     try {
-      const base64Image = await compressImageToBase64(file);
-      
-      const res = await fetch("/api/admin/promotions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title,
-          description,
-          points,
-          image: base64Image
-        })
+      const payload = { id, title, description, points, expiresAt };
+
+      const newFile = editImageInput?.files[0];
+      if (newFile) {
+        setResult(editResult, 'info', 'Comprimiendo imagen...');
+        payload.image = await compressImageToBase64(newFile);
+      }
+
+      const res = await fetch('/api/admin/promotions', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+        credentials: 'include'
       });
-      
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Error al crear la promoción");
-      
-      setPromoResult("adminResult--ok", "¡Promoción creada exitosamente!");
-      promoForm.reset();
-      fetchPromotions();
-      
-      setTimeout(() => setPromoResult("", ""), 3000);
-      
+      if (!res.ok) throw new Error(data.error || 'Error al guardar');
+
+      setResult(editResult, 'ok', '¡Guardado!');
+      setTimeout(() => { closeEditModal(); fetchPromotions(); }, 1000);
     } catch (err) {
-      setPromoResult("adminResult--err", err.message);
+      setResult(editResult, 'err', err.message);
     } finally {
-      createPromoBtn.disabled = false;
+      btn.disabled = false;
     }
   });
 }
 
+/* ─── Boot ────────────────────────────────────────────────────────────────── */
 checkAuth();
