@@ -3611,7 +3611,11 @@ document.addEventListener("DOMContentLoaded", () => {
   if (pdCloseBtn) pdCloseBtn.addEventListener("click", closePromoDetailsModal);
 
   const openPromoDetailsModal = (p) => {
-    if (!promoDetailsView) return;
+    let view = promoDetailsView || document.getElementById("promoDetailsView");
+    if (!view) {
+      alert("La aplicación se actualizó. Por favor cierra la app por completo y vuelve a abrirla.");
+      return;
+    }
     currentSelectedPromo = p;
     
     document.getElementById("pdImage").src = p.image;
@@ -3665,8 +3669,8 @@ document.addEventListener("DOMContentLoaded", () => {
        pdRequestBtn.style.opacity = "1";
     }
 
-    promoDetailsView.style.display = "flex";
-    promoDetailsView.setAttribute("aria-hidden", "false");
+    view.style.display = "flex";
+    view.setAttribute("aria-hidden", "false");
   };
 
   if (pdRequestBtn) {
