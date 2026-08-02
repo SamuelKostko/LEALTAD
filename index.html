@@ -1398,6 +1398,38 @@
     </div>
   </div><!-- /.promotionsView -->
 
+  <!-- Modal de Detalles de Promoción -->
+  <div class="bpv" id="promoDetailsModal" aria-hidden="true" style="display: none; z-index: 10000; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px);">
+    <div style="position: absolute; bottom: 0; left: 0; right: 0; background: #111; border-radius: 24px 24px 0 0; border-top: 1px solid rgba(255,255,255,0.1); max-height: 90vh; display: flex; flex-direction: column; overflow: hidden; transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);" id="promoDetailsFrame">
+      <div style="position: relative; height: 220px; background: #000; flex-shrink: 0;">
+        <img id="pdImage" src="" alt="Promo" style="width: 100%; height: 100%; object-fit: cover;" />
+        <div style="position: absolute; inset: 0; background: linear-gradient(to top, #111 0%, transparent 60%);"></div>
+        <button id="pdCloseBtn" style="position: absolute; top: 16px; right: 16px; background: rgba(0,0,0,0.5); border: none; color: #fff; width: 36px; height: 36px; border-radius: 50%; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px);">✕</button>
+      </div>
+      <div style="padding: 24px 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px;">
+        <div>
+          <h3 id="pdTitle" style="font-size: 22px; font-weight: 800; color: #fff; margin: 0 0 6px; line-height: 1.2;"></h3>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <span id="pdPoints" style="background: linear-gradient(135deg, #0891b2, #7c3aed); color: #fff; font-weight: 700; font-size: 13px; padding: 4px 10px; border-radius: 12px;"></span>
+            <span id="pdUnits" style="background: rgba(16, 185, 129, 0.15); color: #10b981; font-weight: 600; font-size: 12px; padding: 4px 10px; border-radius: 12px; display: none;"></span>
+            <span id="pdExpires" style="background: rgba(245,158,11,0.15); color: #f59e0b; font-weight: 600; font-size: 12px; padding: 4px 10px; border-radius: 12px; display: none;"></span>
+            <span id="pdBranch" style="background: rgba(255,255,255,0.1); color: #e2e8f0; font-weight: 600; font-size: 12px; padding: 4px 10px; border-radius: 12px; display: none; align-items: center; gap: 4px;"></span>
+          </div>
+        </div>
+        <p id="pdDesc" style="font-size: 14px; color: rgba(255,255,255,0.7); line-height: 1.6; margin: 0;"></p>
+        
+        <div style="margin-top: 10px;">
+          <button id="pdRequestBtn" class="bpv__cta" style="margin: 0; display: flex; align-items: center; justify-content: center; gap: 8px;">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+            Solicitar y Descontar Puntos
+          </button>
+          <div id="pdResult" style="text-align: center; font-size: 13px; margin-top: 8px; min-height: 20px;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
 
   <!-- Modal de historial de transacciones -->
   <div class="historyModal" id="historyModal" aria-hidden="true" role="dialog" aria-modal="true"

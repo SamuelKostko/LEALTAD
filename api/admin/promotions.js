@@ -8,25 +8,33 @@ export default async function handler(req, res) {
   const collection = db.collection('promotions');
 
   try {
-    // GET is public for the client app
     if (req.method === 'GET') {
       const now = Date.now();
+      const url = new URL(req.url, 'http://localhost');
+      const isAdmin = url.searchParams.get('admin') === '1';
+      
       const snap = await collection.orderBy('createdAt', 'desc').get();
-      const promos = snap.docs
+      let promos = snap.docs
         .map(doc => {
           const data = doc.data();
           return {
             id: doc.id,
             title: data.title || '',
             description: data.description || '',
+            branch: data.branch || '',
             points: data.points || 0,
+            realPrice: data.realPrice || 0,
+            units: data.units || 0,
             image: data.image || '',
             expiresAt: data.expiresAt || null,
             createdAt: data.createdAt || null
           };
-        })
-        // Filter out expired promotions
-        .filter(p => !p.expiresAt || p.expiresAt > now);
+        });
+        
+      if (!isAdmin) {
+        promos = promos.filter(p => !p.expiresAt || p.expiresAt > now);
+      }
+      
       sendJson(res, 200, { promotions: promos });
       return;
     }
@@ -38,7 +46,10 @@ export default async function handler(req, res) {
       const body = await readJsonBody(req);
       const title = String(body?.title || '').trim();
       const description = String(body?.description || '').trim();
+      const branch = String(body?.branch || '').trim();
       const points = Number(body?.points || 0);
+      const realPrice = Number(body?.realPrice || 0);
+      const units = Number(body?.units || 0);
       const image = String(body?.image || '').trim();
       const expiresAt = body?.expiresAt ? Number(body.expiresAt) : null;
 
@@ -51,7 +62,10 @@ export default async function handler(req, res) {
       const docData = {
         title,
         description,
+        branch,
         points,
+        realPrice,
+        units,
         image,
         createdAt: Date.now()
       };
@@ -73,7 +87,10 @@ export default async function handler(req, res) {
       const updates = {};
       if (body.title !== undefined) updates.title = String(body.title).trim();
       if (body.description !== undefined) updates.description = String(body.description).trim();
+      if (body.branch !== undefined) updates.branch = String(body.branch).trim();
       if (body.points !== undefined) updates.points = Number(body.points);
+      if (body.realPrice !== undefined) updates.realPrice = Number(body.realPrice);
+      if (body.units !== undefined) updates.units = Number(body.units);
       if (body.image) updates.image = String(body.image).trim();
       if (body.expiresAt !== undefined) updates.expiresAt = body.expiresAt ? Number(body.expiresAt) : null;
       

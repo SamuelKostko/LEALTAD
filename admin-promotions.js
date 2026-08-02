@@ -140,6 +140,10 @@ const fetchPromotions = async () => {
         <div class="ap-promo-item__info">
           <div class="ap-promo-item__title">${p.title}</div>
           ${p.description ? `<div class="ap-promo-item__desc">${p.description}</div>` : ''}
+          ${p.branch ? `<div style="font-size:11px; color:rgba(255,255,255,0.7); display:flex; align-items:center; gap:4px;">
+            <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+            ${p.branch}
+          </div>` : ''}
           <div class="ap-promo-item__pts">${p.points.toLocaleString('es-VE')} Pts</div>
           ${expiryText ? `<div class="ap-promo-item__expires">${expiryText}</div>` : ''}
           <div class="ap-promo-item__actions">
@@ -203,11 +207,14 @@ if (promoForm) {
 
     const title = $('promoTitle').value.trim();
     const description = $('promoDesc').value.trim();
+    const branch = $('promoBranch').value.trim();
     const points = parseInt($('promoPoints').value, 10);
+    const realPrice = parseFloat($('promoRealPrice').value);
+    const units = parseInt($('promoUnits').value, 10);
     const expiresAt = dateToTimestamp($('promoExpires').value);
 
-    if (!title || !points || points <= 0) {
-      setResult(promoResult, 'err', 'Completa los campos obligatorios');
+    if (!title || !points || points <= 0 || !branch || isNaN(units) || units < 1 || isNaN(realPrice) || realPrice < 0) {
+      setResult(promoResult, 'err', 'Completa los campos obligatorios correctamente');
       return;
     }
 
@@ -222,7 +229,7 @@ if (promoForm) {
       const res = await fetch('/api/admin/promotions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, description, points, image, expiresAt }),
+        body: JSON.stringify({ title, description, branch, points, realPrice, units, image, expiresAt }),
         credentials: 'include'
       });
       const data = await res.json();
@@ -252,7 +259,10 @@ const openEditModal = (promo) => {
   $('editPromoId').value = promo.id;
   $('editPromoTitle').value = promo.title;
   $('editPromoDesc').value = promo.description || '';
+  $('editPromoBranch').value = promo.branch || '';
   $('editPromoPoints').value = promo.points;
+  $('editPromoRealPrice').value = promo.realPrice || 0;
+  $('editPromoUnits').value = promo.units || 1;
   $('editPromoExpires').value = timestampToDateInput(promo.expiresAt);
   if (editImagePreview) {
     editImagePreview.src = promo.image;
@@ -286,12 +296,15 @@ if (editForm) {
     const id = $('editPromoId').value;
     const title = $('editPromoTitle').value.trim();
     const description = $('editPromoDesc').value.trim();
+    const branch = $('editPromoBranch').value.trim();
     const points = parseInt($('editPromoPoints').value, 10);
+    const realPrice = parseFloat($('editPromoRealPrice').value);
+    const units = parseInt($('editPromoUnits').value, 10);
     const expiresAt = dateToTimestamp($('editPromoExpires').value);
     const editResult = $('editPromoResult');
 
-    if (!title || !points || points <= 0) {
-      setResult(editResult, 'err', 'Completa los campos obligatorios');
+    if (!title || !points || points <= 0 || !branch || isNaN(units) || units < 1 || isNaN(realPrice) || realPrice < 0) {
+      setResult(editResult, 'err', 'Completa los campos obligatorios correctamente');
       return;
     }
 
@@ -300,7 +313,7 @@ if (editForm) {
     setResult(editResult, 'info', 'Guardando...');
 
     try {
-      const payload = { id, title, description, points, expiresAt };
+      const payload = { id, title, description, branch, points, realPrice, units, expiresAt };
 
       const newFile = editImageInput?.files[0];
       if (newFile) {

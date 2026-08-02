@@ -3521,7 +3521,8 @@ document.addEventListener("DOMContentLoaded", () => {
         <div style="position:absolute; bottom:10px; left:12px; right:12px;">
           <span style="font-size:16px; font-weight:800; color:#fff; line-height:1.1; text-shadow:0 2px 8px rgba(0,0,0,0.6); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${p.title}</span>
         </div>
-        <div style="position:absolute; top:8px; right:8px;">
+        <div style="position:absolute; top:8px; right:8px; display:flex; flex-direction:column; align-items:flex-end; gap:4px;">
+          ${p.realPrice ? `<span style="background: rgba(239,68,68,0.8); backdrop-filter: blur(4px); color:#fff; font-weight:700; font-size:10px; padding:2px 6px; border-radius:8px; text-decoration: line-through;">$${Number(p.realPrice).toFixed(2)}</span>` : ''}
           <span style="background: rgba(9,9,11,0.7); backdrop-filter: blur(4px); color:#06b6d4; font-weight:800; font-size:11px; padding:4px 8px; border-radius:12px; white-space:nowrap;">
             ${Number(p.points).toLocaleString("es-VE")} Pts
           </span>
@@ -3533,6 +3534,7 @@ document.addEventListener("DOMContentLoaded", () => {
       </div>
     `;
 
+    card.addEventListener("click", () => openPromoDetailsModal(p));
     container.appendChild(card);
 
     // Start live countdown
@@ -3550,6 +3552,127 @@ document.addEventListener("DOMContentLoaded", () => {
       promoCountdownIntervals.push(setInterval(tick, 1000));
     }
   };
+
+  let currentSelectedPromo = null;
+  const promoDetailsModal = document.getElementById("promoDetailsModal");
+  const promoDetailsFrame = document.getElementById("promoDetailsFrame");
+  const pdCloseBtn = document.getElementById("pdCloseBtn");
+  const pdRequestBtn = document.getElementById("pdRequestBtn");
+
+  const closePromoDetailsModal = () => {
+    if (!promoDetailsModal) return;
+    promoDetailsFrame.style.transform = "translateY(100%)";
+    setTimeout(() => {
+      promoDetailsModal.style.display = "none";
+      promoDetailsModal.setAttribute("aria-hidden", "true");
+      currentSelectedPromo = null;
+    }, 300);
+  };
+
+  if (pdCloseBtn) pdCloseBtn.addEventListener("click", closePromoDetailsModal);
+  if (promoDetailsModal) {
+    promoDetailsModal.addEventListener("click", (e) => {
+      if (e.target === promoDetailsModal) closePromoDetailsModal();
+    });
+  }
+
+  const openPromoDetailsModal = (p) => {
+    if (!promoDetailsModal) return;
+    currentSelectedPromo = p;
+    
+    document.getElementById("pdImage").src = p.image;
+    document.getElementById("pdTitle").textContent = p.title;
+    document.getElementById("pdDesc").textContent = p.description || "";
+    
+    const pointsHtml = p.realPrice ? `<span style="font-size:12px; color:rgba(255,255,255,0.5); text-decoration:line-through; margin-right:4px;">$${Number(p.realPrice).toFixed(2)}</span>${Number(p.points).toLocaleString("es-VE")} Pts` : `${Number(p.points).toLocaleString("es-VE")} Pts`;
+    document.getElementById("pdPoints").innerHTML = pointsHtml;
+    
+    const unitsEl = document.getElementById("pdUnits");
+    if (p.units !== undefined) {
+      unitsEl.textContent = `${p.units} ${p.units === 1 ? 'disponible' : 'disponibles'}`;
+      unitsEl.style.display = "inline-flex";
+      unitsEl.style.color = p.units > 0 ? "#10b981" : "#ef4444";
+      unitsEl.style.background = p.units > 0 ? "rgba(16, 185, 129, 0.15)" : "rgba(239, 68, 68, 0.15)";
+      if (p.units <= 0) unitsEl.textContent = "Agotado";
+    } else {
+      unitsEl.style.display = "none";
+    }
+
+    const expiresEl = document.getElementById("pdExpires");
+    if (p.expiresAt) {
+      const d = new Date(p.expiresAt);
+      expiresEl.textContent = `Válido hasta: ${d.toLocaleDateString("es-VE")}`;
+      expiresEl.style.display = "inline-flex";
+    } else {
+      expiresEl.style.display = "none";
+    }
+
+    const branchEl = document.getElementById("pdBranch");
+    if (p.branch) {
+      branchEl.innerHTML = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg> ${p.branch}`;
+      branchEl.style.display = "inline-flex";
+    } else {
+      branchEl.style.display = "none";
+    }
+
+    setResult(document.getElementById("pdResult"), "", "");
+    pdRequestBtn.disabled = p.units <= 0;
+    if (p.units <= 0) {
+       pdRequestBtn.innerHTML = "Promoción Agotada";
+       pdRequestBtn.style.opacity = "0.5";
+    } else {
+       pdRequestBtn.innerHTML = `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg> Solicitar y Descontar Puntos`;
+       pdRequestBtn.style.opacity = "1";
+    }
+
+    promoDetailsModal.style.display = "flex";
+    promoDetailsModal.setAttribute("aria-hidden", "false");
+    // Wait for display:flex to apply before animating transform
+    setTimeout(() => {
+      promoDetailsFrame.style.transform = "translateY(0)";
+    }, 10);
+  };
+
+  if (pdRequestBtn) {
+    pdRequestBtn.addEventListener("click", async () => {
+      if (!currentSelectedPromo) return;
+      const resEl = document.getElementById("pdResult");
+      
+      // Basic client-side check if user has enough points
+      const currentBalance = Number(clientDataCache?.balance || 0);
+      if (currentBalance < currentSelectedPromo.points) {
+        setResult(resEl, "err", `Puntos insuficientes. Tienes ${currentBalance.toLocaleString("es-VE")} Pts y necesitas ${currentSelectedPromo.points.toLocaleString("es-VE")} Pts.`);
+        return;
+      }
+      
+      setResult(resEl, "info", "Procesando solicitud...");
+      pdRequestBtn.disabled = true;
+      
+      try {
+        const token = getTokenFromUrl();
+        const res = await fetch("/api/client/request-promotion", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token, promotionId: currentSelectedPromo.id })
+        });
+        const data = await res.json();
+        
+        if (!res.ok) {
+          throw new Error(data.error || "Error al solicitar promoción");
+        }
+        
+        setResult(resEl, "ok", "¡Promoción solicitada con éxito! Se descontaron los puntos y se envió un correo.");
+        
+        // Refresh balance visually
+        if (typeof syncBalance === "function") syncBalance();
+        
+        setTimeout(() => closePromoDetailsModal(), 3500);
+      } catch (err) {
+        setResult(resEl, "err", err.message);
+        pdRequestBtn.disabled = false;
+      }
+    });
+  }
 
   if (profilePromocionesBtn && promotionsView && promotionsListClientContainer) {
     profilePromocionesBtn.addEventListener("click", async () => {
