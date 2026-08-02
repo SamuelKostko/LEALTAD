@@ -3554,37 +3554,28 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   let currentSelectedPromo = null;
-  const promoDetailsModal = document.getElementById("promoDetailsModal");
-  const promoDetailsFrame = document.getElementById("promoDetailsFrame");
+  const promoDetailsView = document.getElementById("promoDetailsView");
   const pdCloseBtn = document.getElementById("pdCloseBtn");
   const pdRequestBtn = document.getElementById("pdRequestBtn");
 
   const closePromoDetailsModal = () => {
-    if (!promoDetailsModal) return;
-    promoDetailsFrame.style.transform = "translateY(100%)";
-    setTimeout(() => {
-      promoDetailsModal.style.display = "none";
-      promoDetailsModal.setAttribute("aria-hidden", "true");
-      currentSelectedPromo = null;
-    }, 300);
+    if (!promoDetailsView) return;
+    promoDetailsView.style.display = "none";
+    promoDetailsView.setAttribute("aria-hidden", "true");
+    currentSelectedPromo = null;
   };
 
   if (pdCloseBtn) pdCloseBtn.addEventListener("click", closePromoDetailsModal);
-  if (promoDetailsModal) {
-    promoDetailsModal.addEventListener("click", (e) => {
-      if (e.target === promoDetailsModal) closePromoDetailsModal();
-    });
-  }
 
   const openPromoDetailsModal = (p) => {
-    if (!promoDetailsModal) return;
+    if (!promoDetailsView) return;
     currentSelectedPromo = p;
     
     document.getElementById("pdImage").src = p.image;
     document.getElementById("pdTitle").textContent = p.title;
     document.getElementById("pdDesc").textContent = p.description || "";
     
-    const pointsHtml = p.realPrice ? `<span style="font-size:12px; color:rgba(255,255,255,0.5); text-decoration:line-through; margin-right:4px;">$${Number(p.realPrice).toFixed(2)}</span>${Number(p.points).toLocaleString("es-VE")} Pts` : `${Number(p.points).toLocaleString("es-VE")} Pts`;
+    const pointsHtml = p.realPrice ? `<span style="font-size:14px; color:rgba(255,255,255,0.5); text-decoration:line-through; margin-right:6px;">$${Number(p.realPrice).toFixed(2)}</span>${Number(p.points).toLocaleString("es-VE")} Pts` : `${Number(p.points).toLocaleString("es-VE")} Pts`;
     document.getElementById("pdPoints").innerHTML = pointsHtml;
     
     const unitsEl = document.getElementById("pdUnits");
@@ -3616,21 +3607,23 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     setResult(document.getElementById("pdResult"), "", "");
+    
+    // Reset OTP UI
+    document.getElementById("pdOtpContainer").style.display = "none";
+    document.getElementById("pdOtpInput").value = "";
+    document.getElementById("pdRequestBtn").style.display = "flex";
+    
     pdRequestBtn.disabled = p.units <= 0;
     if (p.units <= 0) {
-       pdRequestBtn.innerHTML = "Promoción Agotada";
+       pdRequestBtn.innerHTML = "Agotada";
        pdRequestBtn.style.opacity = "0.5";
     } else {
-       pdRequestBtn.innerHTML = `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg> Solicitar y Descontar Puntos`;
+       pdRequestBtn.innerHTML = `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg> COMPRAR`;
        pdRequestBtn.style.opacity = "1";
     }
 
-    promoDetailsModal.style.display = "flex";
-    promoDetailsModal.setAttribute("aria-hidden", "false");
-    // Wait for display:flex to apply before animating transform
-    setTimeout(() => {
-      promoDetailsFrame.style.transform = "translateY(0)";
-    }, 10);
+    promoDetailsView.style.display = "flex";
+    promoDetailsView.setAttribute("aria-hidden", "false");
   };
 
   if (pdRequestBtn) {
@@ -3638,38 +3631,81 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!currentSelectedPromo) return;
       const resEl = document.getElementById("pdResult");
       
-      // Basic client-side check if user has enough points
-      const currentBalance = Number(clientDataCache?.balance || 0);
-      if (currentBalance < currentSelectedPromo.points) {
-        setResult(resEl, "err", `Puntos insuficientes. Tienes ${currentBalance.toLocaleString("es-VE")} Pts y necesitas ${currentSelectedPromo.points.toLocaleString("es-VE")} Pts.`);
+      pdRequestBtn.disabled = true;
+      setResult(resEl, "info", "Solicitando código de validación...");
+      
+      try {
+        const token = getTokenFromUrl();
+        const res = await fetch("/api/client/request-promotion-otp", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            token: token,
+            promotionId: currentSelectedPromo.id
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Error al solicitar OTP");
+        
+        // Hide button, show OTP container
+        pdRequestBtn.style.display = "none";
+        document.getElementById("pdOtpContainer").style.display = "flex";
+        document.getElementById("pdOtpInput").focus();
+        setResult(resEl, "", "");
+        
+      } catch (err) {
+        setResult(resEl, "err", err.message);
+        pdRequestBtn.disabled = false;
+      }
+    });
+  }
+
+  const pdConfirmOtpBtn = document.getElementById("pdConfirmOtpBtn");
+  if (pdConfirmOtpBtn) {
+    pdConfirmOtpBtn.addEventListener("click", async () => {
+      if (!currentSelectedPromo) return;
+      const otpInput = document.getElementById("pdOtpInput");
+      const otp = otpInput.value.trim();
+      const resEl = document.getElementById("pdResult");
+
+      if (!otp || otp.length !== 6) {
+        setResult(resEl, "err", "Ingresa el código de 6 dígitos completo");
         return;
       }
-      
-      setResult(resEl, "info", "Procesando solicitud...");
-      pdRequestBtn.disabled = true;
-      
+
+      pdConfirmOtpBtn.disabled = true;
+      setResult(resEl, "info", "Validando compra...");
+
       try {
         const token = getTokenFromUrl();
         const res = await fetch("/api/client/request-promotion", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ token, promotionId: currentSelectedPromo.id })
+          body: JSON.stringify({
+            token: token,
+            promotionId: currentSelectedPromo.id,
+            otp: otp
+          }),
         });
         const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Error al validar la compra");
+
+        setResult(resEl, "ok", "¡Compra exitosa! Revisa tu correo.");
         
-        if (!res.ok) {
-          throw new Error(data.error || "Error al solicitar promoción");
+        // Deduct points locally for immediate visual feedback if using cache
+        if (typeof clientDataCache !== 'undefined' && clientDataCache) {
+          clientDataCache.balance = Math.max(0, (clientDataCache.balance || 0) - currentSelectedPromo.points);
         }
-        
-        setResult(resEl, "ok", "¡Promoción solicitada con éxito! Se descontaron los puntos y se envió un correo.");
         
         // Refresh balance visually
         if (typeof syncBalance === "function") syncBalance();
-        
-        setTimeout(() => closePromoDetailsModal(), 3500);
+
+        setTimeout(() => {
+          closePromoDetailsModal();
+        }, 2500);
       } catch (err) {
         setResult(resEl, "err", err.message);
-        pdRequestBtn.disabled = false;
+        pdConfirmOtpBtn.disabled = false;
       }
     });
   }

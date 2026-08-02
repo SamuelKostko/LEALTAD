@@ -81,9 +81,10 @@ export default async function handler(req, res) {
     const body = await readJsonBody(req);
     const token = String(body?.token || '').trim();
     const promotionId = String(body?.promotionId || '').trim();
+    const otp = String(body?.otp || '').trim();
 
-    if (!token || !promotionId) {
-      sendJson(res, 400, { error: 'Token y promotionId son requeridos' });
+    if (!token || !promotionId || !otp) {
+      sendJson(res, 400, { error: 'Token, promotionId y otp son requeridos' });
       return;
     }
 
@@ -123,6 +124,32 @@ export default async function handler(req, res) {
         clientRef = clientDoc.ref;
       }
       const clientData = clientDoc.data() || {};
+      
+      // OTP Verification
+      const savedOtp = clientData.promoOtpCode;
+      const otpExpiresAt = clientData.promoOtpExpiresAt || 0;
+      let otpAttempts = clientData.promoOtpAttempts || 0;
+
+      if (!savedOtp) {
+         throw new Error('No has solicitado un código OTP para esta compra.');
+      }
+      
+      if (Date.now() > otpExpiresAt) {
+         tx.update(clientRef, { promoOtpCode: FieldValue.delete(), promoOtpExpiresAt: FieldValue.delete(), promoOtpAttempts: FieldValue.delete() });
+         throw new Error('El código OTP ha expirado. Solicita uno nuevo.');
+      }
+      
+      if (savedOtp !== otp) {
+         otpAttempts += 1;
+         if (otpAttempts >= 3) {
+             tx.update(clientRef, { promoOtpCode: FieldValue.delete(), promoOtpExpiresAt: FieldValue.delete(), promoOtpAttempts: FieldValue.delete() });
+             throw new Error('Demasiados intentos fallidos. Código cancelado, solicita uno nuevo.');
+         } else {
+             tx.update(clientRef, { promoOtpAttempts: otpAttempts });
+             throw new Error(`Código incorrecto. Te quedan ${3 - otpAttempts} intentos.`);
+         }
+      }
+
       const currentBalance = Number(clientData.totalPoints || 0);
 
       // 3. Verify points
@@ -130,10 +157,13 @@ export default async function handler(req, res) {
         throw new Error(`Puntos insuficientes. Tienes ${currentBalance} Pts y necesitas ${pointsRequired} Pts.`);
       }
 
-      // 4. Update balance and units
+      // 4. Update balance and units and clear OTP
       const newBalance = currentBalance - pointsRequired;
       tx.update(clientRef, {
         totalPoints: newBalance,
+        promoOtpCode: FieldValue.delete(),
+        promoOtpExpiresAt: FieldValue.delete(),
+        promoOtpAttempts: FieldValue.delete(),
         updatedAt: FieldValue.serverTimestamp()
       });
       
