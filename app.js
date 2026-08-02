@@ -382,43 +382,22 @@ if (qrButton) {
           }, { passive: true });
         }
 
-        const showPromoModal = async () => {
+        const showPromoModal = () => {
           const promoModal = document.getElementById("promoModal");
           const promoImg = document.getElementById("promoModalImage");
-          if (!promoModal || !promoImg) return;
+          if (promoModal && promoImg) {
+            // Imagen única de promoción
+            const chosenImg = "/images/publi3.jpeg";
+            promoImg.src = chosenImg;
 
-          try {
-            const res = await fetch("/api/client/promotions");
-            const data = await res.json();
-            const promos = data.promotions || [];
-            
-            const validPromos = promos.filter(p => (!p.expiresAt || p.expiresAt > Date.now()) && p.units > 0);
-            if (validPromos.length === 0) return;
-            
-            const p = validPromos[0];
-            promoImg.src = p.image;
-
-            const timerEl = document.getElementById("promoModalTimer");
-            let timerInt = null;
-            if (timerEl) {
-              if (p.expiresAt) {
-                const tick = () => {
-                  const { label } = formatCountdown(p.expiresAt - Date.now());
-                  timerEl.textContent = "⏱ " + label;
-                };
-                tick();
-                timerInt = setInterval(tick, 1000);
-                // Also add it to our global intervals array so it cleans up correctly if needed
-                if (typeof promoCountdownIntervals !== "undefined") promoCountdownIntervals.push(timerInt);
-              } else {
-                timerEl.textContent = "¡Oferta especial disponible!";
-              }
-            }
+            setTimeout(() => {
+              promoModal.classList.add("promoModal--active");
+              promoModal.setAttribute("aria-hidden", "false");
+            }, 800);
 
             const hidePromo = () => {
               promoModal.classList.remove("promoModal--active");
               promoModal.setAttribute("aria-hidden", "true");
-              if (timerInt) clearInterval(timerInt);
             };
 
             const closeBtn = document.getElementById("promoModalCloseBtn");
@@ -426,28 +405,6 @@ if (qrButton) {
 
             const backdrop = document.getElementById("promoModalBackdrop");
             if (backdrop) backdrop.onclick = hidePromo;
-
-            const contentEl = document.getElementById("promoModalContent");
-            if (contentEl) {
-              contentEl.onclick = () => {
-                hidePromo();
-                const promotionsView = document.getElementById("promotionsView");
-                if (promotionsView) {
-                  promotionsView.style.display = "flex";
-                  promotionsView.setAttribute("aria-hidden", "false");
-                }
-                if (typeof openPromoDetailsModal === "function") {
-                  openPromoDetailsModal(p);
-                }
-              };
-            }
-
-            setTimeout(() => {
-              promoModal.classList.add("promoModal--active");
-              promoModal.setAttribute("aria-hidden", "false");
-            }, 800);
-          } catch(err) {
-            console.warn("No se pudo cargar la promoción emergente:", err);
           }
         };
 
@@ -3584,7 +3541,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (hasExpiry) {
       const el = document.getElementById(countdownId);
       const tick = () => {
-        const { label, cls } = formatCountdown(p.expiresAt - Date.now());
+        const { label, cls } = formatCountdown(new Date(p.expiresAt).getTime() - Date.now());
         el.textContent = label;
         el.style.color = cls === "promo-critical" ? "#ef4444"
           : cls === "promo-urgent" ? "#f59e0b"
@@ -3611,66 +3568,73 @@ document.addEventListener("DOMContentLoaded", () => {
   if (pdCloseBtn) pdCloseBtn.addEventListener("click", closePromoDetailsModal);
 
   const openPromoDetailsModal = (p) => {
-    let view = promoDetailsView || document.getElementById("promoDetailsView");
-    if (!view) {
-      alert("La aplicación se actualizó. Por favor cierra la app por completo y vuelve a abrirla.");
-      return;
-    }
-    currentSelectedPromo = p;
-    
-    document.getElementById("pdImage").src = p.image;
-    document.getElementById("pdTitle").textContent = p.title;
-    document.getElementById("pdDesc").textContent = p.description || "";
-    
-    const pointsHtml = p.realPrice ? `<span style="font-size:14px; color:rgba(255,255,255,0.5); text-decoration:line-through; margin-right:6px;">$${Number(p.realPrice).toFixed(2)}</span>${Number(p.points).toLocaleString("es-VE")} Pts` : `${Number(p.points).toLocaleString("es-VE")} Pts`;
-    document.getElementById("pdPoints").innerHTML = pointsHtml;
-    
-    const unitsEl = document.getElementById("pdUnits");
-    if (p.units !== undefined) {
-      unitsEl.textContent = `${p.units} ${p.units === 1 ? 'disponible' : 'disponibles'}`;
-      unitsEl.style.display = "inline-flex";
-      unitsEl.style.color = p.units > 0 ? "#10b981" : "#ef4444";
-      unitsEl.style.background = p.units > 0 ? "rgba(16, 185, 129, 0.15)" : "rgba(239, 68, 68, 0.15)";
-      if (p.units <= 0) unitsEl.textContent = "Agotado";
-    } else {
-      unitsEl.style.display = "none";
-    }
+    try {
+      let view = promoDetailsView || document.getElementById("promoDetailsView");
+      if (!view) {
+        alert("La aplicación se actualizó. Por favor cierra la app por completo y vuelve a abrirla.");
+        return;
+      }
+      currentSelectedPromo = p;
+      
+      document.getElementById("pdImage").src = p.image || "";
+      document.getElementById("pdTitle").textContent = p.title || "Sin título";
+      document.getElementById("pdDesc").textContent = p.description || "";
+      
+      const pointsHtml = p.realPrice ? `<span style="font-size:14px; color:rgba(255,255,255,0.5); text-decoration:line-through; margin-right:6px;">$${Number(p.realPrice).toFixed(2)}</span>${Number(p.points).toLocaleString("es-VE")} Pts` : `${Number(p.points).toLocaleString("es-VE")} Pts`;
+      document.getElementById("pdPoints").innerHTML = pointsHtml;
+      
+      const unitsEl = document.getElementById("pdUnits");
+      if (p.units !== undefined) {
+        unitsEl.textContent = `${p.units} ${p.units === 1 ? 'disponible' : 'disponibles'}`;
+        unitsEl.style.display = "inline-flex";
+        unitsEl.style.color = p.units > 0 ? "#10b981" : "#ef4444";
+        unitsEl.style.background = p.units > 0 ? "rgba(16, 185, 129, 0.15)" : "rgba(239, 68, 68, 0.15)";
+        if (p.units <= 0) unitsEl.textContent = "Agotado";
+      } else {
+        unitsEl.style.display = "none";
+      }
 
-    const expiresEl = document.getElementById("pdExpires");
-    if (p.expiresAt) {
-      const d = new Date(p.expiresAt);
-      expiresEl.textContent = `Válido hasta: ${d.toLocaleDateString("es-VE")}`;
-      expiresEl.style.display = "inline-flex";
-    } else {
-      expiresEl.style.display = "none";
-    }
+      const expiresEl = document.getElementById("pdExpires");
+      if (p.expiresAt) {
+        const d = new Date(p.expiresAt);
+        expiresEl.textContent = `Válido hasta: ${d.toLocaleDateString("es-VE")}`;
+        expiresEl.style.display = "inline-flex";
+      } else {
+        expiresEl.style.display = "none";
+      }
 
-    const branchEl = document.getElementById("pdBranch");
-    if (p.branch) {
-      branchEl.innerHTML = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg> ${p.branch}`;
-      branchEl.style.display = "inline-flex";
-    } else {
-      branchEl.style.display = "none";
-    }
+      const branchEl = document.getElementById("pdBranch");
+      if (p.branch) {
+        branchEl.innerHTML = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg> ${p.branch}`;
+        branchEl.style.display = "inline-flex";
+      } else {
+        branchEl.style.display = "none";
+      }
 
-    setResult(document.getElementById("pdResult"), "", "");
-    
-    // Reset OTP UI
-    document.getElementById("pdOtpContainer").style.display = "none";
-    document.getElementById("pdOtpInput").value = "";
-    document.getElementById("pdRequestBtn").style.display = "flex";
-    
-    pdRequestBtn.disabled = p.units <= 0;
-    if (p.units <= 0) {
-       pdRequestBtn.innerHTML = "Agotada";
-       pdRequestBtn.style.opacity = "0.5";
-    } else {
-       pdRequestBtn.innerHTML = `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg> COMPRAR`;
-       pdRequestBtn.style.opacity = "1";
-    }
+      setResult(document.getElementById("pdResult"), "", "");
+      
+      // Reset OTP UI
+      document.getElementById("pdOtpContainer").style.display = "none";
+      document.getElementById("pdOtpInput").value = "";
+      document.getElementById("pdRequestBtn").style.display = "flex";
+      
+      const pdRequestBtnLocal = document.getElementById("pdRequestBtn");
+      if (pdRequestBtnLocal) {
+        pdRequestBtnLocal.disabled = p.units <= 0;
+        if (p.units <= 0) {
+           pdRequestBtnLocal.innerHTML = "Agotada";
+           pdRequestBtnLocal.style.opacity = "0.5";
+        } else {
+           pdRequestBtnLocal.innerHTML = `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg> COMPRAR`;
+           pdRequestBtnLocal.style.opacity = "1";
+        }
+      }
 
-    view.style.display = "flex";
-    view.setAttribute("aria-hidden", "false");
+      view.style.display = "flex";
+      view.setAttribute("aria-hidden", "false");
+    } catch (err) {
+      alert("Error al abrir detalles: " + err.message);
+    }
   };
 
   if (pdRequestBtn) {
