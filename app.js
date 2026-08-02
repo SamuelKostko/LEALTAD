@@ -382,23 +382,43 @@ if (qrButton) {
           }, { passive: true });
         }
 
-        // Control de Modal de Promoción
-        const showPromoModal = () => {
+        const showPromoModal = async () => {
           const promoModal = document.getElementById("promoModal");
           const promoImg = document.getElementById("promoModalImage");
-          if (promoModal && promoImg) {
-            // Imagen única de promoción
-            const chosenImg = "/images/publi3.jpeg";
-            promoImg.src = chosenImg;
+          if (!promoModal || !promoImg) return;
 
-            setTimeout(() => {
-              promoModal.classList.add("promoModal--active");
-              promoModal.setAttribute("aria-hidden", "false");
-            }, 800);
+          try {
+            const res = await fetch("/api/client/promotions");
+            const data = await res.json();
+            const promos = data.promotions || [];
+            
+            const validPromos = promos.filter(p => (!p.expiresAt || p.expiresAt > Date.now()) && p.units > 0);
+            if (validPromos.length === 0) return;
+            
+            const p = validPromos[0];
+            promoImg.src = p.image;
+
+            const timerEl = document.getElementById("promoModalTimer");
+            let timerInt = null;
+            if (timerEl) {
+              if (p.expiresAt) {
+                const tick = () => {
+                  const { label } = formatCountdown(p.expiresAt - Date.now());
+                  timerEl.textContent = "⏱ " + label;
+                };
+                tick();
+                timerInt = setInterval(tick, 1000);
+                // Also add it to our global intervals array so it cleans up correctly if needed
+                if (typeof promoCountdownIntervals !== "undefined") promoCountdownIntervals.push(timerInt);
+              } else {
+                timerEl.textContent = "¡Oferta especial disponible!";
+              }
+            }
 
             const hidePromo = () => {
               promoModal.classList.remove("promoModal--active");
               promoModal.setAttribute("aria-hidden", "true");
+              if (timerInt) clearInterval(timerInt);
             };
 
             const closeBtn = document.getElementById("promoModalCloseBtn");
@@ -406,6 +426,28 @@ if (qrButton) {
 
             const backdrop = document.getElementById("promoModalBackdrop");
             if (backdrop) backdrop.onclick = hidePromo;
+
+            const contentEl = document.getElementById("promoModalContent");
+            if (contentEl) {
+              contentEl.onclick = () => {
+                hidePromo();
+                const promotionsView = document.getElementById("promotionsView");
+                if (promotionsView) {
+                  promotionsView.style.display = "flex";
+                  promotionsView.setAttribute("aria-hidden", "false");
+                }
+                if (typeof openPromoDetailsModal === "function") {
+                  openPromoDetailsModal(p);
+                }
+              };
+            }
+
+            setTimeout(() => {
+              promoModal.classList.add("promoModal--active");
+              promoModal.setAttribute("aria-hidden", "false");
+            }, 800);
+          } catch(err) {
+            console.warn("No se pudo cargar la promoción emergente:", err);
           }
         };
 
@@ -3491,16 +3533,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const renderPromotionCard = (p, container) => {
     const card = document.createElement("div");
+    card.setAttribute("role", "button");
     card.style.cssText = [
-      "background: rgba(255,255,255,0.04)",
-      "border: 1px solid rgba(255,255,255,0.1)",
-      "border-radius: 16px",
+      "position: relative",
+      "background: #111",
+      "border: 1px solid rgba(255,255,255,0.05)",
+      "border-radius: 20px",
       "overflow: hidden",
       "display: flex",
       "flex-direction: column",
       "transition: transform 0.2s",
       "break-inside: avoid",
-      "margin-bottom: 12px"
+      "margin-bottom: 12px",
+      "cursor: pointer"
     ].join(";");
 
     const hasExpiry = Boolean(p.expiresAt);
@@ -3517,21 +3562,19 @@ document.addEventListener("DOMContentLoaded", () => {
           style="width:100%; height:100%; object-fit:cover; display:block; transition: transform 0.4s;"
           loading="lazy"
         />
-        <div style="position:absolute; inset:0; background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 60%);"></div>
-        <div style="position:absolute; bottom:10px; left:12px; right:12px;">
+        <div style="position:absolute; inset:0; background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 60%); pointer-events: none;"></div>
+        <div style="position:absolute; bottom:10px; left:12px; right:12px; pointer-events: none;">
+          ${hasExpiry ? `<div id="${countdownId}" style="font-size:10px; font-weight:800; letter-spacing:0.05em; text-transform:uppercase; margin-bottom:4px;"></div>` : ""}
           <span style="font-size:16px; font-weight:800; color:#fff; line-height:1.1; text-shadow:0 2px 8px rgba(0,0,0,0.6); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${p.title}</span>
         </div>
-        <div style="position:absolute; top:8px; right:8px; display:flex; flex-direction:column; align-items:flex-end; gap:4px;">
+        <div style="position:absolute; top:8px; right:8px; display:flex; flex-direction:column; align-items:flex-end; gap:4px; pointer-events: none;">
           ${p.realPrice ? `<span style="background: rgba(239,68,68,0.8); backdrop-filter: blur(4px); color:#fff; font-weight:700; font-size:10px; padding:2px 6px; border-radius:8px; text-decoration: line-through;">$${Number(p.realPrice).toFixed(2)}</span>` : ''}
           <span style="background: rgba(9,9,11,0.7); backdrop-filter: blur(4px); color:#06b6d4; font-weight:800; font-size:11px; padding:4px 8px; border-radius:12px; white-space:nowrap;">
             ${Number(p.points).toLocaleString("es-VE")} Pts
           </span>
         </div>
       </div>
-      <div style="padding: 12px; display:flex; flex-direction:column; gap:6px;">
-        ${p.description ? `<p style="margin:0; font-size:11px; color:rgba(255,255,255,0.6); line-height:1.4; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">${p.description}</p>` : ""}
-        ${hasExpiry ? `<div id="${countdownId}" style="font-size:11px; font-weight:700; letter-spacing:0.03em;"></div>` : ""}
-      </div>
+      ${p.description ? `<div style="padding: 12px;"><p style="margin:0; font-size:11px; color:rgba(255,255,255,0.6); line-height:1.4; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">${p.description}</p></div>` : ""}
     `;
 
     card.addEventListener("click", () => openPromoDetailsModal(p));
