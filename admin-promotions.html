@@ -11,9 +11,9 @@
   <link rel="icon" href="/icons/icon-v2.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="/styles.css" />
   <style>
-    body.mode-admin { overflow: hidden !important; background: #09090b !important; color: #fff !important; }
+    body.mode-admin { background: #09090b !important; color: #fff !important; }
 
-    .ap-layout { display: flex; flex-direction: column; height: 100dvh; overflow: hidden; }
+    .ap-layout { display: flex; flex-direction: column; min-height: 100dvh; }
     .ap-header {
       display: flex; align-items: center; gap: 12px; padding: 14px 20px;
       border-bottom: 1px solid rgba(255,255,255,0.08); flex-shrink: 0;
@@ -197,7 +197,7 @@
               </div>
               <div class="ap-field" style="margin-bottom:0">
                 <label for="promoExpires">Vencimiento (opcional)</label>
-                <input id="promoExpires" type="date" />
+                <input id="promoExpires" type="datetime-local" />
               </div>
             </div>
             <br/>
@@ -262,7 +262,7 @@
           </div>
           <div class="ap-field" style="margin-bottom:0">
             <label for="editPromoExpires">Vencimiento</label>
-            <input id="editPromoExpires" type="date" />
+            <input id="editPromoExpires" type="datetime-local" />
           </div>
         </div>
         <br/>

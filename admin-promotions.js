@@ -30,15 +30,15 @@ const compressImageToBase64 = (file, maxWidth = 1080, quality = 0.75) =>
 
 const dateToTimestamp = (dateStr) => {
   if (!dateStr) return null;
-  // Set to end of the chosen day in local time
-  const d = new Date(dateStr + 'T23:59:59');
+  const d = new Date(dateStr);
   return d.getTime();
 };
 
 const timestampToDateInput = (ts) => {
   if (!ts) return '';
   const d = new Date(ts);
-  return d.toISOString().slice(0, 10);
+  // Convert to local time string matching 'YYYY-MM-DDThh:mm'
+  return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
 };
 
 const formatExpiry = (ts) => {
