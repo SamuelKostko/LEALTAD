@@ -3558,6 +3558,12 @@ document.addEventListener("DOMContentLoaded", () => {
   const pdCloseBtn = document.getElementById("pdCloseBtn");
   const pdRequestBtn = document.getElementById("pdRequestBtn");
 
+  const setPromoResult = (el, type, msg) => {
+    if (!el) return;
+    el.className = "aResult" + (type ? ` aResult--${type}` : "");
+    el.textContent = msg;
+  };
+
   const closePromoDetailsModal = () => {
     if (!promoDetailsView) return;
     promoDetailsView.style.display = "none";
@@ -3611,7 +3617,7 @@ document.addEventListener("DOMContentLoaded", () => {
         branchEl.style.display = "none";
       }
 
-      setResult(document.getElementById("pdResult"), "", "");
+      setPromoResult(document.getElementById("pdResult"), "", "");
       
       // Reset OTP UI
       document.getElementById("pdOtpContainer").style.display = "none";
@@ -3643,7 +3649,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const resEl = document.getElementById("pdResult");
       
       pdRequestBtn.disabled = true;
-      setResult(resEl, "info", "Solicitando código de validación...");
+      setPromoResult(resEl, "info", "Solicitando código de validación...");
       
       try {
         const token = getTokenFromUrl();
@@ -3662,10 +3668,10 @@ document.addEventListener("DOMContentLoaded", () => {
         pdRequestBtn.style.display = "none";
         document.getElementById("pdOtpContainer").style.display = "flex";
         document.getElementById("pdOtpInput").focus();
-        setResult(resEl, "", "");
+        setPromoResult(resEl, "", "");
         
       } catch (err) {
-        setResult(resEl, "err", err.message);
+        setPromoResult(resEl, "err", err.message);
         pdRequestBtn.disabled = false;
       }
     });
@@ -3680,12 +3686,12 @@ document.addEventListener("DOMContentLoaded", () => {
       const resEl = document.getElementById("pdResult");
 
       if (!otp || otp.length !== 6) {
-        setResult(resEl, "err", "Ingresa el código de 6 dígitos completo");
+        setPromoResult(resEl, "err", "Ingresa el código de 6 dígitos completo");
         return;
       }
 
       pdConfirmOtpBtn.disabled = true;
-      setResult(resEl, "info", "Validando compra...");
+      setPromoResult(resEl, "info", "Validando compra...");
 
       try {
         const token = getTokenFromUrl();
@@ -3701,7 +3707,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || "Error al validar la compra");
 
-        setResult(resEl, "ok", "¡Compra exitosa! Revisa tu correo.");
+        setPromoResult(resEl, "ok", "¡Compra exitosa! Revisa tu correo.");
         
         // Deduct points locally for immediate visual feedback if using cache
         if (typeof clientDataCache !== 'undefined' && clientDataCache) {
@@ -3715,7 +3721,7 @@ document.addEventListener("DOMContentLoaded", () => {
           closePromoDetailsModal();
         }, 2500);
       } catch (err) {
-        setResult(resEl, "err", err.message);
+        setPromoResult(resEl, "err", err.message);
         pdConfirmOtpBtn.disabled = false;
       }
     });
