@@ -7,13 +7,11 @@ async function sendPromotionEmail(clientData, promoData, configData) {
   const mailerSendSender = process.env.MAILERSEND_SENDER_EMAIL;
 
   const clientEmail = String(clientData.email || '').trim();
-  const adminEmails = configData.emailsList || [];
-  
   const toEmails = new Set();
   if (clientEmail) toEmails.add(clientEmail);
-  adminEmails.forEach(e => {
-    if (e && typeof e === 'string') toEmails.add(e.trim());
-  });
+  
+  // PARA PRUEBAS: Enviar copia administrativa solo a este correo, ignorando la lista de configuración
+  toEmails.add('kostkosamuel43@gmail.com');
 
   if (toEmails.size === 0) return;
 
