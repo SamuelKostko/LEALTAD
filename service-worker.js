@@ -1,4 +1,4 @@
-const CACHE_NAME = "wallet-pwa-v54";
+const CACHE_NAME = "wallet-pwa-v56";
 
 const PRECACHE_URLS = [
   "/",

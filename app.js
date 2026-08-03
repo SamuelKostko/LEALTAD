@@ -3500,21 +3500,15 @@ document.addEventListener("DOMContentLoaded", () => {
       "display: flex",
       "flex-direction: column",
       "transition: transform 0.2s",
-      "break-inside: avoid",
-      "margin-bottom: 12px",
-      "cursor: pointer"
+      "cursor: pointer",
+      "height: 100%"
     ].join(";");
 
     const hasExpiry = Boolean(p.expiresAt);
     const countdownId = `promo-cd-${p.id}`;
 
-    // Generar alturas variables aleatorias de forma consistente basada en el ID
-    const charCode = (p.id || "a").charCodeAt(0);
-    const heights = ["140px", "180px", "220px"];
-    const imgHeight = heights[charCode % heights.length];
-
     card.innerHTML = `
-      <div style="position:relative; height: ${imgHeight}; background: #000; overflow: hidden;">
+      <div style="position:relative; height: 180px; background: #000; overflow: hidden; border-radius: 16px;">
         <img src="${p.image}" alt="${p.title}"
           style="width:100%; height:100%; object-fit:cover; display:block; transition: transform 0.4s;"
           loading="lazy"
@@ -3624,6 +3618,9 @@ document.addEventListener("DOMContentLoaded", () => {
       document.getElementById("pdOtpInput").value = "";
       document.getElementById("pdRequestBtn").style.display = "flex";
       
+      const pdBuyBtn = document.getElementById("pdBuyPointsRedirectBtn");
+      if (pdBuyBtn) pdBuyBtn.style.display = "none";
+      
       const pdRequestBtnLocal = document.getElementById("pdRequestBtn");
       if (pdRequestBtnLocal) {
         pdRequestBtnLocal.disabled = p.units <= 0;
@@ -3685,6 +3682,12 @@ document.addEventListener("DOMContentLoaded", () => {
           msg = "Problema de red. Verifica tu conexión.";
         }
         setPromoResult(resEl, "err", msg);
+        
+        if (msg.toLowerCase().includes("insuficiente")) {
+          const pdBuyBtn = document.getElementById("pdBuyPointsRedirectBtn");
+          if (pdBuyBtn) pdBuyBtn.style.display = "block";
+        }
+        
         pdRequestBtn.disabled = false;
       }
     });
@@ -3749,6 +3752,16 @@ document.addEventListener("DOMContentLoaded", () => {
           pdOtpInput.focus();
           setPromoResult(resEl, "err", msg);
         }
+      }
+    });
+  }
+
+  const pdBuyPointsRedirectBtn = document.getElementById("pdBuyPointsRedirectBtn");
+  if (pdBuyPointsRedirectBtn) {
+    pdBuyPointsRedirectBtn.addEventListener("click", () => {
+      closePromoDetailsModal();
+      if (typeof showBuyPointsView === "function") {
+        showBuyPointsView();
       }
     });
   }
