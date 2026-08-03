@@ -3647,27 +3647,26 @@ document.addEventListener("DOMContentLoaded", () => {
     pdRequestBtn.addEventListener("click", async () => {
       if (!currentSelectedPromo) return;
       const resEl = document.getElementById("pdResult");
+      const otpContainer = document.getElementById("pdOtpContainer");
+      const otpInput = document.getElementById("pdOtpInput");
       
       pdRequestBtn.disabled = true;
       setPromoResult(resEl, "info", "Solicitando código de validación...");
       
       try {
-        const token = getTokenFromUrl();
-        const res = await fetch("/api/client/request-promotion-otp", {
+        const tk = localStorage.getItem("wallet_token");
+        const res = await fetch("/api/client/promotions/request-buy", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            token: token,
-            promotionId: currentSelectedPromo.id
-          }),
+          headers: { "Content-Type": "application/json", "Authorization": "Bearer " + tk },
+          body: JSON.stringify({ promotionId: currentSelectedPromo.id })
         });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error || "Error al solicitar OTP");
+        if (!res.ok) throw new Error(data.error || "No se pudo solicitar la compra");
         
-        // Hide button, show OTP container
         pdRequestBtn.style.display = "none";
-        document.getElementById("pdOtpContainer").style.display = "flex";
-        document.getElementById("pdOtpInput").focus();
+        otpContainer.style.display = "block";
+        otpInput.value = "";
+        otpInput.focus();
         setPromoResult(resEl, "", "");
         
       } catch (err) {
@@ -3677,52 +3676,45 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  const pdConfirmOtpBtn = document.getElementById("pdConfirmOtpBtn");
-  if (pdConfirmOtpBtn) {
-    pdConfirmOtpBtn.addEventListener("click", async () => {
-      if (!currentSelectedPromo) return;
-      const otpInput = document.getElementById("pdOtpInput");
-      const otp = otpInput.value.trim();
-      const resEl = document.getElementById("pdResult");
+  const pdOtpInput = document.getElementById("pdOtpInput");
+  if (pdOtpInput) {
+    pdOtpInput.addEventListener("input", async (e) => {
+      const val = e.target.value.trim();
+      if (val.length === 6) {
+        const resEl = document.getElementById("pdResult");
+        const otpContainer = document.getElementById("pdOtpContainer");
 
-      if (!otp || otp.length !== 6) {
-        setPromoResult(resEl, "err", "Ingresa el código de 6 dígitos completo");
-        return;
-      }
-
-      pdConfirmOtpBtn.disabled = true;
-      setPromoResult(resEl, "info", "Validando compra...");
-
-      try {
-        const token = getTokenFromUrl();
-        const res = await fetch("/api/client/request-promotion", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            token: token,
-            promotionId: currentSelectedPromo.id,
-            otp: otp
-          }),
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error || "Error al validar la compra");
-
-        setPromoResult(resEl, "ok", "¡Compra exitosa! Revisa tu correo.");
-        
-        // Deduct points locally for immediate visual feedback if using cache
-        if (typeof clientDataCache !== 'undefined' && clientDataCache) {
-          clientDataCache.balance = Math.max(0, (clientDataCache.balance || 0) - currentSelectedPromo.points);
+        if (!currentSelectedPromo) {
+          setPromoResult(resEl, "err", "Promoción no seleccionada");
+          return;
         }
-        
-        // Refresh balance visually
-        if (typeof syncBalance === "function") syncBalance();
 
-        setTimeout(() => {
-          closePromoDetailsModal();
-        }, 2500);
-      } catch (err) {
-        setPromoResult(resEl, "err", err.message);
-        pdConfirmOtpBtn.disabled = false;
+        try {
+          pdOtpInput.disabled = true;
+          setPromoResult(resEl, "info", "Validando compra...");
+
+          const tk = localStorage.getItem("wallet_token");
+          const res = await fetch("/api/client/promotions/confirm-buy", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "Authorization": "Bearer " + tk },
+            body: JSON.stringify({ promotionId: currentSelectedPromo.id, otp: val })
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || "Código inválido o expirado");
+
+          setPromoResult(resEl, "ok", "¡Compra exitosa! Revisa tu correo.");
+          otpContainer.style.display = "none";
+
+          setTimeout(() => {
+            closePromoDetailsModal();
+          }, 3000);
+
+        } catch (err) {
+          pdOtpInput.disabled = false;
+          pdOtpInput.value = "";
+          pdOtpInput.focus();
+          setPromoResult(resEl, "err", err.message);
+        }
       }
     });
   }
