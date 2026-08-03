@@ -3760,8 +3760,8 @@ document.addEventListener("DOMContentLoaded", () => {
   if (pdBuyPointsRedirectBtn) {
     pdBuyPointsRedirectBtn.addEventListener("click", () => {
       closePromoDetailsModal();
-      if (typeof showBuyPointsView === "function") {
-        showBuyPointsView();
+      if (typeof window.showBuyPointsView === "function") {
+        window.showBuyPointsView();
       }
     });
   }
@@ -3863,7 +3863,7 @@ document.addEventListener("DOMContentLoaded", () => {
     buyPointsSubmitBtn.textContent = "Notificar Pago";
   }
 
-  function showBuyPointsView() {
+  window.showBuyPointsView = function showBuyPointsView() {
     const profileMenu = document.getElementById("profileMenu");
     if (profileMenu) {
       profileMenu.classList.remove("profileMenu--active");
