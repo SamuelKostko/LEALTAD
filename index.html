@@ -804,12 +804,13 @@
                     <tr style="border-bottom: 1px solid rgba(255,255,255,0.1); text-align: left; color: rgba(255,255,255,0.5); font-size: 12px; text-transform: uppercase;">
                       <th style="padding: 12px; font-weight: 600;">Nombre</th>
                       <th style="padding: 12px; font-weight: 600;">Usuario</th>
+                      <th style="padding: 12px; font-weight: 600; text-align: center;">Estado</th>
                       <th style="padding: 12px; font-weight: 600; text-align: right;">Acciones</th>
                     </tr>
                   </thead>
                   <tbody id="marketingUsersTableBody">
                     <tr>
-                      <td colspan="3" style="text-align: center; padding: 20px; color: rgba(255,255,255,0.5);">Cargando...</td>
+                      <td colspan="4" style="text-align: center; padding: 20px; color: rgba(255,255,255,0.5);">Cargando...</td>
                     </tr>
                   </tbody>
                 </table>
@@ -817,6 +818,29 @@
             </div>
           </section>
 
+          <!-- Modal de Edición de Promotor -->
+          <div class="historyModal" id="editPromoterModal" aria-hidden="true" role="dialog" aria-modal="true" aria-label="Editar Promotor">
+            <div class="historyModal__frame" style="max-width: 400px; height: auto; border-radius: 16px;">
+              <header class="historyModal__header">
+                <span class="historyModal__title">Editar Promotor</span>
+                <button class="historyModal__close" id="editPromoterCloseBtn" type="button" aria-label="Cerrar">✕</button>
+              </header>
+              <div class="historyModal__body" style="padding: 20px;">
+                <form id="editPromoterForm" style="display: flex; flex-direction: column; gap: 16px;">
+                  <input type="hidden" id="editPromoterId" />
+                  
+                  <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <label for="editPromoterName" style="font-size: 14px; font-weight: 500; color: #e2e8f0;">Nombre Completo</label>
+                    <input type="text" id="editPromoterName" class="loginField__input" placeholder="Nombre" required />
+                  </div>
+                  
+                  <div id="editPromoterResult" class="aResult" style="display: none;"></div>
+                  
+                  <button type="submit" id="editPromoterSubmitBtn" class="aBtn aBtn--primary" style="margin-top: 8px;">Guardar Cambios</button>
+                </form>
+              </div>
+            </div>
+          </div>
 
         </div>
 

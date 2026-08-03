@@ -3280,7 +3280,7 @@ document.addEventListener("DOMContentLoaded", () => {
   window.loadMarketingUsers = async () => {
     const tbody = document.getElementById("marketingUsersTableBody");
     if (!tbody) return;
-    tbody.innerHTML = `<tr><td colspan="3" style="text-align: center; padding: 20px; color: rgba(255,255,255,0.5);">Cargando...</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 20px; color: rgba(255,255,255,0.5);">Cargando...</td></tr>`;
     try {
       const res = await fetch("/api/admin/marketing-users", { credentials: "include" });
       const data = await res.json();
@@ -3288,7 +3288,7 @@ document.addEventListener("DOMContentLoaded", () => {
       
       const usersList = data.marketingUsers || [];
       if (usersList.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="3" style="text-align: center; padding: 20px; color: rgba(255,255,255,0.5);">No hay usuarios de marketing</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 20px; color: rgba(255,255,255,0.5);">No hay usuarios de marketing</td></tr>`;
         return;
       }
       
@@ -3297,30 +3297,104 @@ document.addEventListener("DOMContentLoaded", () => {
         const tr = document.createElement("tr");
         tr.style.borderBottom = "1px solid rgba(255,255,255,0.05)";
         
+        const statusText = u.isActive !== false ? `<span style="color: #22c55e; font-weight: 600;">Activo</span>` : `<span style="color: #ef4444; font-weight: 600;">Inactivo</span>`;
+        const toggleText = u.isActive !== false ? "Desactivar" : "Activar";
+        
         tr.innerHTML = `
           <td style="padding: 12px; color: #fff; font-size: 14px;">${u.name || "—"}</td>
           <td style="padding: 12px; color: #fff; font-size: 14px;">${u.username}</td>
-          <td style="padding: 12px; text-align: right;">
-            <button class="aBtn" style="background: rgba(239, 68, 68, 0.2); color: #ef4444; padding: 6px 12px; font-size: 12px; border-radius: 6px; border: none; cursor: pointer;">Eliminar</button>
+          <td style="padding: 12px; color: #fff; font-size: 14px; text-align: center;">${statusText}</td>
+          <td style="padding: 12px; text-align: right; display: flex; justify-content: flex-end; gap: 8px;">
+            <button class="editBtn" style="background: rgba(59, 130, 246, 0.2); color: #3b82f6; padding: 6px 12px; font-size: 12px; border-radius: 6px; border: none; cursor: pointer;">Editar</button>
+            <button class="toggleBtn" style="background: rgba(168, 162, 158, 0.2); color: #a8a29e; padding: 6px 12px; font-size: 12px; border-radius: 6px; border: none; cursor: pointer;">${toggleText}</button>
+            <button class="delBtn" style="background: rgba(239, 68, 68, 0.2); color: #ef4444; padding: 6px 12px; font-size: 12px; border-radius: 6px; border: none; cursor: pointer;">Eliminar</button>
           </td>
         `;
         
-        const delBtn = tr.querySelector("button");
-        delBtn.onclick = async () => {
-          if (!confirm(`¿Eliminar usuario ${u.username}?`)) return;
+        tr.querySelector(".editBtn").onclick = () => {
+          document.getElementById("editPromoterId").value = u.id;
+          document.getElementById("editPromoterName").value = u.name || "";
+          document.getElementById("editPromoterModal").style.display = "flex";
+          document.getElementById("editPromoterModal").setAttribute("aria-hidden", "false");
+          document.getElementById("editPromoterResult").style.display = "none";
+        };
+        
+        tr.querySelector(".toggleBtn").onclick = async () => {
+          if (!confirm(`¿${toggleText} el promotor ${u.username}?`)) return;
           try {
-            await fetch(`/api/admin/marketing-users?id=${u.id}`, { method: "DELETE", credentials: "include" });
+            const res = await fetch(`/api/admin/marketing-users`, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ id: u.id, isActive: u.isActive === false }),
+              credentials: "include"
+            });
+            if (!res.ok) throw new Error("Error al cambiar estado");
             loadMarketingUsers();
           } catch (e) {
-            alert("Error al eliminar");
+            alert(e.message);
+          }
+        };
+
+        tr.querySelector(".delBtn").onclick = async () => {
+          if (!confirm(`¿Eliminar usuario ${u.username}?`)) return;
+          try {
+            const res = await fetch(`/api/admin/marketing-users`, { 
+              method: "DELETE", 
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ id: u.id }),
+              credentials: "include" 
+            });
+            if (!res.ok) throw new Error("Error al eliminar");
+            loadMarketingUsers();
+          } catch (e) {
+            alert(e.message);
           }
         };
         tbody.appendChild(tr);
       });
     } catch (e) {
-      tbody.innerHTML = `<tr><td colspan="3" style="text-align: center; padding: 20px; color: #ef4444;">Error al cargar: ${e.message}</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 20px; color: #ef4444;">Error al cargar: ${e.message}</td></tr>`;
     }
   };
+
+  const editPromoterModal = document.getElementById("editPromoterModal");
+  if (editPromoterModal) {
+    document.getElementById("editPromoterCloseBtn").onclick = () => {
+      editPromoterModal.style.display = "none";
+      editPromoterModal.setAttribute("aria-hidden", "true");
+    };
+    
+    document.getElementById("editPromoterForm").onsubmit = async (e) => {
+      e.preventDefault();
+      const id = document.getElementById("editPromoterId").value;
+      const name = document.getElementById("editPromoterName").value;
+      const btn = document.getElementById("editPromoterSubmitBtn");
+      const resEl = document.getElementById("editPromoterResult");
+      
+      btn.disabled = true;
+      resEl.style.display = "none";
+      
+      try {
+        const res = await fetch("/api/admin/marketing-users", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id, name }),
+          credentials: "include"
+        });
+        if (!res.ok) throw new Error("Error al guardar cambios");
+        
+        editPromoterModal.style.display = "none";
+        editPromoterModal.setAttribute("aria-hidden", "true");
+        loadMarketingUsers();
+      } catch (err) {
+        resEl.textContent = err.message;
+        resEl.className = "aResult aResult--error";
+        resEl.style.display = "block";
+      } finally {
+        btn.disabled = false;
+      }
+    };
+  }
 
   const mktForm = document.getElementById("adminMarketingUserForm");
   if (mktForm) {

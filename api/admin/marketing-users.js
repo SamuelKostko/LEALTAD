@@ -18,6 +18,7 @@ export default async function handler(req, res) {
           id: doc.id,
           name: data.name || '',
           username: data.username || '',
+          isActive: data.isActive !== false, // defaults to true
           createdAt: data.createdAt || null
         };
       });
@@ -49,6 +50,7 @@ export default async function handler(req, res) {
         username,
         password,
         role: 'marketing',
+        isActive: true,
         createdAt: Date.now()
       });
 
@@ -67,6 +69,7 @@ export default async function handler(req, res) {
       const updates = {};
       if (body.name) updates.name = String(body.name).trim();
       if (body.password) updates.password = String(body.password).trim();
+      if (typeof body.isActive === 'boolean') updates.isActive = body.isActive;
       
       if (Object.keys(updates).length > 0) {
         await collection.doc(id).update(updates);
