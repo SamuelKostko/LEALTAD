@@ -37,10 +37,16 @@ export default async function handler(req, res) {
         return;
       }
 
-      // Check for duplicates
-      const exists = await collection.where('username', '==', username).limit(1).get();
-      if (!exists.empty) {
-        sendJson(res, 400, { error: 'El nombre de usuario ya existe' });
+      // Check for duplicates globally across all roles
+      const checks = await Promise.all([
+        db.collection('config').where('email', '==', username).limit(1).get(),
+        db.collection('cashiers').where('username', '==', username).limit(1).get(),
+        db.collection('merchants').where('username', '==', username).limit(1).get(),
+        db.collection('marketing').where('username', '==', username).limit(1).get()
+      ]);
+
+      if (checks.some(snap => !snap.empty)) {
+        sendJson(res, 400, { error: 'El nombre de usuario ya está en uso por otro perfil en el sistema' });
         return;
       }
 
