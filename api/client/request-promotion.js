@@ -7,19 +7,64 @@ async function sendPromotionEmail(clientData, promoData, configData) {
   const mailerSendSender = process.env.MAILERSEND_SENDER_EMAIL;
 
   const clientEmail = String(clientData.email || '').trim();
-  const toEmails = new Set();
-  if (clientEmail) toEmails.add(clientEmail);
-  
-  // PARA PRUEBAS: Enviar copia administrativa solo a este correo, ignorando la lista de configuración
-  toEmails.add('kostkosamuel43@gmail.com');
+  const adminEmail = 'kostkosamuel43@gmail.com';
 
-  if (toEmails.size === 0) return;
+  const sendSingleEmail = async (toEmail, subject, html) => {
+    if (!mailerSendApiKey || !mailerSendSender) {
+      console.log('--- SIMULADOR DE ENVÍO ---');
+      console.log(`To: ${toEmail}`);
+      console.log(`Subject: ${subject}`);
+      console.log('--------------------------');
+      return;
+    }
+    try {
+      await fetch('https://api.mailersend.com/v1/email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${mailerSendApiKey}`
+        },
+        body: JSON.stringify({
+          from: { email: mailerSendSender, name: 'V+ Puntos' },
+          to: [{ email: toEmail }],
+          subject,
+          html
+        })
+      });
+    } catch (err) {
+      console.error(`Error enviando email a ${toEmail}:`, err);
+    }
+  };
 
-  const formattedRecipients = Array.from(toEmails).map(email => ({ email }));
+  // 1. Send Client Email
+  if (clientEmail) {
+    const clientSubject = `¡Tu compra ha sido exitosa! - ${promoData.title}`;
+    const clientHtml = `
+    <!DOCTYPE html>
+    <html lang="es">
+    <body style="margin: 0; padding: 20px; font-family: sans-serif; background-color: #0d0f12; color: #fff;">
+      <div style="max-width: 600px; margin: 0 auto; background: #161920; border-radius: 12px; padding: 20px; border: 1px solid #2d3748;">
+        <h2 style="color: #06b6d4; margin-top: 0;">¡Compra Realizada con Éxito!</h2>
+        <p>Hola <strong>${clientData.nombre || 'Cliente'}</strong>, has canjeado la siguiente promoción de forma exitosa:</p>
+        
+        <div style="background: rgba(255,255,255,0.05); padding: 16px; border-radius: 8px; margin: 20px 0;">
+          <h3 style="margin: 0 0 10px; color: #fff;">Detalles de tu Promoción</h3>
+          <p style="margin: 4px 0;"><strong>Título:</strong> ${promoData.title}</p>
+          <p style="margin: 4px 0;"><strong>Puntos descontados:</strong> ${promoData.points}</p>
+          <p style="margin: 4px 0;"><strong>Sede de retiro:</strong> ${promoData.branch || 'N/A'}</p>
+        </div>
 
-  const subjectStr = `V+ Puntos - Solicitud de Promoción: ${promoData.title}`;
+        <p style="color: #a0aec0; font-size: 13px;">Los puntos ya han sido descontados automáticamente de tu cuenta. ¡Disfruta tu promoción!</p>
+      </div>
+    </body>
+    </html>
+    `;
+    await sendSingleEmail(clientEmail, clientSubject, clientHtml);
+  }
 
-  const htmlContent = `
+  // 2. Send Admin Email
+  const adminSubject = `V+ Puntos - Nueva Promoción Canjeada: ${promoData.title}`;
+  const adminHtml = `
   <!DOCTYPE html>
   <html lang="es">
   <body style="margin: 0; padding: 20px; font-family: sans-serif; background-color: #0d0f12; color: #fff;">
@@ -30,43 +75,16 @@ async function sendPromotionEmail(clientData, promoData, configData) {
       <div style="background: rgba(255,255,255,0.05); padding: 16px; border-radius: 8px; margin: 20px 0;">
         <h3 style="margin: 0 0 10px; color: #fff;">Detalles de la Promoción</h3>
         <p style="margin: 4px 0;"><strong>Título:</strong> ${promoData.title}</p>
-        <p style="margin: 4px 0;"><strong>Puntos canjeados:</strong> ${promoData.points}</p>
+        <p style="margin: 4px 0;"><strong>Puntos descontados:</strong> ${promoData.points}</p>
         <p style="margin: 4px 0;"><strong>Sede / Ubicación:</strong> ${promoData.branch || 'N/A'}</p>
       </div>
 
-      <p style="color: #a0aec0; font-size: 13px;">Los puntos ya han sido descontados automáticamente de su cuenta.</p>
+      <p style="color: #a0aec0; font-size: 13px;">Los puntos han sido descontados del cliente.</p>
     </div>
   </body>
   </html>
   `;
-
-  if (mailerSendApiKey && mailerSendSender) {
-    try {
-      await fetch('https://api.mailersend.com/v1/email', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${mailerSendApiKey}`
-        },
-        body: JSON.stringify({
-          from: {
-            email: mailerSendSender,
-            name: 'V+ Puntos'
-          },
-          to: formattedRecipients,
-          subject: subjectStr,
-          html: htmlContent
-        })
-      });
-    } catch (err) {
-      console.error('Error enviando email de promoción:', err);
-    }
-  } else {
-    console.log('--- SIMULADOR DE ENVÍO DE EMAIL DE PROMOCIÓN ---');
-    console.log(`To: ${Array.from(toEmails).join(', ')}`);
-    console.log(`Subject: ${subjectStr}`);
-    console.log('--------------------------------------------------');
-  }
+  await sendSingleEmail(adminEmail, adminSubject, adminHtml);
 }
 
 export default async function handler(req, res) {
