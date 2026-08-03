@@ -233,6 +233,10 @@ if (promoForm) {
         credentials: 'include'
       });
       const data = await res.json();
+      if (res.status === 401) {
+        checkAuth();
+        throw new Error('Sesión expirada. Por favor, inicia sesión nuevamente.');
+      }
       if (!res.ok) throw new Error(data.error || 'Error al crear la promoción');
 
       setResult(promoResult, 'ok', '¡Promoción creada exitosamente!');
