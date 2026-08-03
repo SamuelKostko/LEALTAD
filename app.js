@@ -3618,9 +3618,6 @@ document.addEventListener("DOMContentLoaded", () => {
       document.getElementById("pdOtpInput").value = "";
       document.getElementById("pdRequestBtn").style.display = "flex";
       
-      const pdBuyBtn = document.getElementById("pdBuyPointsRedirectBtn");
-      if (pdBuyBtn) pdBuyBtn.style.display = "none";
-      
       const pdRequestBtnLocal = document.getElementById("pdRequestBtn");
       if (pdRequestBtnLocal) {
         pdRequestBtnLocal.disabled = p.units <= 0;
@@ -3682,12 +3679,6 @@ document.addEventListener("DOMContentLoaded", () => {
           msg = "Problema de red. Verifica tu conexión.";
         }
         setPromoResult(resEl, "err", msg);
-        
-        if (msg.toLowerCase().includes("insuficiente")) {
-          const pdBuyBtn = document.getElementById("pdBuyPointsRedirectBtn");
-          if (pdBuyBtn) pdBuyBtn.style.display = "block";
-        }
-        
         pdRequestBtn.disabled = false;
       }
     });
@@ -3756,16 +3747,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  const pdBuyPointsRedirectBtn = document.getElementById("pdBuyPointsRedirectBtn");
-  if (pdBuyPointsRedirectBtn) {
-    pdBuyPointsRedirectBtn.addEventListener("click", () => {
-      closePromoDetailsModal();
-      if (typeof window.showBuyPointsView === "function") {
-        window.showBuyPointsView();
-      }
-    });
-  }
-
   if (profilePromocionesBtn && promotionsView && promotionsListClientContainer) {
     profilePromocionesBtn.addEventListener("click", async () => {
       const profileMenu = document.getElementById("profileMenu");
@@ -3780,7 +3761,7 @@ document.addEventListener("DOMContentLoaded", () => {
       promotionsListClientContainer.innerHTML = `<div style="text-align: center; color: rgba(255,255,255,0.5); padding: 60px 20px; font-size: 1rem;">Cargando promociones...</div>`;
 
       try {
-        const res = await fetch("/api/admin/promotions");
+        const res = await fetch("/api/admin/promotions", { cache: "no-store" });
         const resData = await res.json();
         if (!res.ok) throw new Error(resData.error);
 
