@@ -3654,14 +3654,22 @@ document.addEventListener("DOMContentLoaded", () => {
       setPromoResult(resEl, "info", "Solicitando código de validación...");
       
       try {
-        const tk = localStorage.getItem("wallet_token");
-        const res = await fetch("/api/client/promotions/request-buy", {
+        let tk = new URLSearchParams(window.location.search).get("token") || new URLSearchParams(window.location.search).get("t");
+        if (!tk && window.location.pathname.startsWith("/card/")) {
+          tk = decodeURIComponent(window.location.pathname.slice(6));
+        }
+        if (!tk) throw new Error("No se encontró el token de la tarjeta");
+
+        const res = await fetch("/api/client/request-promotion-otp", {
           method: "POST",
-          headers: { "Content-Type": "application/json", "Authorization": "Bearer " + tk },
-          body: JSON.stringify({ promotionId: currentSelectedPromo.id })
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            token: tk,
+            promotionId: currentSelectedPromo.id
+          })
         });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error || "No se pudo solicitar la compra");
+        if (!res.ok) throw new Error(data.error || "Error al solicitar el código");
         
         pdRequestBtn.style.display = "none";
         otpContainer.style.display = "block";
@@ -3670,7 +3678,13 @@ document.addEventListener("DOMContentLoaded", () => {
         setPromoResult(resEl, "", "");
         
       } catch (err) {
-        setPromoResult(resEl, "err", err.message);
+        let msg = err.message;
+        if (msg === "Failed to fetch" || !navigator.onLine) {
+          msg = "Sin conexión a internet. Verifica tu red.";
+        } else if (msg.includes("NetworkError") || msg.includes("network")) {
+          msg = "Problema de red. Verifica tu conexión.";
+        }
+        setPromoResult(resEl, "err", msg);
         pdRequestBtn.disabled = false;
       }
     });
@@ -3693,27 +3707,47 @@ document.addEventListener("DOMContentLoaded", () => {
           pdOtpInput.disabled = true;
           setPromoResult(resEl, "info", "Validando compra...");
 
-          const tk = localStorage.getItem("wallet_token");
-          const res = await fetch("/api/client/promotions/confirm-buy", {
+          let tk = new URLSearchParams(window.location.search).get("token") || new URLSearchParams(window.location.search).get("t");
+          if (!tk && window.location.pathname.startsWith("/card/")) {
+            tk = decodeURIComponent(window.location.pathname.slice(6));
+          }
+          if (!tk) throw new Error("No se encontró el token de la tarjeta");
+
+          const res = await fetch("/api/client/request-promotion", {
             method: "POST",
-            headers: { "Content-Type": "application/json", "Authorization": "Bearer " + tk },
-            body: JSON.stringify({ promotionId: currentSelectedPromo.id, otp: val })
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              token: tk,
+              promotionId: currentSelectedPromo.id,
+              otp: val
+            })
           });
           const data = await res.json();
           if (!res.ok) throw new Error(data.error || "Código inválido o expirado");
 
           setPromoResult(resEl, "ok", "¡Compra exitosa! Revisa tu correo.");
           otpContainer.style.display = "none";
+          
+          if (typeof clientDataCache !== 'undefined' && clientDataCache) {
+            clientDataCache.balance = Math.max(0, (clientDataCache.balance || 0) - currentSelectedPromo.points);
+          }
+          if (typeof syncBalance === "function") syncBalance();
 
           setTimeout(() => {
             closePromoDetailsModal();
           }, 3000);
 
         } catch (err) {
+          let msg = err.message;
+          if (msg === "Failed to fetch" || !navigator.onLine) {
+            msg = "Sin conexión a internet. Verifica tu red.";
+          } else if (msg.includes("NetworkError") || msg.includes("network")) {
+            msg = "Problema de red. Verifica tu conexión.";
+          }
           pdOtpInput.disabled = false;
           pdOtpInput.value = "";
           pdOtpInput.focus();
-          setPromoResult(resEl, "err", err.message);
+          setPromoResult(resEl, "err", msg);
         }
       }
     });
