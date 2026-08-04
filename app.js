@@ -3641,6 +3641,30 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (pdCloseBtn) pdCloseBtn.addEventListener("click", closePromoDetailsModal);
 
+  const pdImageEl = document.getElementById("pdImage");
+  if (pdImageEl) {
+    pdImageEl.style.cursor = "pointer";
+    pdImageEl.addEventListener("click", () => {
+      if (!pdImageEl.src) return;
+      const promoModal = document.getElementById("promoModal");
+      const promoImg = document.getElementById("promoModalImage");
+      if (promoModal && promoImg) {
+        promoImg.src = pdImageEl.src;
+        promoModal.classList.add("promoModal--active");
+        promoModal.setAttribute("aria-hidden", "false");
+        
+        const hidePromo = () => {
+          promoModal.classList.remove("promoModal--active");
+          promoModal.setAttribute("aria-hidden", "true");
+        };
+        const closeBtn = document.getElementById("promoModalCloseBtn");
+        if (closeBtn) closeBtn.onclick = hidePromo;
+        const backdrop = document.getElementById("promoModalBackdrop");
+        if (backdrop) backdrop.onclick = hidePromo;
+      }
+    });
+  }
+
   const openPromoDetailsModal = (p) => {
     try {
       let view = promoDetailsView || document.getElementById("promoDetailsView");

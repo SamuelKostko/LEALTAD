@@ -7,12 +7,13 @@ async function sendPromotionEmail(clientData, promoData, configData) {
   const mailerSendSender = process.env.MAILERSEND_SENDER_EMAIL;
 
   const clientEmail = String(clientData.email || '').trim();
-  const adminEmail = 'kostkosamuel43@gmail.com';
+  const adminEmails = ['kostkosamuel43@gmail.com', 'frankelissuarez2.0@gmail.com'];
 
-  const sendSingleEmail = async (toEmail, subject, html) => {
+  const sendEmail = async (toEmails, subject, html) => {
+    const toArray = Array.isArray(toEmails) ? toEmails.map(e => ({ email: e })) : [{ email: toEmails }];
     if (!mailerSendApiKey || !mailerSendSender) {
       console.log('--- SIMULADOR DE ENVÍO ---');
-      console.log(`To: ${toEmail}`);
+      console.log(`To: ${JSON.stringify(toArray)}`);
       console.log(`Subject: ${subject}`);
       console.log('--------------------------');
       return;
@@ -26,13 +27,13 @@ async function sendPromotionEmail(clientData, promoData, configData) {
         },
         body: JSON.stringify({
           from: { email: mailerSendSender, name: 'V+ Puntos' },
-          to: [{ email: toEmail }],
+          to: toArray,
           subject,
           html
         })
       });
     } catch (err) {
-      console.error(`Error enviando email a ${toEmail}:`, err);
+      console.error(`Error enviando email a ${JSON.stringify(toArray)}:`, err);
     }
   };
 
@@ -59,7 +60,7 @@ async function sendPromotionEmail(clientData, promoData, configData) {
     </body>
     </html>
     `;
-    await sendSingleEmail(clientEmail, clientSubject, clientHtml);
+    await sendEmail(clientEmail, clientSubject, clientHtml);
   }
 
   // 2. Send Admin Email
@@ -84,7 +85,7 @@ async function sendPromotionEmail(clientData, promoData, configData) {
   </body>
   </html>
   `;
-  await sendSingleEmail(adminEmail, adminSubject, adminHtml);
+  await sendEmail(adminEmails, adminSubject, adminHtml);
 }
 
 export default async function handler(req, res) {
