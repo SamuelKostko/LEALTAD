@@ -876,6 +876,7 @@ if (qrButton) {
     if (navMarketing) navMarketing.addEventListener("click", () => {
       switchPanel("marketing");
       loadMarketingUsers();
+      loadRedeemedPromotions();
     });
 
     const mobNavClientes = document.getElementById("aMobNavClientes");
@@ -3428,6 +3429,110 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
   }
+
+  // Redeemed Promotions Management
+  window.loadRedeemedPromotions = async () => {
+    const tbody = document.getElementById("redeemedPromotionsTableBody");
+    if (!tbody) return;
+
+    try {
+      const res = await fetch("/api/admin/redeemed-promotions", { credentials: "include" });
+      if (!res.ok) throw new Error("Error fetching redeemed promotions");
+      const data = await res.json();
+      const promotions = data.promotions || [];
+
+      if (promotions.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 20px; color: rgba(255,255,255,0.5);">No hay promociones canjeadas</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = promotions.map(p => {
+        const date = new Date(p.createdAt).toLocaleString('es-ES', { 
+          day: '2-digit', month: '2-digit', year: 'numeric', 
+          hour: '2-digit', minute: '2-digit' 
+        });
+        const statusText = p.deliveryStatus === 'delivered' ? 'Entregado' : 'Pendiente';
+        const statusColor = p.deliveryStatus === 'delivered' ? '#10b981' : '#f59e0b';
+        
+        return `
+          <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 13px;">
+            <td style="padding: 12px; color: rgba(255,255,255,0.8);">${date}</td>
+            <td style="padding: 12px; color: #fff;">${p.clientName || p.token || 'N/A'}</td>
+            <td style="padding: 12px; color: #fff; font-weight: 500;">
+              ${p.description ? p.description.replace('Canje de promoción: ', '') : 'Promoción'}
+            </td>
+            <td style="padding: 12px; text-align: center;">
+              <span style="background: ${statusColor}20; color: ${statusColor}; padding: 4px 8px; border-radius: 4px; font-weight: 600; font-size: 11px; text-transform: uppercase;">
+                ${statusText}
+              </span>
+            </td>
+            <td style="padding: 12px; text-align: right;">
+              <div style="display: flex; gap: 6px; justify-content: flex-end;">
+                ${p.deliveryStatus !== 'delivered' ? `
+                  <button class="aBtn" onclick="markRedemptionDelivered('${p.id}')" style="background: rgba(16, 185, 129, 0.1); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.2); padding: 6px 10px; font-size: 11px; border-radius: 6px; cursor: pointer;">
+                    Entregar
+                  </button>
+                ` : ''}
+                <button class="aBtn" onclick="deleteRedemption('${p.id}')" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); padding: 6px 10px; font-size: 11px; border-radius: 6px; cursor: pointer;">
+                  Eliminar
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    } catch (err) {
+      console.error(err);
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 20px; color: #ef4444;">Error cargando promociones canjeadas</td></tr>`;
+    }
+  };
+
+  window.markRedemptionDelivered = async (id) => {
+    if (!confirm("¿Marcar esta promoción como entregada al cliente?")) return;
+    
+    try {
+      const res = await fetch("/api/admin/redeemed-promotions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, action: 'deliver' }),
+        credentials: "include"
+      });
+      
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Error al actualizar");
+      
+      loadRedeemedPromotions();
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  window.deleteRedemption = async (id) => {
+    const refund = window.confirm("¿Deseas reembolsar los puntos al cliente por esta promoción?");
+    const password = window.prompt("Introduce tu CLAVE DE ADMINISTRADOR para confirmar la eliminación:");
+    
+    if (password === null) return;
+    if (!password.trim()) {
+      alert("Debes ingresar la clave.");
+      return;
+    }
+    
+    try {
+      const res = await fetch(`/api/admin/redeemed-promotions?id=${id}&password=${encodeURIComponent(password.trim())}&refund=${refund}`, {
+        method: "DELETE",
+        credentials: "include"
+      });
+      
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Error al eliminar");
+      
+      alert(data.message || "Promoción eliminada exitosamente.");
+      loadRedeemedPromotions();
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
 
   // Promotions Management (Admin/Marketing)
   window.loadPromotionsAdmin = async () => {
