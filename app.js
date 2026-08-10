@@ -3442,7 +3442,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const promotions = data.promotions || [];
 
       if (promotions.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 20px; color: rgba(255,255,255,0.5);">No hay promociones canjeadas</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 20px; color: var(--muted);">No hay promociones canjeadas</td></tr>`;
         return;
       }
 
@@ -3455,10 +3455,10 @@ document.addEventListener("DOMContentLoaded", () => {
         const statusColor = p.deliveryStatus === 'delivered' ? '#10b981' : '#f59e0b';
         
         return `
-          <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 13px;">
-            <td style="padding: 12px; color: rgba(255,255,255,0.8);">${date}</td>
-            <td style="padding: 12px; color: #fff;">${p.clientName || p.token || 'N/A'}</td>
-            <td style="padding: 12px; color: #fff; font-weight: 500;">
+          <tr style="border-bottom: 1px solid var(--border-soft); font-size: 13px;">
+            <td style="padding: 12px; color: var(--text-mid, var(--text));">${date}</td>
+            <td style="padding: 12px; color: var(--text-strong, var(--text));">${p.clientName || p.token || 'N/A'}</td>
+            <td style="padding: 12px; color: var(--text-strong, var(--text)); font-weight: 500;">
               ${p.description ? p.description.replace('Canje de promoción: ', '') : 'Promoción'}
             </td>
             <td style="padding: 12px; text-align: center;">
