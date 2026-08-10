@@ -4311,7 +4311,7 @@ body:has(.aDash:not([hidden])) {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--surface-4);
   border: 1px solid var(--border-soft);
   border-radius: 8px;
   padding: 0.5rem 0.75rem;
@@ -4331,7 +4331,7 @@ body:has(.aDash:not([hidden])) {
   border: 1px solid var(--border-soft);
   border-radius: 16px;
   overflow: hidden;
-  background: rgba(255,255,255,0.02);
+  background: var(--surface-2);
 }
 
 .bpv__calc-field {
@@ -4343,7 +4343,7 @@ body:has(.aDash:not([hidden])) {
   border-bottom: none;
 }
 .bpv__calc-field:focus-within {
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--surface-3);
 }
 
 .bpv__calc-label {
@@ -4465,7 +4465,7 @@ body:has(.aDash:not([hidden])) {
 .bpv__term-text {
   font-size: 0.85rem;
   line-height: 1.4;
-  color: rgba(255, 255, 255, 0.75);
+  color: var(--text-mid);
 }
 
 /* --- Payment card --- */
@@ -4590,7 +4590,7 @@ body:has(.aDash:not([hidden])) {
 }
 
 .bpv__input {
-  background: rgba(255, 255, 255, 0.04);
+  background: var(--surface-3);
   border: 1.5px solid var(--border-soft);
   border-radius: 12px;
   padding: 0.875rem 1rem;
