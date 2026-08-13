@@ -25,6 +25,7 @@ export default async function handler(req, res) {
             points: data.points || 0,
             realPrice: data.realPrice || 0,
             units: data.units || 0,
+            maxPerUser: data.maxPerUser || 0,
             image: data.image || '',
             expiresAt: data.expiresAt || null,
             createdAt: data.createdAt || null
@@ -50,6 +51,7 @@ export default async function handler(req, res) {
       const points = Number(body?.points || 0);
       const realPrice = Number(body?.realPrice || 0);
       const units = Number(body?.units || 0);
+      const maxPerUser = Number(body?.maxPerUser || 0);
       const image = String(body?.image || '').trim();
       const expiresAt = body?.expiresAt ? Number(body.expiresAt) : null;
 
@@ -66,6 +68,7 @@ export default async function handler(req, res) {
         points,
         realPrice,
         units,
+        maxPerUser,
         image,
         createdAt: Date.now()
       };
@@ -91,6 +94,7 @@ export default async function handler(req, res) {
       if (body.points !== undefined) updates.points = Number(body.points);
       if (body.realPrice !== undefined) updates.realPrice = Number(body.realPrice);
       if (body.units !== undefined) updates.units = Number(body.units);
+      if (body.maxPerUser !== undefined) updates.maxPerUser = Number(body.maxPerUser);
       if (body.image) updates.image = String(body.image).trim();
       if (body.expiresAt !== undefined) updates.expiresAt = body.expiresAt ? Number(body.expiresAt) : null;
       

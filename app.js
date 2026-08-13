@@ -3442,7 +3442,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const promotions = data.promotions || [];
 
       if (promotions.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 20px; color: var(--muted);">No hay promociones canjeadas</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 20px; color: var(--muted);">No hay promociones canjeadas</td></tr>`;
         return;
       }
 
@@ -3456,6 +3456,7 @@ document.addEventListener("DOMContentLoaded", () => {
         
         return `
           <tr style="border-bottom: 1px solid var(--border-soft); font-size: 13px;">
+            <td style="padding: 12px; font-weight: 600; color: var(--text-strong, var(--text));">#${p.orderNumber || 'N/A'}</td>
             <td style="padding: 12px; color: var(--text-mid, var(--text));">${date}</td>
             <td style="padding: 12px; color: var(--text-strong, var(--text));">${p.clientName || p.token || 'N/A'}</td>
             <td style="padding: 12px; color: var(--text-strong, var(--text)); font-weight: 500;">
@@ -3483,7 +3484,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }).join('');
     } catch (err) {
       console.error(err);
-      tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; padding: 20px; color: #ef4444;">Error cargando promociones canjeadas</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 20px; color: #ef4444;">Error cargando promociones canjeadas</td></tr>`;
     }
   };
 
@@ -3698,7 +3699,7 @@ document.addEventListener("DOMContentLoaded", () => {
           <span style="font-size:16px; font-weight:800; color:#fff; line-height:1.1; text-shadow:0 2px 8px rgba(0,0,0,0.6); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${p.title}</span>
         </div>
         <div style="position:absolute; top:8px; right:8px; display:flex; flex-direction:column; align-items:flex-end; gap:4px; pointer-events: none;">
-          ${p.realPrice ? `<span style="background: rgba(239,68,68,0.8); backdrop-filter: blur(4px); color:#fff; font-weight:700; font-size:10px; padding:2px 6px; border-radius:8px; text-decoration: line-through;">$${Number(p.realPrice).toFixed(2)}</span>` : ''}
+          ${p.realPrice ? `<span style="background: rgba(239,68,68,0.8); backdrop-filter: blur(4px); color:#fff; font-weight:700; font-size:10px; padding:2px 6px; border-radius:8px; text-decoration: line-through;">${Number(p.realPrice).toLocaleString("es-VE")} Pts</span>` : ''}
           <span style="background: rgba(9,9,11,0.7); backdrop-filter: blur(4px); color:#06b6d4; font-weight:800; font-size:11px; padding:4px 8px; border-radius:12px; white-space:nowrap;">
             ${Number(p.points).toLocaleString("es-VE")} Pts
           </span>
@@ -3770,6 +3771,22 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  let currentPromoQty = 1;
+
+  const updateQtyUi = () => {
+    const pdQtyValue = document.getElementById("pdQtyValue");
+    const pdTotalPoints = document.getElementById("pdTotalPoints");
+    const pdTotalPointsContainer = document.getElementById("pdTotalPointsContainer");
+    if (pdQtyValue) pdQtyValue.textContent = currentPromoQty;
+    if (currentSelectedPromo && pdTotalPoints) {
+      const total = (currentSelectedPromo.points || 0) * currentPromoQty;
+      pdTotalPoints.textContent = `${total.toLocaleString("es-VE")} Pts`;
+      if (pdTotalPointsContainer) {
+        pdTotalPointsContainer.style.display = currentPromoQty > 1 ? "block" : "none";
+      }
+    }
+  };
+
   const openPromoDetailsModal = (p) => {
     try {
       let view = promoDetailsView || document.getElementById("promoDetailsView");
@@ -3783,7 +3800,7 @@ document.addEventListener("DOMContentLoaded", () => {
       document.getElementById("pdTitle").textContent = p.title || "Sin título";
       document.getElementById("pdDesc").textContent = p.description || "";
       
-      const pointsHtml = p.realPrice ? `<span style="font-size:14px; color:rgba(255,255,255,0.5); text-decoration:line-through; margin-right:6px;">$${Number(p.realPrice).toFixed(2)}</span>${Number(p.points).toLocaleString("es-VE")} Pts` : `${Number(p.points).toLocaleString("es-VE")} Pts`;
+      const pointsHtml = p.realPrice ? `<span style="font-size:14px; color:rgba(255,255,255,0.5); text-decoration:line-through; margin-right:6px;">${Number(p.realPrice).toLocaleString("es-VE")} Pts</span>${Number(p.points).toLocaleString("es-VE")} Pts` : `${Number(p.points).toLocaleString("es-VE")} Pts`;
       document.getElementById("pdPoints").innerHTML = pointsHtml;
       
       const unitsEl = document.getElementById("pdUnits");
@@ -3807,12 +3824,28 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       const branchEl = document.getElementById("pdBranch");
-      if (p.branch) {
-        branchEl.innerHTML = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg> ${p.branch}`;
-        branchEl.style.display = "inline-flex";
-      } else {
-        branchEl.style.display = "none";
+      branchEl.style.display = "none";
+
+      const selectContainer = document.getElementById("pdBranchSelectContainer");
+      const branchSelect = document.getElementById("pdBranchSelect");
+      if (p.branch && selectContainer && branchSelect) {
+        const branches = p.branch.split(',').map(b => b.trim().toUpperCase()).filter(b => b);
+        if (branches.length > 0) {
+          let optionsHtml = `<option value="" disabled selected>SELECCIONE UNA SEDE</option>`;
+          branches.forEach(b => {
+            optionsHtml += `<option value="${b}">${b}</option>`;
+          });
+          branchSelect.innerHTML = optionsHtml;
+          selectContainer.style.display = "block";
+        } else {
+          selectContainer.style.display = "none";
+        }
+      } else if (selectContainer) {
+        selectContainer.style.display = "none";
       }
+      
+      currentPromoQty = 1;
+      updateQtyUi();
 
       setPromoResult(document.getElementById("pdResult"), "", "");
       
@@ -3840,10 +3873,48 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
+  if (document.getElementById("pdQtyMinus")) {
+    document.getElementById("pdQtyMinus").addEventListener("click", () => {
+      if (currentPromoQty > 1) {
+        currentPromoQty--;
+        updateQtyUi();
+      }
+    });
+  }
+
+  if (document.getElementById("pdQtyPlus")) {
+    document.getElementById("pdQtyPlus").addEventListener("click", () => {
+      if (!currentSelectedPromo) return;
+      let maxAllowed = currentSelectedPromo.units || 1;
+      if (currentSelectedPromo.maxPerUser && currentSelectedPromo.maxPerUser > 0) {
+        maxAllowed = Math.min(maxAllowed, currentSelectedPromo.maxPerUser);
+      }
+      if (typeof clientDataCache !== 'undefined' && clientDataCache) {
+         const clientPoints = clientDataCache.totalPoints || 0;
+         const maxAffordable = Math.floor(clientPoints / (currentSelectedPromo.points || 1));
+         maxAllowed = Math.min(maxAllowed, maxAffordable);
+      }
+      if (currentPromoQty < maxAllowed) {
+        currentPromoQty++;
+        updateQtyUi();
+      }
+    });
+  }
+
   if (pdRequestBtn) {
     pdRequestBtn.addEventListener("click", async () => {
       if (!currentSelectedPromo) return;
       const resEl = document.getElementById("pdResult");
+      
+      const selectContainer = document.getElementById("pdBranchSelectContainer");
+      const branchSelect = document.getElementById("pdBranchSelect");
+      if (selectContainer && selectContainer.style.display !== "none") {
+        if (!branchSelect.value) {
+          setPromoResult(resEl, "err", "Por favor seleccione una sede de retiro.");
+          return;
+        }
+      }
+
       const otpContainer = document.getElementById("pdOtpContainer");
       const otpInput = document.getElementById("pdOtpInput");
       
@@ -3862,7 +3933,8 @@ document.addEventListener("DOMContentLoaded", () => {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             token: tk,
-            promotionId: currentSelectedPromo.id
+            promotionId: currentSelectedPromo.id,
+            quantity: currentPromoQty
           })
         });
         const data = await res.json();
@@ -3916,13 +3988,15 @@ document.addEventListener("DOMContentLoaded", () => {
             body: JSON.stringify({
               token: tk,
               promotionId: currentSelectedPromo.id,
-              otp: val
+              otp: val,
+              selectedBranch: document.getElementById("pdBranchSelect")?.value || currentSelectedPromo.branch,
+              quantity: currentPromoQty
             })
           });
           const data = await res.json();
           if (!res.ok) throw new Error(data.error || "Código inválido o expirado");
 
-          setPromoResult(resEl, "ok", "¡Compra exitosa! Revisa tu correo.");
+          setPromoResult(resEl, "ok", `¡Compra exitosa! Orden #${data.orderNumber || ''}. Revisa tu correo.`);
           otpContainer.style.display = "none";
           
           if (typeof clientDataCache !== 'undefined' && clientDataCache) {

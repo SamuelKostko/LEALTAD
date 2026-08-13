@@ -50,8 +50,10 @@ async function sendPromotionEmail(clientData, promoData, configData) {
         
         <div style="background: rgba(255,255,255,0.05); padding: 16px; border-radius: 8px; margin: 20px 0;">
           <h3 style="margin: 0 0 10px; color: #fff;">Detalles de tu Promoción</h3>
+          <p style="margin: 4px 0;"><strong>Orden:</strong> #${promoData.orderNumber}</p>
           <p style="margin: 4px 0;"><strong>Título:</strong> ${promoData.title}</p>
-          <p style="margin: 4px 0;"><strong>Puntos descontados:</strong> ${promoData.points}</p>
+          <p style="margin: 4px 0;"><strong>Cantidad:</strong> ${promoData.quantity || 1}</p>
+          <p style="margin: 4px 0;"><strong>Puntos descontados:</strong> ${Number(promoData.points) * Number(promoData.quantity || 1)}</p>
           <p style="margin: 4px 0;"><strong>Sede de retiro:</strong> ${promoData.branch || 'N/A'}</p>
         </div>
 
@@ -75,8 +77,10 @@ async function sendPromotionEmail(clientData, promoData, configData) {
       
       <div style="background: rgba(255,255,255,0.05); padding: 16px; border-radius: 8px; margin: 20px 0;">
         <h3 style="margin: 0 0 10px; color: #fff;">Detalles de la Promoción</h3>
+        <p style="margin: 4px 0;"><strong>Orden:</strong> #${promoData.orderNumber}</p>
         <p style="margin: 4px 0;"><strong>Título:</strong> ${promoData.title}</p>
-        <p style="margin: 4px 0;"><strong>Puntos descontados:</strong> ${promoData.points}</p>
+        <p style="margin: 4px 0;"><strong>Cantidad:</strong> ${promoData.quantity || 1}</p>
+        <p style="margin: 4px 0;"><strong>Puntos descontados:</strong> ${Number(promoData.points) * Number(promoData.quantity || 1)}</p>
         <p style="margin: 4px 0;"><strong>Sede / Ubicación:</strong> ${promoData.branch || 'N/A'}</p>
       </div>
 
@@ -99,6 +103,8 @@ export default async function handler(req, res) {
     const token = String(body?.token || '').trim();
     const promotionId = String(body?.promotionId || '').trim();
     const otp = String(body?.otp || '').trim();
+    const selectedBranch = String(body?.selectedBranch || '').trim();
+    const quantity = Number(body?.quantity) || 1;
 
     if (!token || !promotionId || !otp) {
       sendJson(res, 400, { error: 'Token, promotionId y otp son requeridos' });
@@ -119,14 +125,38 @@ export default async function handler(req, res) {
         throw new Error('La promoción no existe.');
       }
       const promoData = promoDoc.data();
-      const pointsRequired = Number(promoData.points || 0);
+      const pointsRequired = Number(promoData.points || 0) * quantity;
 
       if (promoData.expiresAt && promoData.expiresAt < Date.now()) {
         throw new Error('La promoción ha expirado.');
       }
       
-      if (promoData.units !== undefined && promoData.units <= 0) {
-        throw new Error('Esta promoción se ha agotado.');
+      if (promoData.units !== undefined) {
+        if (promoData.units <= 0) {
+          throw new Error('Esta promoción se ha agotado.');
+        }
+        if (promoData.units < quantity) {
+          throw new Error(`Solo quedan ${promoData.units} unidades disponibles.`);
+        }
+      }
+
+      if (promoData.maxPerUser > 0) {
+        const startOfDay = new Date();
+        startOfDay.setHours(0, 0, 0, 0);
+        const todayTxsSnap = await tx.get(
+          firestore.collection('transactions')
+            .where('token', '==', token)
+            .where('type', '==', 'promotion_request')
+            .where('promotionId', '==', promotionId)
+            .where('createdAt', '>=', startOfDay)
+        );
+        let dailyPurchased = 0;
+        todayTxsSnap.forEach(doc => {
+           dailyPurchased += (doc.data().quantity || 1);
+        });
+        if (dailyPurchased + quantity > promoData.maxPerUser) {
+           throw new Error(`Excedes el límite diario de ${promoData.maxPerUser} para esta promoción. Ya has canjeado ${dailyPurchased} hoy.`);
+        }
       }
 
       // 2. Fetch client
@@ -141,6 +171,10 @@ export default async function handler(req, res) {
         clientRef = clientDoc.ref;
       }
       const clientData = clientDoc.data() || {};
+
+      // 2.5 Fetch order sequence
+      const counterRef = firestore.collection('config').doc('order_sequence');
+      const counterDoc = await tx.get(counterRef);
       
       // OTP Verification
       const savedOtp = clientData.promoOtpCode;
@@ -186,9 +220,22 @@ export default async function handler(req, res) {
       
       if (promoData.units !== undefined) {
         tx.update(promoRef, {
-          units: promoData.units - 1
+          units: promoData.units - quantity
         });
       }
+
+      let nextSeq = 10;
+      if (counterDoc.exists) {
+        nextSeq = (counterDoc.data().value || 9) + 1;
+      }
+      tx.set(counterRef, { value: nextSeq }, { merge: true });
+
+      const orderNumber = String(nextSeq).padStart(6, '0');
+      promoData.orderNumber = orderNumber;
+      if (selectedBranch) {
+        promoData.branch = selectedBranch;
+      }
+      promoData.quantity = quantity;
 
       // 5. Create transaction log
       const txRef = firestore.collection('transactions').doc();
@@ -203,7 +250,9 @@ export default async function handler(req, res) {
         createdAt: FieldValue.serverTimestamp(),
         processedAt: FieldValue.serverTimestamp(),
         promotionId: promotionId,
-        branchName: promoData.branch || 'Global'
+        branchName: selectedBranch || promoData.branch || 'Global',
+        orderNumber: orderNumber,
+        quantity: quantity
       });
 
       return { clientData, promoData };
@@ -212,7 +261,7 @@ export default async function handler(req, res) {
     // Send email asynchronously without blocking the response
     sendPromotionEmail(result.clientData, result.promoData, configData).catch(e => console.error(e));
 
-    sendJson(res, 200, { ok: true });
+    sendJson(res, 200, { ok: true, orderNumber: result.promoData.orderNumber });
   } catch (err) {
     console.error('Request promotion error:', err);
     sendJson(res, 400, { error: err.message || 'Error al procesar solicitud' });

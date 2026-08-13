@@ -212,6 +212,7 @@ if (promoForm) {
     const realPrice = parseFloat($('promoRealPrice').value);
     const units = parseInt($('promoUnits').value, 10);
     const expiresAt = dateToTimestamp($('promoExpires').value);
+    const maxPerUser = parseInt($('promoMaxPerUser').value, 10) || 0;
 
     if (!title || !points || points <= 0 || !branch || isNaN(units) || units < 1 || isNaN(realPrice) || realPrice < 0) {
       setResult(promoResult, 'err', 'Completa los campos obligatorios correctamente');
@@ -229,7 +230,7 @@ if (promoForm) {
       const res = await fetch('/api/admin/promotions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, description, branch, points, realPrice, units, image, expiresAt }),
+        body: JSON.stringify({ title, description, branch, points, realPrice, units, image, expiresAt, maxPerUser }),
         credentials: 'include'
       });
       const data = await res.json();
@@ -268,6 +269,7 @@ const openEditModal = (promo) => {
   $('editPromoRealPrice').value = promo.realPrice || 0;
   $('editPromoUnits').value = promo.units || 1;
   $('editPromoExpires').value = timestampToDateInput(promo.expiresAt);
+  $('editPromoMaxPerUser').value = promo.maxPerUser || 0;
   if (editImagePreview) {
     editImagePreview.src = promo.image;
     editImagePreview.classList.add('is-visible');
@@ -305,6 +307,7 @@ if (editForm) {
     const realPrice = parseFloat($('editPromoRealPrice').value);
     const units = parseInt($('editPromoUnits').value, 10);
     const expiresAt = dateToTimestamp($('editPromoExpires').value);
+    const maxPerUser = parseInt($('editPromoMaxPerUser').value, 10) || 0;
     const editResult = $('editPromoResult');
 
     if (!title || !points || points <= 0 || !branch || isNaN(units) || units < 1 || isNaN(realPrice) || realPrice < 0) {
@@ -317,7 +320,7 @@ if (editForm) {
     setResult(editResult, 'info', 'Guardando...');
 
     try {
-      const payload = { id, title, description, branch, points, realPrice, units, expiresAt };
+      const payload = { id, title, description, branch, points, realPrice, units, expiresAt, maxPerUser };
 
       const newFile = editImageInput?.files[0];
       if (newFile) {

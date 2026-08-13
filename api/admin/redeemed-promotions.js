@@ -22,14 +22,23 @@ export default async function handler(req, res) {
       snap.forEach(doc => {
         const data = doc.data();
         if (data.token) tokensToFetch.add(data.token);
-        promotions.push({
+          let createdAtIso = new Date().toISOString();
+          if (data.createdAt) {
+            try {
+              if (typeof data.createdAt.toDate === 'function') createdAtIso = data.createdAt.toDate().toISOString();
+              else createdAtIso = new Date(data.createdAt).toISOString();
+            } catch(e) {}
+          }
+
+          promotions.push({
           id: doc.id,
-          createdAt: data.createdAt ? data.createdAt.toDate().toISOString() : new Date().toISOString(),
+          createdAt: createdAtIso,
           token: data.token,
           description: data.description,
           points: data.points,
           promotionId: data.promotionId,
-          deliveryStatus: data.deliveryStatus || 'pending'
+          deliveryStatus: data.deliveryStatus || 'pending',
+          orderNumber: data.orderNumber || 'N/A'
         });
       });
 
