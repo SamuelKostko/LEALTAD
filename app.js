@@ -3437,8 +3437,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     try {
       const res = await fetch("/api/admin/redeemed-promotions", { credentials: "include" });
-      if (!res.ok) throw new Error("Error fetching redeemed promotions");
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Error fetching redeemed promotions");
       const promotions = data.promotions || [];
 
       if (promotions.length === 0) {
@@ -3460,7 +3460,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <td style="padding: 12px; color: var(--text-mid, var(--text));">${date}</td>
             <td style="padding: 12px; color: var(--text-strong, var(--text));">${p.clientName || p.token || 'N/A'}</td>
             <td style="padding: 12px; color: var(--text-strong, var(--text)); font-weight: 500;">
-              ${p.description ? p.description.replace('Canje de promoción: ', '') : 'Promoción'}
+              ${String(p.description || '').replace('Canje de promoción: ', '') || 'Promoción'}
             </td>
             <td style="padding: 12px; text-align: center;">
               <span style="background: ${statusColor}20; color: ${statusColor}; padding: 4px 8px; border-radius: 4px; font-weight: 600; font-size: 11px; text-transform: uppercase;">
@@ -3484,7 +3484,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }).join('');
     } catch (err) {
       console.error(err);
-      tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 20px; color: #ef4444;">Error cargando promociones canjeadas</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; padding: 20px; color: #ef4444;">Error cargando promociones canjeadas: ${err.message}</td></tr>`;
     }
   };
 
