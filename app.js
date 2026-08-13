@@ -3455,11 +3455,11 @@ document.addEventListener("DOMContentLoaded", () => {
         const statusColor = p.deliveryStatus === 'delivered' ? '#10b981' : '#f59e0b';
         
         return `
-          <tr style="border-bottom: 1px solid var(--border-soft); font-size: 13px;">
-            <td style="padding: 12px; font-weight: 600; color: var(--text-strong, var(--text));">#${p.orderNumber || 'N/A'}</td>
-            <td style="padding: 12px; color: var(--text-mid, var(--text));">${date}</td>
-            <td style="padding: 12px; color: var(--text-strong, var(--text));">${p.clientName || p.token || 'N/A'}</td>
-            <td style="padding: 12px; color: var(--text-strong, var(--text)); font-weight: 500;">
+          <tr style="border-bottom: 1px solid rgba(255,255,255,0.08); font-size: 13px; color: #fff;">
+            <td style="padding: 12px; font-weight: 600; color: #fff;">#${p.orderNumber || 'N/A'}</td>
+            <td style="padding: 12px; color: rgba(255,255,255,0.7);">${date}</td>
+            <td style="padding: 12px; color: #fff;">${p.clientName || p.token || 'N/A'}</td>
+            <td style="padding: 12px; color: #fff; font-weight: 500;">
               ${String(p.description || '').replace('Canje de promoción: ', '') || 'Promoción'}
             </td>
             <td style="padding: 12px; text-align: center;">
