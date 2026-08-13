@@ -47,14 +47,19 @@ export default async function handler(req, res) {
       
       if (tokensArray.length <= 50) {
           await Promise.all(tokensArray.map(async (token) => {
-             const clientSnap = await db.collection('clientes').doc(token).get();
-             if (clientSnap.exists) {
-                 clientNames[token] = clientSnap.data().nombre || clientSnap.data().name || token;
-             } else {
-                 const clientQ = await db.collection('clientes').where('token', '==', token).limit(1).get();
-                 if (!clientQ.empty) {
-                     clientNames[token] = clientQ.docs[0].data().nombre || clientQ.docs[0].data().name || token;
-                 }
+             if (typeof token !== 'string' || !token.trim() || token.includes('/')) return;
+             try {
+               const clientSnap = await db.collection('clientes').doc(token).get();
+               if (clientSnap.exists) {
+                   clientNames[token] = clientSnap.data().nombre || clientSnap.data().name || token;
+               } else {
+                   const clientQ = await db.collection('clientes').where('token', '==', token).limit(1).get();
+                   if (!clientQ.empty) {
+                       clientNames[token] = clientQ.docs[0].data().nombre || clientQ.docs[0].data().name || token;
+                   }
+               }
+             } catch (e) {
+               console.error('Error fetching client name for token', token, e);
              }
           }));
       }
