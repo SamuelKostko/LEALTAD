@@ -31,6 +31,7 @@ export default async function handler(req, res) {
       sendJson(res, 200, {
         ok: true,
         emails: data.emails ?? '',
+        hiddenBranches: Array.isArray(data.hiddenBranches) ? data.hiddenBranches : [],
         scheduleEnabled: !!data.scheduleEnabled,
         scheduleTime: typeof data.scheduleTime === 'string' ? data.scheduleTime : '18:00',
         schedulePeriod: typeof data.schedulePeriod === 'string' ? data.schedulePeriod : 'day'
@@ -65,9 +66,15 @@ export default async function handler(req, res) {
         schedulePeriod = body.schedulePeriod.trim().toLowerCase();
       }
 
+      const hiddenBranchesRaw = body.hiddenBranches;
+      const hiddenBranches = Array.isArray(hiddenBranchesRaw) 
+        ? hiddenBranchesRaw.map(b => String(b).trim()).filter(b => b.length > 0)
+        : [];
+
       await configDocRef.set({
         emails: cleanedEmailsString,
         emailsList: cleanedList,
+        hiddenBranches,
         scheduleEnabled,
         scheduleTime,
         schedulePeriod,
@@ -77,6 +84,7 @@ export default async function handler(req, res) {
       sendJson(res, 200, {
         ok: true,
         emails: cleanedEmailsString,
+        hiddenBranches,
         scheduleEnabled,
         scheduleTime,
         schedulePeriod

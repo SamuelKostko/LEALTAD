@@ -90,7 +90,7 @@ export async function aggregateReportData(start, end) {
   const firestore = getFirestoreDb();
 
   // Run aggregation queries in parallel
-  const [clientsSnap, txSnap, totalClientsSnap] = await Promise.all([
+  const [clientsSnap, txSnap, totalClientsSnap, configDoc] = await Promise.all([
     firestore.collection('clientes')
       .where('createdAt', '>=', start)
       .where('createdAt', '<=', end)
@@ -99,10 +99,16 @@ export async function aggregateReportData(start, end) {
       .where('createdAt', '>=', start)
       .where('createdAt', '<=', end)
       .get(),
-    firestore.collection('clientes').count().get()
+    firestore.collection('clientes').count().get(),
+    firestore.collection('config').doc('reports_settings').get()
   ]);
 
   const totalClients = totalClientsSnap.data().count;
+  
+  const configData = configDoc.exists ? configDoc.data() : {};
+  const hiddenBranches = Array.isArray(configData.hiddenBranches) 
+    ? configData.hiddenBranches.map(b => b.toLowerCase()) 
+    : [];
 
   // Aggregate clients by branch
   const clientsByBranch = {};
@@ -115,6 +121,8 @@ export async function aggregateReportData(start, end) {
       : (typeof c.sede === 'string' && c.sede.trim() !== '') 
         ? c.sede.trim() 
         : 'Sin Sede';
+        
+    if (hiddenBranches.includes(branch.toLowerCase())) return;
         
     clientsByBranch[branch] = (clientsByBranch[branch] || 0) + 1;
     totalNewClients++;
@@ -135,6 +143,7 @@ export async function aggregateReportData(start, end) {
       : 'Sin Sede';
 
     if (status !== undefined && status !== 'success') return;
+    if (hiddenBranches.includes(branch.toLowerCase())) return;
 
     if (data.type === 'credit' || data.type === 'purchase_credit' || (!data.type && pts > 0)) {
       totalPointsCredited += pts;
