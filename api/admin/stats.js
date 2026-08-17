@@ -48,12 +48,15 @@ export default async function handler(req, res) {
   try {
     const firestore = getFirestoreDb();
     
-    // Fetch hidden branches config
-    const configDoc = await firestore.collection('config').doc('reports_settings').get();
-    const configData = configDoc.exists ? configDoc.data() : {};
-    const hiddenBranches = Array.isArray(configData.hiddenBranches) 
-      ? configData.hiddenBranches.map(b => b.toLowerCase()) 
-      : [];
+    const ALLOWED_BRANCHES = [
+      "NO ESTOY EN UNA SEDE", "PROQUIMICOS DEL ZULIA", "PROQUIMICOS SUCURSAL LA H",
+      "PROQUIMICOS LA CHILE", "PROQUIMICOS ALIADOS", "RUTAS MOVIL", "RUTA MOVIL OJEDA",
+      "PROQUIMICOS DELICIAS", "PROQUIMICOS DE OCCIDENTE", "PROQUIMICOS LA L",
+      "PROQUIMICOS CALLE TRUJILLO", "PROQUIMICOS DABAJURO", "PROQUIMICOS PUNTO FIJO",
+      "PROQUIMICOS CARORA", "PROQUIMICOS VALERA", "PROQUIMICOS BOCONO",
+      "PROQUIMICOS SABANA MENDOZA", "NEXUS MOTORS", "INDULSA PRINCIPAL",
+      "INDULSA CALLE TRUJILLO", "CHINA SHOPPING", "PUBLIK", "ALIADOS", "ENCUESTAS"
+    ].map(b => b.toLowerCase());
 
     // 1. Total users (using count() to save reads)
     const totalUsersCount = await firestore.collection('clientes').count().get();
@@ -80,7 +83,7 @@ export default async function handler(req, res) {
           ? c.sede.trim() 
           : 'Sin sede';
           
-      if (hiddenBranches.includes(branch.toLowerCase())) return;
+      if (!ALLOWED_BRANCHES.includes(branch.toLowerCase())) return;
       clientsByBranch[branch] = (clientsByBranch[branch] || 0) + 1;
     });
 
@@ -106,7 +109,7 @@ export default async function handler(req, res) {
       const branchName = typeof data.branchName === 'string' && data.branchName.trim() !== '' ? data.branchName.trim() : 'Sin sede';
       
       if (status !== undefined && status !== 'success') return;
-      if (hiddenBranches.includes(branchName.toLowerCase())) return;
+      if (!ALLOWED_BRANCHES.includes(branchName.toLowerCase())) return;
 
       if (data.type === 'credit' || data.type === 'purchase_credit' || (!data.type && pts > 0)) {
         pointsEarned += pts;

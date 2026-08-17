@@ -615,16 +615,9 @@ if (qrButton) {
     const reportScheduleTimeGroup  = document.getElementById("adminReportScheduleTimeGroup");
     const reportSchedulePeriodGroup = document.getElementById("adminReportSchedulePeriodGroup");
 
-    const reportHiddenBranchInput = document.getElementById("adminHiddenBranchInput");
-    const reportAddHiddenBranchBtn = document.getElementById("adminAddHiddenBranchBtn");
-    const reportHiddenBranchesList = document.getElementById("adminHiddenBranchesList");
-
     // ── Email list state ─────────────────────────────────────────────────────
     let configuredReportEmails = [];
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    
-    // ── Hidden branches state ────────────────────────────────────────────────
-    let configuredHiddenBranches = [];
 
     const renderConfiguredEmails = () => {
       if (!reportEmailsList) return;
@@ -684,63 +677,6 @@ if (qrButton) {
       configuredReportEmails.push(val);
       reportEmailInput.value = "";
       renderConfiguredEmails();
-    };
-
-    const renderConfiguredHiddenBranches = () => {
-      if (!reportHiddenBranchesList) return;
-      if (configuredHiddenBranches.length === 0) {
-        reportHiddenBranchesList.innerHTML = `
-          <div style="display:flex;align-items:center;gap:8px;padding:10px 14px;background:rgba(255,255,255,0.03);border:1px dashed rgba(255,255,255,0.1);border-radius:8px;">
-            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="2"><path d="M4 4h16v16H4z" stroke="none"/><circle cx="12" cy="12" r="8"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
-            <span style="font-size:13px;color:rgba(255,255,255,0.3);font-style:italic;">No hay sedes ocultas. Se mostrarán todas.</span>
-          </div>`;
-        return;
-      }
-      reportHiddenBranchesList.innerHTML = configuredHiddenBranches.map((branch, i) => `
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;
-          background:rgba(244,63,94,0.06);border:1px solid rgba(244,63,94,0.2);
-          border-radius:8px;padding:9px 12px;transition:background 0.15s;"
-          onmouseover="this.style.background='rgba(244,63,94,0.12)'"
-          onmouseout="this.style.background='rgba(244,63,94,0.06)'">
-          <div style="display:flex;align-items:center;gap:8px;overflow:hidden;">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#f43f5e" stroke-width="2" style="flex-shrink:0">
-              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-              <polyline points="9 22 9 12 15 12 15 22"></polyline>
-            </svg>
-            <span style="font-size:13px;color:#e2e8f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${branch}">${branch}</span>
-          </div>
-          <button type="button" onclick="window._removeHiddenBranch(${i})"
-            title="Eliminar ${branch}"
-            style="flex-shrink:0;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:#fff;
-              width:26px;height:26px;border-radius:6px;cursor:pointer;font-size:15px;line-height:1;
-              display:flex;align-items:center;justify-content:center;transition:background 0.15s,border-color 0.15s;"
-            onmouseover="this.style.background='rgba(255,255,255,0.2)';this.style.borderColor='rgba(255,255,255,0.4)'"
-            onmouseout="this.style.background='rgba(255,255,255,0.1)';this.style.borderColor='rgba(255,255,255,0.2)'">
-            &times;
-          </button>
-        </div>`).join("");
-    };
-
-    window._removeHiddenBranch = (index) => {
-      configuredHiddenBranches.splice(index, 1);
-      renderConfiguredHiddenBranches();
-    };
-
-    const addHiddenBranch = () => {
-      if (!reportHiddenBranchInput) return;
-      const val = reportHiddenBranchInput.value.trim();
-      if (!val) return;
-      
-      const exists = configuredHiddenBranches.find(b => b.toLowerCase() === val.toLowerCase());
-      if (exists) {
-        reportHiddenBranchInput.style.borderColor = "rgba(251,191,36,0.7)";
-        setTimeout(() => { reportHiddenBranchInput.style.borderColor = "rgba(255,255,255,0.1)"; }, 1500);
-        reportHiddenBranchInput.select();
-        return;
-      }
-      configuredHiddenBranches.push(val);
-      reportHiddenBranchInput.value = "";
-      renderConfiguredHiddenBranches();
     };
 
     const getVzlaTodayStr = () => {
@@ -1973,9 +1909,6 @@ Esto eliminará también sus transacciones.`
           .map(e => e.trim().toLowerCase())
           .filter(e => emailRegex.test(e));
         renderConfiguredEmails();
-        
-        configuredHiddenBranches = data.hiddenBranches || [];
-        renderConfiguredHiddenBranches();
         if (reportScheduleEnabled) reportScheduleEnabled.checked = !!data.scheduleEnabled;
         if (reportScheduleTime) reportScheduleTime.value = data.scheduleTime || "18:00";
         if (reportSchedulePeriod) reportSchedulePeriod.value = data.schedulePeriod || "day";
@@ -1995,7 +1928,6 @@ Esto eliminará también sus transacciones.`
       try {
         const response = await apiPost("/api/admin/reports-config", {
           emails: configuredReportEmails.join(", "),
-          hiddenBranches: configuredHiddenBranches,
           scheduleEnabled: reportScheduleEnabled ? reportScheduleEnabled.checked : false,
           scheduleTime: reportScheduleTime ? reportScheduleTime.value : "18:00",
           schedulePeriod: reportSchedulePeriod ? reportSchedulePeriod.value : "day"
@@ -2009,9 +1941,6 @@ Esto eliminará también sus transacciones.`
           .map(e => e.trim().toLowerCase())
           .filter(e => emailRegex.test(e));
         renderConfiguredEmails();
-        
-        configuredHiddenBranches = response.hiddenBranches || [];
-        renderConfiguredHiddenBranches();
         if (reportScheduleEnabled) reportScheduleEnabled.checked = !!response.scheduleEnabled;
         if (reportScheduleTime) reportScheduleTime.value = response.scheduleTime || "18:00";
         if (reportSchedulePeriod) reportSchedulePeriod.value = response.schedulePeriod || "day";
