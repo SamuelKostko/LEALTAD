@@ -4376,3 +4376,224 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
 });
+(() => {
+  const profileTransferBtn = document.getElementById("profileTransferBtn");
+  const modal = document.getElementById("transferModal");
+  const closeBtn = document.getElementById("transferCloseBtn");
+  const backdrop = document.getElementById("transferModalBackdrop");
+  
+  if (!profileTransferBtn || !modal) return;
+
+  const steps = {
+    1: document.getElementById("transferStep1"),
+    2: document.getElementById("transferStep2"),
+    3: document.getElementById("transferStep3"),
+    4: document.getElementById("transferStep4")
+  };
+
+  const state = {
+    email: '',
+    name: '',
+    amount: 0,
+    otp: ''
+  };
+
+  const getToken = () => {
+    let token = '';
+    const path = window.location.pathname || "";
+    if (path.startsWith("/card/")) {
+      token = decodeURIComponent(path.slice("/card/".length)).trim();
+    }
+    if (!token) {
+      const url = new URL(window.location.href);
+      token = (url.searchParams.get("token") || url.searchParams.get("t") || "").trim();
+    }
+    return token;
+  };
+
+  const showStep = (stepNumber) => {
+    Object.values(steps).forEach(el => {
+      if(el) el.style.display = 'none';
+    });
+    if(steps[stepNumber]) steps[stepNumber].style.display = 'block';
+  };
+
+  const openModal = () => {
+    // Close profile menu if open
+    const menu = document.getElementById("profileMenu");
+    if (menu) {
+      menu.classList.remove("profileMenu--active");
+      menu.setAttribute("aria-hidden", "true");
+      const profileTrigger = document.getElementById("profileButton");
+      if (profileTrigger) profileTrigger.setAttribute("aria-expanded", "false");
+    }
+
+    // Reset state
+    state.email = '';
+    state.name = '';
+    state.amount = 0;
+    state.otp = '';
+    
+    document.getElementById("transferEmailInput").value = '';
+    document.getElementById("transferAmountInput").value = '';
+    document.getElementById("transferOtpInput").value = '';
+
+    showStep(1);
+    
+    modal.style.display = 'flex';
+    // Small delay to allow display flex to apply before opacity transition
+    setTimeout(() => {
+      modal.classList.add("historyModal--show");
+      modal.setAttribute("aria-hidden", "false");
+    }, 10);
+  };
+
+  const closeModal = () => {
+    modal.classList.remove("historyModal--show");
+    modal.setAttribute("aria-hidden", "true");
+    setTimeout(() => {
+      modal.style.display = 'none';
+    }, 300);
+  };
+
+  profileTransferBtn.addEventListener("click", openModal);
+  closeBtn.addEventListener("click", closeModal);
+  backdrop.addEventListener("click", closeModal);
+  
+  document.getElementById("transferDoneBtn")?.addEventListener("click", closeModal);
+
+  // --- API Calls ---
+
+  const showLoading = (btnId) => {
+    const btn = document.getElementById(btnId);
+    if(btn) {
+      btn.dataset.originalText = btn.textContent;
+      btn.textContent = 'Cargando...';
+      btn.disabled = true;
+    }
+  };
+
+  const hideLoading = (btnId) => {
+    const btn = document.getElementById(btnId);
+    if(btn) {
+      btn.textContent = btn.dataset.originalText;
+      btn.disabled = false;
+    }
+  };
+
+  // Step 1: Verify Email
+  document.getElementById("transferVerifyEmailBtn")?.addEventListener("click", async () => {
+    const emailInput = document.getElementById("transferEmailInput").value.trim();
+    if(!emailInput) {
+      alert("Por favor ingresa un correo.");
+      return;
+    }
+
+    showLoading("transferVerifyEmailBtn");
+    try {
+      const res = await fetch('/api/client/transfer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'verify_email', email: emailInput })
+      });
+      const data = await res.json();
+      
+      if(!res.ok) {
+        alert(data.error || 'Error al verificar el correo.');
+        hideLoading("transferVerifyEmailBtn");
+        return;
+      }
+
+      state.email = emailInput;
+      state.name = data.name;
+      
+      document.getElementById("transferRecipientName").textContent = state.name;
+      showStep(2);
+
+    } catch (err) {
+      alert('Error de conexión.');
+    }
+    hideLoading("transferVerifyEmailBtn");
+  });
+
+  // Step 2: Request OTP
+  document.getElementById("transferRequestBtn")?.addEventListener("click", async () => {
+    const amountInput = document.getElementById("transferAmountInput").value;
+    const amount = Number(amountInput);
+
+    if(!amount || amount < 1) {
+      alert("Por favor ingresa un monto válido (Mínimo 1).");
+      return;
+    }
+
+    const token = getToken();
+
+    showLoading("transferRequestBtn");
+    try {
+      const res = await fetch('/api/client/transfer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'request_otp', token, email: state.email, amount })
+      });
+      const data = await res.json();
+      
+      if(!res.ok) {
+        alert(data.error || 'Error al solicitar transferencia.');
+        hideLoading("transferRequestBtn");
+        return;
+      }
+
+      state.amount = amount;
+      showStep(3);
+
+    } catch (err) {
+      alert('Error de conexión.');
+    }
+    hideLoading("transferRequestBtn");
+  });
+
+  document.getElementById("transferBackTo1Btn")?.addEventListener("click", () => showStep(1));
+
+  // Step 3: Confirm Transfer
+  document.getElementById("transferConfirmBtn")?.addEventListener("click", async () => {
+    const otpInput = document.getElementById("transferOtpInput").value.trim();
+    if(!otpInput || otpInput.length !== 6) {
+      alert("Por favor ingresa el código de 6 dígitos.");
+      return;
+    }
+
+    const token = getToken();
+
+    showLoading("transferConfirmBtn");
+    try {
+      const res = await fetch('/api/client/transfer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'confirm', token, otp: otpInput })
+      });
+      const data = await res.json();
+      
+      if(!res.ok) {
+        alert(data.error || 'Código incorrecto o error al confirmar.');
+        hideLoading("transferConfirmBtn");
+        return;
+      }
+
+      showStep(4);
+      
+      // Update global balance and refresh UI if possible
+      setTimeout(() => {
+        if(window.loadClientData && token) {
+           window.loadClientData(token);
+        }
+      }, 1500);
+
+    } catch (err) {
+      alert('Error de conexión.');
+    }
+    hideLoading("transferConfirmBtn");
+  });
+
+  document.getElementById("transferBackTo2Btn")?.addEventListener("click", () => showStep(2));
+})();
+
