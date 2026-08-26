@@ -399,16 +399,17 @@ if (qrButton) {
             if (config.type === 'custom_image' && config.imageUrl) {
               chosenImg = config.imageUrl;
             } else if (config.type === 'promotion' && config.promotionId) {
-              // Find the promotion from loaded state
-              const promo = window.walletState?.promotions?.find(p => p.id === config.promotionId);
-              if (promo && promo.image) {
-                chosenImg = promo.image;
-                onImageClick = () => {
-                  hidePromo();
-                  if (typeof window.showDetailModal === 'function') {
-                    window.showDetailModal(promo);
-                  }
-                };
+              // The backend now returns the image directly in config.imageUrl and the full promo in config.promotion
+              if (config.imageUrl) {
+                chosenImg = config.imageUrl;
+                if (config.promotion) {
+                  onImageClick = () => {
+                    hidePromo();
+                    if (typeof window.showDetailModal === 'function') {
+                      window.showDetailModal(config.promotion);
+                    }
+                  };
+                }
               }
             }
 

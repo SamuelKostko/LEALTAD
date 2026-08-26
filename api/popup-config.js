@@ -17,7 +17,22 @@ export default async function handler(req, res) {
       return;
     }
 
-    sendJson(res, 200, snap.data());
+    const data = snap.data();
+    
+    // If it's a promotion, fetch the promotion details so the frontend has the image immediately
+    if (data.type === 'promotion' && data.promotionId) {
+      const promoSnap = await firestore.collection('promotions').doc(data.promotionId).get();
+      if (promoSnap.exists) {
+        const promoData = promoSnap.data();
+        data.imageUrl = promoData.image; // attach the image
+        data.promotion = { id: promoSnap.id, ...promoData }; // attach the full promo for click handler
+      } else {
+        // Promotion no longer exists, default to none
+        data.type = 'none';
+      }
+    }
+
+    sendJson(res, 200, data);
   } catch (err) {
     sendJson(res, 500, { error: err.message });
   }
