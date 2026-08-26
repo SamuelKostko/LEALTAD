@@ -234,6 +234,12 @@
               </svg>
               Promotores
             </button>
+            <button class="aSidebar__navItem" id="aNavStartup" type="button" data-panel="startup">
+              <svg viewBox="0 0 24 24" width="17" height="17" fill="none">
+                <path d="M4 5a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5zM8 10h8m-8 4h8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+              Inicio de App
+            </button>
 
           </nav>
           <div class="aSidebar__bottom">
@@ -989,6 +995,45 @@
               </div>
             </div>
           </div>
+          <!-- Panel Inicio de App -->
+          <section class="aPanel" id="aPanelStartup" aria-label="Inicio de App" hidden>
+            <div class="aPanel__header">
+              <div>
+                <h2 class="aPanel__title">Inicio de App</h2>
+                <p class="aPanel__sub">Configura lo que verán los usuarios al abrir la aplicación.</p>
+              </div>
+            </div>
+            
+            <div class="aCard" style="margin-top: 20px;">
+              <h3 style="font-size: 16px; font-weight: 600; color: #fff; margin-top: 0; margin-bottom: 8px;">Popup Inicial</h3>
+              <p style="font-size: 13px; color: rgba(255,255,255,0.6); margin-bottom: 20px;">Selecciona la promoción o imagen que saltará como ventana emergente al iniciar Wallet.</p>
+
+              <div class="aInputGroup" style="margin-bottom: 15px;">
+                <label for="popupType" class="aLabel">Tipo de Popup</label>
+                <select id="popupType" class="aInput" style="cursor: pointer;">
+                  <option value="none">Ninguno (Desactivado)</option>
+                  <option value="promotion">Promoción del Catálogo</option>
+                  <option value="custom_image">Imagen Personalizada</option>
+                </select>
+              </div>
+
+              <div id="popupPromotionSection" class="aInputGroup" style="display: none; margin-bottom: 15px;">
+                <label for="popupPromotionSelect" class="aLabel">Selecciona la Promoción</label>
+                <select id="popupPromotionSelect" class="aInput" style="cursor: pointer;">
+                  <!-- Options populated dynamically -->
+                </select>
+              </div>
+
+              <div id="popupCustomImageSection" class="aInputGroup" style="display: none; margin-bottom: 15px;">
+                <label for="popupCustomImage" class="aLabel">Sube una Imagen (Max 15 MB)</label>
+                <input id="popupCustomImage" type="file" class="aInput" accept="image/*" />
+                <img id="popupImagePreview" alt="Vista previa" style="margin-top: 10px; max-width: 100%; border-radius: 8px; display: none;" />
+              </div>
+
+              <button class="aBtn" id="savePopupConfigBtn" type="button" style="background: #06b6d4; color: #fff; padding: 10px 20px; font-weight: 600; border-radius: 8px; border: none; cursor: pointer;">Guardar Configuración</button>
+              <div id="popupResult" style="margin-top: 10px; font-size: 13px; font-weight: 500;"></div>
+            </div>
+          </section>
 
         </div>
 
@@ -1188,6 +1233,7 @@
         <button class="activity__more" id="activityMoreBtn" type="button" aria-expanded="false" hidden>Mostrar
           todas</button>
       </section>
+
     </main>
 
     <div class="cta" aria-label="Acción principal">
@@ -1264,6 +1310,14 @@
               fill="currentColor" />
           </svg>
           Comprar Puntos
+        </button>
+
+        <button class="profileMenu__item" id="profileTransferBtn" type="button"
+          style="color: #6366f1;">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 10px;">
+            <path d="M17 8l4 4m0 0l-4 4m4-4H3" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Transferir Puntos
         </button>
 
         <button class="profileMenu__item profileMenu__item--install" id="profileInstallBtn" type="button" hidden>
@@ -1795,6 +1849,95 @@
     </div>
   </div>
 
+
+  <!-- Modal de Transferencia -->
+  <div class="transferModal" id="transferModal" aria-hidden="true" role="dialog" aria-modal="true">
+    <div class="transferModal__backdrop" id="transferModalBackdrop"></div>
+    <div class="transferModal__frame">
+      <header class="transferModal__header">
+        <div class="transferModal__header-icon">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M17 8l4 4m0 0l-4 4m4-4H3" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <span class="transferModal__title">Transferir Puntos</span>
+        <button class="transferModal__close" id="transferCloseBtn" type="button" aria-label="Cerrar">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </header>
+      
+      <div class="transferModal__body">
+        <!-- Paso 1: Email -->
+        <div id="transferStep1" class="transferModal__step">
+          <p class="transferModal__desc">Ingresa el correo electrónico de la cuenta a la que deseas enviar puntos.</p>
+          <div class="transferModal__input-wrap">
+            <label class="transferModal__label" for="transferEmailInput">Destinatario</label>
+            <div class="transferModal__input-box">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" class="transferModal__input-icon"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" stroke-linecap="round" stroke-linejoin="round"/><path d="M22 6l-10 7L2 6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <input class="transferModal__input" type="email" id="transferEmailInput" placeholder="correo@ejemplo.com" />
+            </div>
+          </div>
+          <button class="transferModal__btn transferModal__btn--primary" id="transferVerifyEmailBtn">Continuar</button>
+        </div>
+
+        <!-- Paso 2: Monto -->
+        <div id="transferStep2" class="transferModal__step" style="display: none;">
+          <div class="transferModal__recipient-card">
+            <div class="transferModal__recipient-avatar" id="transferAvatarInitials"></div>
+            <div class="transferModal__recipient-info">
+              <p class="transferModal__recipient-label">Enviando a</p>
+              <p class="transferModal__recipient-name" id="transferRecipientName">Nombre Destino</p>
+            </div>
+          </div>
+          
+          <div class="transferModal__amount-wrap">
+            <span class="transferModal__amount-currency">Pts</span>
+            <input class="transferModal__amount-input" type="number" id="transferAmountInput" placeholder="0" min="1" step="1" />
+          </div>
+          
+          <div class="transferModal__actions">
+            <button class="transferModal__btn transferModal__btn--primary" id="transferRequestBtn">Revisar Transferencia</button>
+            <button class="transferModal__btn transferModal__btn--ghost" id="transferBackTo1Btn">Cambiar Destinatario</button>
+          </div>
+        </div>
+
+        <!-- Paso 3: OTP -->
+        <div id="transferStep3" class="transferModal__step" style="display: none;">
+          <div class="transferModal__icon-pulse">
+            <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M7 11V7a5 5 0 0 1 10 0v4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <h3 class="transferModal__step-title">Seguridad</h3>
+          <p class="transferModal__desc" style="text-align: center;">Hemos enviado un código de 6 dígitos a tu correo para autorizar el envío.</p>
+          
+          <div class="transferModal__otp-wrap">
+            <input class="transferModal__otp-input" type="text" id="transferOtpInput" placeholder="------" maxlength="6" />
+          </div>
+          
+          <div class="transferModal__actions">
+            <button class="transferModal__btn transferModal__btn--success" id="transferConfirmBtn">Confirmar Envío</button>
+            <button class="transferModal__btn transferModal__btn--ghost" id="transferBackTo2Btn">Cancelar</button>
+          </div>
+        </div>
+
+        <!-- Paso 4: Éxito -->
+        <div id="transferStep4" class="transferModal__step" style="display: none; text-align: center;">
+          <div class="transferModal__success-icon">
+            <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+              <polyline points="22 4 12 14.01 9 11.01"></polyline>
+            </svg>
+          </div>
+          <h3 class="transferModal__success-title">¡Transferencia Exitosa!</h3>
+          <p class="transferModal__success-desc">Los puntos ya están en la cuenta de tu destinatario.</p>
+          <div style="margin-top: 16px; padding: 12px; background: rgba(255, 255, 255, 0.05); border-radius: 8px; border: 1px dashed rgba(255,255,255,0.1);">
+            <p style="margin: 0; font-size: 12px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">Referencia</p>
+            <p id="transferReferenceNumber" style="margin: 4px 0 0 0; font-family: monospace; font-size: 18px; color: #fff; letter-spacing: 1px;">0000000</p>
+          </div>
+          <button class="transferModal__btn transferModal__btn--primary" id="transferDoneBtn" style="margin-top: 24px;">Ir al Inicio</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- Librería ligera de decodificación QR -->
   <script src="https://unpkg.com/jsqr@1.4.0/dist/jsQR.js" crossorigin="anonymous"></script>

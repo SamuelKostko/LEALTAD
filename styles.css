@@ -4890,3 +4890,386 @@ body:has(.aDash:not([hidden])) {
   cursor: not-allowed;
   opacity: 0.7;
 }
+
+/* ==========================================================================
+   Transfer Modal UI (Zelle/CashApp Aesthetic)
+   ========================================================================== */
+
+.transferModal {
+  position: fixed;
+  inset: 0;
+  z-index: 10000; /* highest */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.3s;
+}
+
+.transferModal--active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.transferModal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.transferModal__frame {
+  position: relative;
+  width: 92%;
+  max-width: 420px;
+  background: linear-gradient(145deg, #161925, #0f111a);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 24px;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+  transform: translateY(20px) scale(0.95);
+  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.transferModal--active .transferModal__frame {
+  transform: translateY(0) scale(1);
+}
+
+.transferModal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.transferModal__header-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: rgba(99, 102, 241, 0.15);
+  color: #818cf8;
+  display: grid;
+  place-items: center;
+}
+
+.transferModal__title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #fff;
+  letter-spacing: -0.3px;
+  flex: 1;
+  margin-left: 16px;
+}
+
+.transferModal__close {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.05);
+  color: #a1a1aa;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: all 0.2s;
+}
+
+.transferModal__close:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.transferModal__body {
+  padding: 24px;
+}
+
+.transferModal__step {
+  animation: fadeInStep 0.4s ease forwards;
+}
+
+@keyframes fadeInStep {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.transferModal__desc {
+  font-size: 15px;
+  color: #94a3b8;
+  line-height: 1.5;
+  margin-bottom: 24px;
+}
+
+.transferModal__step-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #fff;
+  text-align: center;
+  margin-bottom: 8px;
+  margin-top: 16px;
+}
+
+/* Inputs */
+.transferModal__input-wrap {
+  margin-bottom: 24px;
+}
+
+.transferModal__label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: #cbd5e1;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.transferModal__input-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.transferModal__input-icon {
+  position: absolute;
+  left: 16px;
+  color: #64748b;
+}
+
+.transferModal__input {
+  width: 100%;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 16px 16px 16px 48px;
+  font-size: 16px;
+  color: #fff;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.transferModal__input:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15);
+}
+
+/* Recipient Card */
+.transferModal__recipient-card {
+  display: flex;
+  align-items: center;
+  background: rgba(99, 102, 241, 0.08);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  padding: 16px;
+  border-radius: 16px;
+  margin-bottom: 32px;
+}
+
+.transferModal__recipient-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #6366f1, #a855f7);
+  color: #fff;
+  font-weight: bold;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 16px;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+.transferModal__recipient-info {
+  flex: 1;
+}
+
+.transferModal__recipient-label {
+  font-size: 13px;
+  color: #818cf8;
+  margin: 0 0 4px 0;
+  font-weight: 500;
+}
+
+.transferModal__recipient-name {
+  font-size: 18px;
+  font-weight: 600;
+  color: #fff;
+  margin: 0;
+}
+
+/* Big Amount Input */
+.transferModal__amount-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 40px;
+}
+
+.transferModal__amount-currency {
+  font-size: 24px;
+  font-weight: 600;
+  color: #10b981;
+  margin-right: 8px;
+  margin-top: 4px;
+}
+
+.transferModal__amount-input {
+  background: transparent;
+  border: none;
+  font-size: 56px;
+  font-weight: 700;
+  color: #fff;
+  width: 100%;
+  max-width: 200px;
+  text-align: center;
+  outline: none;
+  padding: 0;
+}
+
+.transferModal__amount-input::placeholder {
+  color: rgba(255, 255, 255, 0.2);
+}
+
+/* OTP Input */
+.transferModal__otp-wrap {
+  margin: 32px 0;
+}
+
+.transferModal__otp-input {
+  width: 100%;
+  background: rgba(0, 0, 0, 0.3);
+  border: 2px dashed rgba(255, 255, 255, 0.15);
+  border-radius: 16px;
+  padding: 20px;
+  font-size: 32px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 12px;
+  text-align: center;
+  outline: none;
+  transition: all 0.2s;
+}
+
+.transferModal__otp-input:focus {
+  border-color: #6366f1;
+  border-style: solid;
+  background: rgba(99, 102, 241, 0.05);
+  box-shadow: 0 8px 24px rgba(99, 102, 241, 0.15);
+}
+
+/* Buttons */
+.transferModal__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.transferModal__btn {
+  width: 100%;
+  padding: 16px;
+  border-radius: 14px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.transferModal__btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.transferModal__btn--primary {
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+.transferModal__btn--primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(99, 102, 241, 0.4);
+}
+
+.transferModal__btn--success {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.transferModal__btn--success:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
+}
+
+.transferModal__btn--ghost {
+  background: transparent;
+  color: #94a3b8;
+}
+
+.transferModal__btn--ghost:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff;
+}
+
+/* Icons */
+.transferModal__icon-pulse {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: rgba(99, 102, 241, 0.15);
+  color: #818cf8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+  box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4);
+  animation: pulseIcon 2s infinite;
+}
+
+@keyframes pulseIcon {
+  0% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4); }
+  70% { box-shadow: 0 0 0 16px rgba(99, 102, 241, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
+}
+
+.transferModal__success-icon {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 24px auto;
+  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.4);
+  animation: scaleBounce 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes scaleBounce {
+  0% { transform: scale(0); }
+  80% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+.transferModal__success-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #fff;
+  margin: 0 0 12px 0;
+}
+
+.transferModal__success-desc {
+  font-size: 16px;
+  color: #94a3b8;
+  line-height: 1.5;
+  margin: 0;
+}
+

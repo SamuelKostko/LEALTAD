@@ -191,6 +191,14 @@ if (promoImageInput && promoImagePreview) {
   promoImageInput.addEventListener('change', () => {
     const file = promoImageInput.files[0];
     if (!file) { promoImagePreview.classList.remove('is-visible'); return; }
+
+    if (file.size > 15 * 1024 * 1024) {
+      alert('La imagen excede el límite de 15 MB.');
+      promoImageInput.value = '';
+      promoImagePreview.classList.remove('is-visible');
+      return;
+    }
+
     promoImagePreview.src = URL.createObjectURL(file);
     promoImagePreview.classList.add('is-visible');
   });
@@ -290,7 +298,15 @@ if (overlay) overlay.addEventListener('click', e => { if (e.target === overlay) 
 if (editImageInput && editImagePreview) {
   editImageInput.addEventListener('change', () => {
     const file = editImageInput.files[0];
-    if (!file) return;
+    if (!file) { editImagePreview.classList.remove('is-visible'); return; }
+
+    if (file.size > 15 * 1024 * 1024) {
+      alert('La imagen excede el límite de 15 MB.');
+      editImageInput.value = '';
+      editImagePreview.classList.remove('is-visible');
+      return;
+    }
+
     editImagePreview.src = URL.createObjectURL(file);
     editImagePreview.classList.add('is-visible');
   });
@@ -349,3 +365,4 @@ if (editForm) {
 
 /* ─── Boot ────────────────────────────────────────────────────────────────── */
 checkAuth();
+

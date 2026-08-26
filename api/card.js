@@ -72,7 +72,12 @@ export default async function handler(req, res) {
           balanceBefore: Number.isFinite(Number(data.balanceBefore)) ? Number(data.balanceBefore) : null,
           balanceAfter: Number.isFinite(Number(data.balanceAfter)) ? Number(data.balanceAfter) : null,
           merchantId: typeof data.merchantId === 'string' ? data.merchantId : '',
-          merchantName: typeof data.merchantName === 'string' ? data.merchantName : ''
+          merchantName: typeof data.merchantName === 'string' ? data.merchantName : '',
+          amount: Number.isFinite(Number(data.amount)) ? Number(data.amount) : null,
+          senderName: typeof data.senderName === 'string' ? data.senderName : '',
+          recipientName: typeof data.recipientName === 'string' ? data.recipientName : '',
+          recipientEmail: typeof data.recipientEmail === 'string' ? data.recipientEmail : '',
+          reference: typeof data.reference === 'string' ? data.reference : ''
         };
       });
 

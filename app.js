@@ -382,13 +382,42 @@ if (qrButton) {
           }, { passive: true });
         }
 
-        const showPromoModal = () => {
+        const showPromoModal = async () => {
           const promoModal = document.getElementById("promoModal");
           const promoImg = document.getElementById("promoModalImage");
-          if (promoModal && promoImg) {
-            // Imagen única de promoción
-            const chosenImg = "/images/publi3.jpeg";
+          if (!promoModal || !promoImg) return;
+
+          try {
+            const res = await fetch('/api/popup-config');
+            const config = await res.json().catch(() => ({ type: 'none' }));
+
+            if (config.type === 'none' || !config.type) return;
+
+            let chosenImg = null;
+            let onImageClick = null;
+
+            if (config.type === 'custom_image' && config.imageUrl) {
+              chosenImg = config.imageUrl;
+            } else if (config.type === 'promotion' && config.promotionId) {
+              // The backend now returns the image directly in config.imageUrl and the full promo in config.promotion
+              if (config.imageUrl) {
+                chosenImg = config.imageUrl;
+                if (config.promotion) {
+                  onImageClick = () => {
+                    hidePromo();
+                    if (typeof window.showDetailModal === 'function') {
+                      window.showDetailModal(config.promotion);
+                    }
+                  };
+                }
+              }
+            }
+
+            if (!chosenImg) return;
+
             promoImg.src = chosenImg;
+            promoImg.onclick = onImageClick ? onImageClick : null;
+            promoImg.style.cursor = onImageClick ? 'pointer' : 'default';
 
             setTimeout(() => {
               promoModal.classList.add("promoModal--active");
@@ -405,6 +434,9 @@ if (qrButton) {
 
             const backdrop = document.getElementById("promoModalBackdrop");
             if (backdrop) backdrop.onclick = hidePromo;
+
+          } catch (err) {
+            console.error('Error loading popup config', err);
           }
         };
 
@@ -590,6 +622,8 @@ if (qrButton) {
     const mobNavReferidos = document.getElementById("aMobNavReferidos");
     const panelMarketing = document.getElementById("secMarketing");
     const navMarketing = document.getElementById("aNavMarketing");
+    const panelStartup = document.getElementById("aPanelStartup");
+    const navStartup = document.getElementById("aNavStartup");
     
 
     const reportRefresh = document.getElementById("adminReportRefresh");
@@ -803,6 +837,7 @@ if (qrButton) {
       if (panelReportes) panelReportes.hidden = panel !== "reportes";
       if (panelReferidos) panelReferidos.hidden = panel !== "referidos";
       if (panelMarketing) panelMarketing.hidden = panel !== "marketing";
+      if (panelStartup) panelStartup.hidden = panel !== "startup";
 
       if (navClientes) navClientes.classList.toggle("is-active", panel === "clientes");
       if (navTx) navTx.classList.toggle("is-active", panel === "transacciones");
@@ -814,6 +849,7 @@ if (qrButton) {
       if (navReportes) navReportes.classList.toggle("is-active", panel === "reportes");
       if (navReferidos) navReferidos.classList.toggle("is-active", panel === "referidos");
       if (navMarketing) navMarketing.classList.toggle("is-active", panel === "marketing");
+      if (navStartup) navStartup.classList.toggle("is-active", panel === "startup");
 
       
       const mobClientes = document.getElementById("aMobNavClientes");
@@ -877,6 +913,10 @@ if (qrButton) {
       switchPanel("marketing");
       loadMarketingUsers();
       loadRedeemedPromotions();
+    });
+    if (navStartup) navStartup.addEventListener("click", () => {
+      switchPanel("startup");
+      loadAdminPopupConfig();
     });
 
     const mobNavClientes = document.getElementById("aMobNavClientes");
@@ -2480,6 +2520,152 @@ Esto eliminará también sus transacciones.`
         loadAdminStats(r);
       });
     });
+
+    // ── Popup Config Logic ──────────────────────────────────────────────
+    const loadAdminPopupConfig = async () => {
+      const typeSelect = document.getElementById("popupType");
+      const promoSelect = document.getElementById("popupPromotionSelect");
+      const imgPreview = document.getElementById("popupImagePreview");
+      
+      if (!typeSelect || !promoSelect) return;
+      
+      try {
+        const pRes = await fetch('/api/admin/promotions', { credentials: 'include' });
+        if (pRes.ok) {
+          const data = await pRes.json();
+          promoSelect.innerHTML = (data.promotions || []).map(p => `<option value="${p.id}">${p.title}</option>`).join('');
+        }
+      } catch (e) { console.error('Error fetching promos for popup config', e); }
+
+      try {
+        const res = await fetch('/api/admin/popup-config', { credentials: 'include' });
+        const config = await res.json();
+        typeSelect.value = config.type || 'none';
+        if (config.type === 'promotion' && config.promotionId) {
+          promoSelect.value = config.promotionId;
+        } else if (config.type === 'custom_image' && config.imageUrl) {
+          imgPreview.src = config.imageUrl;
+          imgPreview.style.display = 'block';
+        }
+        typeSelect.dispatchEvent(new Event('change'));
+      } catch (err) {
+        console.error('Error loading popup config', err);
+      }
+    };
+
+    const popupType = document.getElementById("popupType");
+    if (popupType) {
+      popupType.addEventListener('change', (e) => {
+        const val = e.target.value;
+        document.getElementById('popupPromotionSection').style.display = val === 'promotion' ? 'block' : 'none';
+        document.getElementById('popupCustomImageSection').style.display = val === 'custom_image' ? 'block' : 'none';
+      });
+    }
+
+    const popupCustomImg = document.getElementById("popupCustomImage");
+    if (popupCustomImg) {
+      popupCustomImg.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        const imgPreview = document.getElementById('popupImagePreview');
+        if (!file) {
+          imgPreview.style.display = 'none';
+          return;
+        }
+        if (file.size > 15 * 1024 * 1024) {
+          alert('La imagen excede el límite de 15 MB.');
+          e.target.value = '';
+          imgPreview.style.display = 'none';
+          return;
+        }
+        
+        document.getElementById('popupResult').textContent = 'Procesando imagen...';
+        document.getElementById('popupResult').style.color = '#fff';
+        
+        try {
+          const reader = new FileReader();
+          reader.readAsDataURL(file);
+          reader.onload = (event) => {
+            const img = new Image();
+            img.src = event.target.result;
+            img.onload = () => {
+              const canvas = document.createElement('canvas');
+              const MAX_WIDTH = 800;
+              let width = img.width;
+              let height = img.height;
+              if (width > MAX_WIDTH) {
+                height *= MAX_WIDTH / width;
+                width = MAX_WIDTH;
+              }
+              canvas.width = width;
+              canvas.height = height;
+              const ctx = canvas.getContext('2d');
+              ctx.drawImage(img, 0, 0, width, height);
+              const base64 = canvas.toDataURL('image/jpeg', 0.6);
+              imgPreview.src = base64;
+              imgPreview.style.display = 'block';
+              document.getElementById('popupResult').textContent = '';
+            };
+          };
+        } catch (err) {
+          document.getElementById('popupResult').textContent = 'Error procesando imagen';
+          document.getElementById('popupResult').style.color = '#ef4444';
+        }
+      });
+    }
+
+    const savePopupBtn = document.getElementById("savePopupConfigBtn");
+    if (savePopupBtn) {
+      savePopupBtn.addEventListener('click', async () => {
+        const resultEl = document.getElementById('popupResult');
+        const type = document.getElementById('popupType').value;
+        let payload = { type };
+
+        if (type === 'promotion') {
+          const pId = document.getElementById('popupPromotionSelect').value;
+          if (!pId) {
+            resultEl.textContent = 'Selecciona una promoción';
+            resultEl.style.color = '#ef4444';
+            return;
+          }
+          payload.promotionId = pId;
+        } else if (type === 'custom_image') {
+          const imgPreview = document.getElementById('popupImagePreview');
+          if (!imgPreview.src || imgPreview.style.display === 'none') {
+            resultEl.textContent = 'Sube una imagen';
+            resultEl.style.color = '#ef4444';
+            return;
+          }
+          payload.imageUrl = imgPreview.src;
+        }
+
+        savePopupBtn.disabled = true;
+        resultEl.textContent = 'Guardando...';
+        resultEl.style.color = '#fff';
+
+        try {
+          const res = await fetch('/api/admin/popup-config', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+            credentials: 'include'
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || 'Error al guardar');
+
+          resultEl.textContent = 'Configuración guardada exitosamente';
+          resultEl.style.color = '#10b981';
+          setTimeout(() => { resultEl.textContent = ''; }, 3000);
+        } catch (err) {
+          resultEl.textContent = err.message;
+          resultEl.style.color = '#ef4444';
+        } finally {
+          savePopupBtn.disabled = false;
+        }
+      });
+    }
+
+    // Expose loadAdminPopupConfig globally so it can be called from the sidebar
+    window.loadAdminPopupConfig = loadAdminPopupConfig;
     const initAuthed = (role) => {
       showDash();
       
@@ -3025,15 +3211,21 @@ Esto eliminará también sus transacciones.`
     const before = Number.isFinite(Number(t.balanceBefore)) ? Number(t.balanceBefore) : null;
     const after = Number.isFinite(Number(t.balanceAfter)) ? Number(t.balanceAfter) : null;
     if (before !== null && after !== null) return after - before;
-    const pts = Number.isFinite(Number(t.points)) ? Number(t.points) : 0;
-    if (String(t.type || "") === "pos_charge") return -Math.abs(pts);
-    if (String(t.type || "").includes("credit")) return Math.abs(pts);
+    let pts = Number(t.points) || 0;
+    if (pts === 0 && t.amount != null) {
+      pts = Number(t.amount);
+    }
+    const type = String(t.type || "");
+    if (type === "pos_charge" || type === "transfer_out") return -Math.abs(pts);
+    if (type.includes("credit") || type === "transfer_in") return Math.abs(pts);
     return pts;
   };
   const getTitle = (t, delta) => {
     const desc = String(t.description || "").trim();
     if (desc) return desc;
     const type = String(t.type || "").trim();
+    if (type === "transfer_out") return `Envío a ${t.recipientName || t.recipientEmail || 'Usuario'}`;
+    if (type === "transfer_in") return `Recibido de ${t.senderName || 'Usuario'}`;
     if (type === "pos_charge") return "Pago";
     if (type.includes("credit")) return "Cr\xE9dito";
     if (delta < 0) return "Pago";
@@ -4376,3 +4568,230 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
 });
+(() => {
+  const profileTransferBtn = document.getElementById("profileTransferBtn");
+  const modal = document.getElementById("transferModal");
+  const closeBtn = document.getElementById("transferCloseBtn");
+  const backdrop = document.getElementById("transferModalBackdrop");
+  
+  if (!profileTransferBtn || !modal) return;
+
+  const steps = {
+    1: document.getElementById("transferStep1"),
+    2: document.getElementById("transferStep2"),
+    3: document.getElementById("transferStep3"),
+    4: document.getElementById("transferStep4")
+  };
+
+  const state = {
+    email: '',
+    name: '',
+    amount: 0,
+    otp: ''
+  };
+
+  const getToken = () => {
+    let token = '';
+    const path = window.location.pathname || "";
+    if (path.startsWith("/card/")) {
+      token = decodeURIComponent(path.slice("/card/".length)).trim();
+    }
+    if (!token) {
+      const url = new URL(window.location.href);
+      token = (url.searchParams.get("token") || url.searchParams.get("t") || "").trim();
+    }
+    return token;
+  };
+
+  const showStep = (stepNumber) => {
+    Object.values(steps).forEach(el => {
+      if(el) el.style.display = 'none';
+    });
+    if(steps[stepNumber]) steps[stepNumber].style.display = 'block';
+  };
+
+  const openModal = () => {
+    // Close profile menu if open
+    const menu = document.getElementById("profileMenu");
+    if (menu) {
+      menu.classList.remove("profileMenu--active");
+      menu.setAttribute("aria-hidden", "true");
+      const profileTrigger = document.getElementById("profileButton");
+      if (profileTrigger) profileTrigger.setAttribute("aria-expanded", "false");
+    }
+
+    // Reset state
+    state.email = '';
+    state.name = '';
+    state.amount = 0;
+    state.otp = '';
+    
+    document.getElementById("transferEmailInput").value = '';
+    document.getElementById("transferAmountInput").value = '';
+    document.getElementById("transferOtpInput").value = '';
+
+    showStep(1);
+    
+    modal.style.display = 'flex';
+    // Small delay to allow display flex to apply before opacity transition
+    setTimeout(() => {
+      modal.classList.add("transferModal--active");
+      modal.setAttribute("aria-hidden", "false");
+    }, 10);
+  };
+
+  const closeModal = () => {
+    modal.classList.remove("transferModal--active");
+    modal.setAttribute("aria-hidden", "true");
+    setTimeout(() => {
+      modal.style.display = 'none';
+    }, 300);
+  };
+
+  profileTransferBtn.addEventListener("click", openModal);
+  closeBtn.addEventListener("click", closeModal);
+  backdrop.addEventListener("click", closeModal);
+  
+  document.getElementById("transferDoneBtn")?.addEventListener("click", closeModal);
+
+  // --- API Calls ---
+
+  const showLoading = (btnId) => {
+    const btn = document.getElementById(btnId);
+    if(btn) {
+      btn.dataset.originalText = btn.textContent;
+      btn.textContent = 'Cargando...';
+      btn.disabled = true;
+    }
+  };
+
+  const hideLoading = (btnId) => {
+    const btn = document.getElementById(btnId);
+    if(btn) {
+      btn.textContent = btn.dataset.originalText;
+      btn.disabled = false;
+    }
+  };
+
+  // Step 1: Verify Email
+  document.getElementById("transferVerifyEmailBtn")?.addEventListener("click", async () => {
+    const emailInput = document.getElementById("transferEmailInput").value.trim();
+    if(!emailInput) {
+      alert("Por favor ingresa un correo.");
+      return;
+    }
+
+    showLoading("transferVerifyEmailBtn");
+    try {
+      const res = await fetch('/api/client/transfer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'verify_email', email: emailInput })
+      });
+      const data = await res.json();
+      
+      if(!res.ok) {
+        alert(data.error || 'Error al verificar el correo.');
+        hideLoading("transferVerifyEmailBtn");
+        return;
+      }
+
+      state.email = emailInput;
+      state.name = data.name;
+      
+      document.getElementById("transferRecipientName").textContent = state.name;
+      document.getElementById("transferAvatarInitials").textContent = state.name ? state.name.substring(0,2).toUpperCase() : '?';
+      showStep(2);
+
+    } catch (err) {
+      alert('Error de conexión.');
+    }
+    hideLoading("transferVerifyEmailBtn");
+  });
+
+  // Step 2: Request OTP
+  document.getElementById("transferRequestBtn")?.addEventListener("click", async () => {
+    const amountInput = document.getElementById("transferAmountInput").value;
+    const amount = Number(amountInput);
+
+    if(!amount || amount < 1) {
+      alert("Por favor ingresa un monto válido (Mínimo 1).");
+      return;
+    }
+
+    const token = getToken();
+
+    showLoading("transferRequestBtn");
+    try {
+      const res = await fetch('/api/client/transfer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'request_otp', token, email: state.email, amount })
+      });
+      const data = await res.json();
+      
+      if(!res.ok) {
+        alert(data.error || 'Error al solicitar transferencia.');
+        hideLoading("transferRequestBtn");
+        return;
+      }
+
+      state.amount = amount;
+      showStep(3);
+
+    } catch (err) {
+      alert('Error de conexión.');
+    }
+    hideLoading("transferRequestBtn");
+  });
+
+  document.getElementById("transferBackTo1Btn")?.addEventListener("click", () => showStep(1));
+
+  // Step 3: Confirm Transfer
+  document.getElementById("transferConfirmBtn")?.addEventListener("click", async () => {
+    const otpInput = document.getElementById("transferOtpInput").value.trim();
+    if(!otpInput || otpInput.length !== 6) {
+      alert("Por favor ingresa el código de 6 dígitos.");
+      return;
+    }
+
+    const token = getToken();
+
+    showLoading("transferConfirmBtn");
+    try {
+      const res = await fetch('/api/client/transfer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'confirm', token, otp: otpInput })
+      });
+      const data = await res.json();
+      
+      if(!res.ok) {
+        alert(data.error || 'Código incorrecto o error al confirmar.');
+        hideLoading("transferConfirmBtn");
+        return;
+      }
+
+      if (data.reference) {
+        const refEl = document.getElementById("transferReferenceNumber");
+        if (refEl) refEl.textContent = data.reference;
+      }
+      
+      showStep(4);
+      
+      // Update global balance and refresh UI if possible
+      setTimeout(() => {
+        if(window.loadClientData && token) {
+           window.loadClientData(token);
+        }
+      }, 1500);
+
+    } catch (err) {
+      alert('Error de conexión.');
+    }
+    hideLoading("transferConfirmBtn");
+  });
+
+  document.getElementById("transferBackTo2Btn")?.addEventListener("click", () => showStep(2));
+})();
+
