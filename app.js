@@ -3025,7 +3025,10 @@ Esto eliminará también sus transacciones.`
     const before = Number.isFinite(Number(t.balanceBefore)) ? Number(t.balanceBefore) : null;
     const after = Number.isFinite(Number(t.balanceAfter)) ? Number(t.balanceAfter) : null;
     if (before !== null && after !== null) return after - before;
-    const pts = Number.isFinite(Number(t.points)) ? Number(t.points) : (Number.isFinite(Number(t.amount)) ? Number(t.amount) : 0);
+    let pts = Number.isFinite(Number(t.points)) ? Number(t.points) : 0;
+    if (pts === 0 && Number.isFinite(Number(t.amount))) {
+      pts = Number(t.amount);
+    }
     const type = String(t.type || "");
     if (type === "pos_charge" || type === "transfer_out") return -Math.abs(pts);
     if (type.includes("credit") || type === "transfer_in") return Math.abs(pts);
