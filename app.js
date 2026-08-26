@@ -4583,6 +4583,11 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
+      if (data.reference) {
+        const refEl = document.getElementById("transferReferenceNumber");
+        if (refEl) refEl.textContent = data.reference;
+      }
+      
       showStep(4);
       
       // Update global balance and refresh UI if possible

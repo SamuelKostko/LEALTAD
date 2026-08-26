@@ -206,16 +206,22 @@ export default async function handler(req, res) {
           totalPoints: FieldValue.increment(transferAmount)
         });
 
+        // Generate reference number
+        const refNumber = `${Math.floor(1000000 + Math.random() * 9000000)}`;
+
         // Record transactions
         const senderTxRef = firestore.collection('transactions').doc();
         tx.set(senderTxRef, {
           type: 'transfer_out',
           token: senderData.token,
           amount: transferAmount,
+          points: transferAmount,
           recipientEmail: lowerEmail,
           recipientName: recipientData.nombre,
-          timestamp: Date.now(),
-          date: new Date().toISOString()
+          createdAt: new Date().toISOString(),
+          processedAt: new Date().toISOString(),
+          description: `Envío a ${recipientData.nombre}`,
+          reference: refNumber
         });
 
         const recipientTxRef = firestore.collection('transactions').doc();
@@ -223,15 +229,18 @@ export default async function handler(req, res) {
           type: 'transfer_in',
           token: recipientData.token,
           amount: transferAmount,
+          points: transferAmount,
           senderName: senderData.nombre,
-          timestamp: Date.now(),
-          date: new Date().toISOString()
+          createdAt: new Date().toISOString(),
+          processedAt: new Date().toISOString(),
+          description: `Recibido de ${senderData.nombre}`,
+          reference: refNumber
         });
 
         // Delete OTP
         tx.delete(otpRef);
 
-        return { transferAmount, recipientName: recipientData.nombre };
+        return { transferAmount, recipientName: recipientData.nombre, reference: refNumber };
       });
 
       sendJson(res, 200, { success: true, ...result });
