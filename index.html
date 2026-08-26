@@ -995,6 +995,45 @@
               </div>
             </div>
           </div>
+          <!-- Panel Inicio de App -->
+          <section class="aPanel" id="aPanelStartup" aria-label="Inicio de App" hidden>
+            <div class="aPanel__header">
+              <div>
+                <h2 class="aPanel__title">Inicio de App</h2>
+                <p class="aPanel__sub">Configura lo que verán los usuarios al abrir la aplicación.</p>
+              </div>
+            </div>
+            
+            <div class="aCard" style="margin-top: 20px;">
+              <h3 style="font-size: 16px; font-weight: 600; color: #fff; margin-top: 0; margin-bottom: 8px;">Popup Inicial</h3>
+              <p style="font-size: 13px; color: rgba(255,255,255,0.6); margin-bottom: 20px;">Selecciona la promoción o imagen que saltará como ventana emergente al iniciar Wallet.</p>
+
+              <div class="aInputGroup" style="margin-bottom: 15px;">
+                <label for="popupType" class="aLabel">Tipo de Popup</label>
+                <select id="popupType" class="aInput" style="cursor: pointer;">
+                  <option value="none">Ninguno (Desactivado)</option>
+                  <option value="promotion">Promoción del Catálogo</option>
+                  <option value="custom_image">Imagen Personalizada</option>
+                </select>
+              </div>
+
+              <div id="popupPromotionSection" class="aInputGroup" style="display: none; margin-bottom: 15px;">
+                <label for="popupPromotionSelect" class="aLabel">Selecciona la Promoción</label>
+                <select id="popupPromotionSelect" class="aInput" style="cursor: pointer;">
+                  <!-- Options populated dynamically -->
+                </select>
+              </div>
+
+              <div id="popupCustomImageSection" class="aInputGroup" style="display: none; margin-bottom: 15px;">
+                <label for="popupCustomImage" class="aLabel">Sube una Imagen (Max 15 MB)</label>
+                <input id="popupCustomImage" type="file" class="aInput" accept="image/*" />
+                <img id="popupImagePreview" alt="Vista previa" style="margin-top: 10px; max-width: 100%; border-radius: 8px; display: none;" />
+              </div>
+
+              <button class="aBtn" id="savePopupConfigBtn" type="button" style="background: #06b6d4; color: #fff; padding: 10px 20px; font-weight: 600; border-radius: 8px; border: none; cursor: pointer;">Guardar Configuración</button>
+              <div id="popupResult" style="margin-top: 10px; font-size: 13px; font-weight: 500;"></div>
+            </div>
+          </section>
 
         </div>
 
@@ -1193,46 +1232,6 @@
         </ul>
         <button class="activity__more" id="activityMoreBtn" type="button" aria-expanded="false" hidden>Mostrar
           todas</button>
-      </section>
-
-      <!-- Panel Inicio de App -->
-      <section class="aPanel" id="aPanelStartup" aria-label="Inicio de App" hidden>
-        <div class="aPanel__header">
-          <div>
-            <h2 class="aPanel__title">Inicio de App</h2>
-            <p class="aPanel__sub">Configura lo que verán los usuarios al abrir la aplicación.</p>
-          </div>
-        </div>
-        
-        <div class="aCard" style="margin-top: 20px;">
-          <h3 style="font-size: 16px; font-weight: 600; color: #fff; margin-top: 0; margin-bottom: 8px;">Popup Inicial</h3>
-          <p style="font-size: 13px; color: rgba(255,255,255,0.6); margin-bottom: 20px;">Selecciona la promoción o imagen que saltará como ventana emergente al iniciar Wallet.</p>
-
-          <div class="aInputGroup" style="margin-bottom: 15px;">
-            <label for="popupType" class="aLabel">Tipo de Popup</label>
-            <select id="popupType" class="aInput" style="cursor: pointer;">
-              <option value="none">Ninguno (Desactivado)</option>
-              <option value="promotion">Promoción del Catálogo</option>
-              <option value="custom_image">Imagen Personalizada</option>
-            </select>
-          </div>
-
-          <div id="popupPromotionSection" class="aInputGroup" style="display: none; margin-bottom: 15px;">
-            <label for="popupPromotionSelect" class="aLabel">Selecciona la Promoción</label>
-            <select id="popupPromotionSelect" class="aInput" style="cursor: pointer;">
-              <!-- Options populated dynamically -->
-            </select>
-          </div>
-
-          <div id="popupCustomImageSection" class="aInputGroup" style="display: none; margin-bottom: 15px;">
-            <label for="popupCustomImage" class="aLabel">Sube una Imagen (Max 15 MB)</label>
-            <input id="popupCustomImage" type="file" class="aInput" accept="image/*" />
-            <img id="popupImagePreview" alt="Vista previa" style="margin-top: 10px; max-width: 100%; border-radius: 8px; display: none;" />
-          </div>
-
-          <button class="aBtn" id="savePopupConfigBtn" type="button" style="background: #06b6d4; color: #fff; padding: 10px 20px; font-weight: 600; border-radius: 8px; border: none; cursor: pointer;">Guardar Configuración</button>
-          <div id="popupResult" style="margin-top: 10px; font-size: 13px; font-weight: 500;"></div>
-        </div>
       </section>
 
     </main>
