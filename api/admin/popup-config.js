@@ -1,13 +1,10 @@
 import { getFirestoreDb } from '../_lib/firestore.js';
-import { getAdminUser } from '../_lib/adminAuth.js';
+import { requireAdmin } from '../_lib/adminAuth.js';
 import { sendJson } from '../_lib/http.js';
 
 export default async function handler(req, res) {
-  const admin = await getAdminUser(req);
-  if (!admin) {
-    sendJson(res, 401, { error: 'No autorizado' });
-    return;
-  }
+  const authorized = await requireAdmin(req, res);
+  if (!authorized) return;
 
   const firestore = getFirestoreDb();
   const configRef = firestore.collection('system').doc('popupConfig');
@@ -25,7 +22,7 @@ export default async function handler(req, res) {
     }
   } else if (req.method === 'POST') {
     try {
-      const { type, promotionId, imageUrl } = await req.json();
+      const { type, promotionId, imageUrl } = req.body;
 
       if (!['none', 'promotion', 'custom_image'].includes(type)) {
         sendJson(res, 400, { error: 'Tipo de popup inválido' });
@@ -34,8 +31,7 @@ export default async function handler(req, res) {
 
       const payload = {
         type,
-        updatedAt: new Date().toISOString(),
-        updatedBy: admin.username
+        updatedAt: new Date().toISOString()
       };
 
       if (type === 'promotion') {
