@@ -194,6 +194,14 @@ if (promoImageInput && promoImagePreview) {
   promoImageInput.addEventListener('change', () => {
     const file = promoImageInput.files[0];
     if (!file) { promoImagePreview.classList.remove('is-visible'); return; }
+
+    if (file.size > 15 * 1024 * 1024) {
+      alert('La imagen excede el límite de 15 MB.');
+      promoImageInput.value = '';
+      promoImagePreview.classList.remove('is-visible');
+      return;
+    }
+
     promoImagePreview.src = URL.createObjectURL(file);
     promoImagePreview.classList.add('is-visible');
   });
@@ -293,7 +301,15 @@ if (overlay) overlay.addEventListener('click', e => { if (e.target === overlay) 
 if (editImageInput && editImagePreview) {
   editImageInput.addEventListener('change', () => {
     const file = editImageInput.files[0];
-    if (!file) return;
+    if (!file) { editImagePreview.classList.remove('is-visible'); return; }
+
+    if (file.size > 15 * 1024 * 1024) {
+      alert('La imagen excede el límite de 15 MB.');
+      editImageInput.value = '';
+      editImagePreview.classList.remove('is-visible');
+      return;
+    }
+
     editImagePreview.src = URL.createObjectURL(file);
     editImagePreview.classList.add('is-visible');
   });
@@ -352,3 +368,120 @@ if (editForm) {
 
 /* ─── Boot ────────────────────────────────────────────────────────────────── */
 checkAuth();
+
+/* =========================================================
+   Popup Config Logic
+   ========================================================= */
+
+let currentPopupConfig = null;
+
+const loadPopupConfig = async (promos) => {
+  const typeSelect = $('popupType');
+  const promoSelect = $('popupPromotionSelect');
+  const imgPreview = $('popupImagePreview');
+
+  if (!typeSelect || !promoSelect) return;
+
+  promoSelect.innerHTML = promos.map(p => `<option value="${p.id}">${p.title}</option>`).join('');
+
+  try {
+    const res = await fetch('/api/admin/popup-config', { credentials: 'include' });
+    const config = await res.json();
+    currentPopupConfig = config;
+
+    typeSelect.value = config.type || 'none';
+    if (config.type === 'promotion' && config.promotionId) {
+      promoSelect.value = config.promotionId;
+    } else if (config.type === 'custom_image' && config.imageUrl) {
+      imgPreview.src = config.imageUrl;
+      imgPreview.classList.add('is-visible');
+    }
+
+    typeSelect.dispatchEvent(new Event('change'));
+  } catch (err) {
+    console.error('Error loading popup config', err);
+  }
+};
+
+if ($('popupType')) {
+  $('popupType').addEventListener('change', (e) => {
+    const val = e.target.value;
+    $('popupPromotionSection').style.display = val === 'promotion' ? 'flex' : 'none';
+    $('popupCustomImageSection').style.display = val === 'custom_image' ? 'flex' : 'none';
+  });
+}
+
+if ($('popupCustomImage')) {
+  $('popupCustomImage').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) {
+      $('popupImagePreview').classList.remove('is-visible');
+      return;
+    }
+    
+    // Check max size 15MB
+    if (file.size > 15 * 1024 * 1024) {
+      alert('La imagen excede el límite de 15 MB.');
+      e.target.value = '';
+      $('popupImagePreview').classList.remove('is-visible');
+      return;
+    }
+
+    setResult($('popupResult'), 'info', 'Optimizando imagen...');
+    try {
+      const base64 = await compressImageToBase64(file, 800, 0.6); // aggressively compress to fit DB
+      $('popupImagePreview').src = base64;
+      $('popupImagePreview').classList.add('is-visible');
+      setResult($('popupResult'), '', '');
+    } catch (err) {
+      setResult($('popupResult'), 'err', 'Error procesando imagen');
+    }
+  });
+}
+
+if ($('savePopupConfigBtn')) {
+  $('savePopupConfigBtn').addEventListener('click', async () => {
+    const btn = $('savePopupConfigBtn');
+    const resultEl = $('popupResult');
+    const type = $('popupType').value;
+    
+    let payload = { type };
+
+    if (type === 'promotion') {
+      const pId = $('popupPromotionSelect').value;
+      if (!pId) {
+        setResult(resultEl, 'err', 'Selecciona una promoción');
+        return;
+      }
+      payload.promotionId = pId;
+    } else if (type === 'custom_image') {
+      const imgPreview = $('popupImagePreview');
+      if (!imgPreview.src || !imgPreview.classList.contains('is-visible')) {
+        setResult(resultEl, 'err', 'Sube una imagen');
+        return;
+      }
+      payload.imageUrl = imgPreview.src;
+    }
+
+    btn.disabled = true;
+    setResult(resultEl, 'info', 'Guardando...');
+
+    try {
+      const res = await fetch('/api/admin/popup-config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+        credentials: 'include'
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error al guardar');
+
+      setResult(resultEl, 'ok', 'Configuración guardada exitosamente');
+      setTimeout(() => setResult(resultEl, '', ''), 3000);
+    } catch (err) {
+      setResult(resultEl, 'err', err.message);
+    } finally {
+      btn.disabled = false;
+    }
+  });
+}
