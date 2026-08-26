@@ -89,7 +89,7 @@ export default async function handler(req, res) {
         senderSnap = senderQuery.docs[0];
       }
       const senderData = senderSnap.data();
-      const senderBalance = Number(senderData.puntos || 0);
+      const senderBalance = Number(senderData.totalPoints || 0);
 
       if (senderBalance < transferAmount) {
         sendJson(res, 400, { error: 'Saldo insuficiente para realizar esta transferencia.' });
@@ -186,7 +186,7 @@ export default async function handler(req, res) {
         }
         const senderData = senderSnap.data();
         
-        if (Number(senderData.puntos || 0) < transferAmount) {
+        if (Number(senderData.totalPoints || 0) < transferAmount) {
           throw new Error('Saldo insuficiente.');
         }
 
@@ -199,11 +199,11 @@ export default async function handler(req, res) {
 
         // Perform transfer
         tx.update(senderRef, {
-          puntos: FieldValue.increment(-transferAmount)
+          totalPoints: FieldValue.increment(-transferAmount)
         });
 
         tx.update(recipientRef, {
-          puntos: FieldValue.increment(transferAmount)
+          totalPoints: FieldValue.increment(transferAmount)
         });
 
         // Record transactions

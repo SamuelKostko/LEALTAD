@@ -1805,63 +1805,86 @@
 
 
   <!-- Modal de Transferencia -->
-  <div class="historyModal" id="transferModal" aria-hidden="true" role="dialog" aria-modal="true" style="display: none; align-items: center; justify-content: center;">
-    <div class="historyModal__backdrop" id="transferModalBackdrop"></div>
-    <div class="historyModal__frame" style="max-width: 400px; width: 90%; height: auto; max-height: 90vh; border-radius: 16px; padding-bottom: 20px;">
-      <header class="historyModal__header">
-        <span class="historyModal__title">Transferir Puntos</span>
-        <button class="historyModal__close" id="transferCloseBtn" type="button" aria-label="Cerrar">&times;</button>
+  <div class="transferModal" id="transferModal" aria-hidden="true" role="dialog" aria-modal="true">
+    <div class="transferModal__backdrop" id="transferModalBackdrop"></div>
+    <div class="transferModal__frame">
+      <header class="transferModal__header">
+        <div class="transferModal__header-icon">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M17 8l4 4m0 0l-4 4m4-4H3" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <span class="transferModal__title">Transferir Puntos</span>
+        <button class="transferModal__close" id="transferCloseBtn" type="button" aria-label="Cerrar">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
       </header>
-      <div class="historyModal__body" style="padding: 20px;">
-        
+      
+      <div class="transferModal__body">
         <!-- Paso 1: Email -->
-        <div id="transferStep1">
-          <p style="margin-bottom: 12px; color: var(--text-muted);">Ingresa el correo de la cuenta destino.</p>
-          <div class="inputGroup" style="margin-bottom: 16px;">
-            <label class="inputLabel" for="transferEmailInput">Correo Electrónico</label>
-            <input class="inputField" type="email" id="transferEmailInput" placeholder="ejemplo@correo.com" />
+        <div id="transferStep1" class="transferModal__step">
+          <p class="transferModal__desc">Ingresa el correo electrónico de la cuenta a la que deseas enviar puntos.</p>
+          <div class="transferModal__input-wrap">
+            <label class="transferModal__label" for="transferEmailInput">Destinatario</label>
+            <div class="transferModal__input-box">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" class="transferModal__input-icon"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" stroke-linecap="round" stroke-linejoin="round"/><path d="M22 6l-10 7L2 6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <input class="transferModal__input" type="email" id="transferEmailInput" placeholder="correo@ejemplo.com" />
+            </div>
           </div>
-          <button class="actionBtn" id="transferVerifyEmailBtn" style="width: 100%; justify-content: center;">Siguiente</button>
+          <button class="transferModal__btn transferModal__btn--primary" id="transferVerifyEmailBtn">Continuar</button>
         </div>
 
         <!-- Paso 2: Monto -->
-        <div id="transferStep2" style="display: none;">
-          <div style="background: rgba(99, 102, 241, 0.1); padding: 12px; border-radius: 8px; margin-bottom: 16px; border: 1px solid rgba(99, 102, 241, 0.2);">
-            <p style="margin: 0; color: var(--text-muted); font-size: 13px;">Transferir a:</p>
-            <p id="transferRecipientName" style="margin: 4px 0 0 0; font-weight: 600; color: #6366f1;">Nombre Destino</p>
+        <div id="transferStep2" class="transferModal__step" style="display: none;">
+          <div class="transferModal__recipient-card">
+            <div class="transferModal__recipient-avatar" id="transferAvatarInitials"></div>
+            <div class="transferModal__recipient-info">
+              <p class="transferModal__recipient-label">Enviando a</p>
+              <p class="transferModal__recipient-name" id="transferRecipientName">Nombre Destino</p>
+            </div>
           </div>
-          <div class="inputGroup" style="margin-bottom: 16px;">
-            <label class="inputLabel" for="transferAmountInput">Monto (Mín. 1 punto)</label>
-            <input class="inputField" type="number" id="transferAmountInput" placeholder="0" min="1" step="1" />
+          
+          <div class="transferModal__amount-wrap">
+            <span class="transferModal__amount-currency">Pts</span>
+            <input class="transferModal__amount-input" type="number" id="transferAmountInput" placeholder="0" min="1" step="1" />
           </div>
-          <button class="actionBtn" id="transferRequestBtn" style="width: 100%; justify-content: center;">Continuar</button>
-          <button id="transferBackTo1Btn" style="width: 100%; padding: 12px; background: transparent; border: none; color: var(--text-muted); margin-top: 8px; cursor: pointer;">Atrás</button>
+          
+          <div class="transferModal__actions">
+            <button class="transferModal__btn transferModal__btn--primary" id="transferRequestBtn">Revisar Transferencia</button>
+            <button class="transferModal__btn transferModal__btn--ghost" id="transferBackTo1Btn">Cambiar Destinatario</button>
+          </div>
         </div>
 
         <!-- Paso 3: OTP -->
-        <div id="transferStep3" style="display: none;">
-          <p style="margin-bottom: 12px; color: var(--text-muted);">Hemos enviado un código de 6 dígitos a tu correo para confirmar la transferencia.</p>
-          <div class="inputGroup" style="margin-bottom: 16px;">
-            <label class="inputLabel" for="transferOtpInput">Código de Seguridad (OTP)</label>
-            <input class="inputField" type="text" id="transferOtpInput" placeholder="123456" maxlength="6" style="letter-spacing: 4px; text-align: center; font-size: 20px; font-weight: 600;" />
+        <div id="transferStep3" class="transferModal__step" style="display: none;">
+          <div class="transferModal__icon-pulse">
+            <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M7 11V7a5 5 0 0 1 10 0v4" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </div>
-          <button class="actionBtn" id="transferConfirmBtn" style="width: 100%; justify-content: center; background: #10b981;">Confirmar Transferencia</button>
-          <button id="transferBackTo2Btn" style="width: 100%; padding: 12px; background: transparent; border: none; color: var(--text-muted); margin-top: 8px; cursor: pointer;">Cancelar</button>
+          <h3 class="transferModal__step-title">Seguridad</h3>
+          <p class="transferModal__desc" style="text-align: center;">Hemos enviado un código de 6 dígitos a tu correo para autorizar el envío.</p>
+          
+          <div class="transferModal__otp-wrap">
+            <input class="transferModal__otp-input" type="text" id="transferOtpInput" placeholder="------" maxlength="6" />
+          </div>
+          
+          <div class="transferModal__actions">
+            <button class="transferModal__btn transferModal__btn--success" id="transferConfirmBtn">Confirmar Envío</button>
+            <button class="transferModal__btn transferModal__btn--ghost" id="transferBackTo2Btn">Cancelar</button>
+          </div>
         </div>
 
         <!-- Paso 4: Éxito -->
-        <div id="transferStep4" style="display: none; text-align: center;">
-          <div style="width: 64px; height: 64px; background: rgba(16, 185, 129, 0.2); color: #10b981; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px auto;">
-            <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <div id="transferStep4" class="transferModal__step" style="display: none; text-align: center;">
+          <div class="transferModal__success-icon">
+            <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
               <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
               <polyline points="22 4 12 14.01 9 11.01"></polyline>
             </svg>
           </div>
-          <h3 style="margin-top: 0; margin-bottom: 8px; font-weight: 600;">¡Transferencia Exitosa!</h3>
-          <p style="color: var(--text-muted); margin-bottom: 24px;">Los puntos han sido enviados correctamente.</p>
-          <button class="actionBtn" id="transferDoneBtn" style="width: 100%; justify-content: center;">Cerrar</button>
+          <h3 class="transferModal__success-title">¡Transferencia Exitosa!</h3>
+          <p class="transferModal__success-desc">Los puntos ya están en la cuenta de tu destinatario.</p>
+          <button class="transferModal__btn transferModal__btn--primary" id="transferDoneBtn" style="margin-top: 24px;">Ir al Inicio</button>
         </div>
-
       </div>
     </div>
   </div>

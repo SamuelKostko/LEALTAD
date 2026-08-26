@@ -4443,13 +4443,13 @@ document.addEventListener("DOMContentLoaded", () => {
     modal.style.display = 'flex';
     // Small delay to allow display flex to apply before opacity transition
     setTimeout(() => {
-      modal.classList.add("historyModal--show");
+      modal.classList.add("transferModal--active");
       modal.setAttribute("aria-hidden", "false");
     }, 10);
   };
 
   const closeModal = () => {
-    modal.classList.remove("historyModal--show");
+    modal.classList.remove("transferModal--active");
     modal.setAttribute("aria-hidden", "true");
     setTimeout(() => {
       modal.style.display = 'none';
@@ -4508,6 +4508,7 @@ document.addEventListener("DOMContentLoaded", () => {
       state.name = data.name;
       
       document.getElementById("transferRecipientName").textContent = state.name;
+      document.getElementById("transferAvatarInitials").textContent = state.name ? state.name.substring(0,2).toUpperCase() : '?';
       showStep(2);
 
     } catch (err) {
