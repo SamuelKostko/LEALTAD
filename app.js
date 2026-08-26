@@ -2519,6 +2519,152 @@ Esto eliminará también sus transacciones.`
         loadAdminStats(r);
       });
     });
+
+    // ── Popup Config Logic ──────────────────────────────────────────────
+    const loadAdminPopupConfig = async () => {
+      const typeSelect = document.getElementById("popupType");
+      const promoSelect = document.getElementById("popupPromotionSelect");
+      const imgPreview = document.getElementById("popupImagePreview");
+      
+      if (!typeSelect || !promoSelect) return;
+      
+      try {
+        const pRes = await fetch('/api/admin/promotions', { credentials: 'include' });
+        if (pRes.ok) {
+          const data = await pRes.json();
+          promoSelect.innerHTML = (data.promotions || []).map(p => `<option value="${p.id}">${p.title}</option>`).join('');
+        }
+      } catch (e) { console.error('Error fetching promos for popup config', e); }
+
+      try {
+        const res = await fetch('/api/admin/popup-config', { credentials: 'include' });
+        const config = await res.json();
+        typeSelect.value = config.type || 'none';
+        if (config.type === 'promotion' && config.promotionId) {
+          promoSelect.value = config.promotionId;
+        } else if (config.type === 'custom_image' && config.imageUrl) {
+          imgPreview.src = config.imageUrl;
+          imgPreview.style.display = 'block';
+        }
+        typeSelect.dispatchEvent(new Event('change'));
+      } catch (err) {
+        console.error('Error loading popup config', err);
+      }
+    };
+
+    const popupType = document.getElementById("popupType");
+    if (popupType) {
+      popupType.addEventListener('change', (e) => {
+        const val = e.target.value;
+        document.getElementById('popupPromotionSection').style.display = val === 'promotion' ? 'block' : 'none';
+        document.getElementById('popupCustomImageSection').style.display = val === 'custom_image' ? 'block' : 'none';
+      });
+    }
+
+    const popupCustomImg = document.getElementById("popupCustomImage");
+    if (popupCustomImg) {
+      popupCustomImg.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        const imgPreview = document.getElementById('popupImagePreview');
+        if (!file) {
+          imgPreview.style.display = 'none';
+          return;
+        }
+        if (file.size > 15 * 1024 * 1024) {
+          alert('La imagen excede el límite de 15 MB.');
+          e.target.value = '';
+          imgPreview.style.display = 'none';
+          return;
+        }
+        
+        document.getElementById('popupResult').textContent = 'Procesando imagen...';
+        document.getElementById('popupResult').style.color = '#fff';
+        
+        try {
+          const reader = new FileReader();
+          reader.readAsDataURL(file);
+          reader.onload = (event) => {
+            const img = new Image();
+            img.src = event.target.result;
+            img.onload = () => {
+              const canvas = document.createElement('canvas');
+              const MAX_WIDTH = 800;
+              let width = img.width;
+              let height = img.height;
+              if (width > MAX_WIDTH) {
+                height *= MAX_WIDTH / width;
+                width = MAX_WIDTH;
+              }
+              canvas.width = width;
+              canvas.height = height;
+              const ctx = canvas.getContext('2d');
+              ctx.drawImage(img, 0, 0, width, height);
+              const base64 = canvas.toDataURL('image/jpeg', 0.6);
+              imgPreview.src = base64;
+              imgPreview.style.display = 'block';
+              document.getElementById('popupResult').textContent = '';
+            };
+          };
+        } catch (err) {
+          document.getElementById('popupResult').textContent = 'Error procesando imagen';
+          document.getElementById('popupResult').style.color = '#ef4444';
+        }
+      });
+    }
+
+    const savePopupBtn = document.getElementById("savePopupConfigBtn");
+    if (savePopupBtn) {
+      savePopupBtn.addEventListener('click', async () => {
+        const resultEl = document.getElementById('popupResult');
+        const type = document.getElementById('popupType').value;
+        let payload = { type };
+
+        if (type === 'promotion') {
+          const pId = document.getElementById('popupPromotionSelect').value;
+          if (!pId) {
+            resultEl.textContent = 'Selecciona una promoción';
+            resultEl.style.color = '#ef4444';
+            return;
+          }
+          payload.promotionId = pId;
+        } else if (type === 'custom_image') {
+          const imgPreview = document.getElementById('popupImagePreview');
+          if (!imgPreview.src || imgPreview.style.display === 'none') {
+            resultEl.textContent = 'Sube una imagen';
+            resultEl.style.color = '#ef4444';
+            return;
+          }
+          payload.imageUrl = imgPreview.src;
+        }
+
+        savePopupBtn.disabled = true;
+        resultEl.textContent = 'Guardando...';
+        resultEl.style.color = '#fff';
+
+        try {
+          const res = await fetch('/api/admin/popup-config', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+            credentials: 'include'
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || 'Error al guardar');
+
+          resultEl.textContent = 'Configuración guardada exitosamente';
+          resultEl.style.color = '#10b981';
+          setTimeout(() => { resultEl.textContent = ''; }, 3000);
+        } catch (err) {
+          resultEl.textContent = err.message;
+          resultEl.style.color = '#ef4444';
+        } finally {
+          savePopupBtn.disabled = false;
+        }
+      });
+    }
+
+    // Expose loadAdminPopupConfig globally so it can be called from the sidebar
+    window.loadAdminPopupConfig = loadAdminPopupConfig;
     const initAuthed = (role) => {
       showDash();
       
