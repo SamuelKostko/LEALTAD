@@ -621,6 +621,8 @@ if (qrButton) {
     const mobNavReferidos = document.getElementById("aMobNavReferidos");
     const panelMarketing = document.getElementById("secMarketing");
     const navMarketing = document.getElementById("aNavMarketing");
+    const panelStartup = document.getElementById("aPanelStartup");
+    const navStartup = document.getElementById("aNavStartup");
     
 
     const reportRefresh = document.getElementById("adminReportRefresh");
@@ -834,6 +836,7 @@ if (qrButton) {
       if (panelReportes) panelReportes.hidden = panel !== "reportes";
       if (panelReferidos) panelReferidos.hidden = panel !== "referidos";
       if (panelMarketing) panelMarketing.hidden = panel !== "marketing";
+      if (panelStartup) panelStartup.hidden = panel !== "startup";
 
       if (navClientes) navClientes.classList.toggle("is-active", panel === "clientes");
       if (navTx) navTx.classList.toggle("is-active", panel === "transacciones");
@@ -845,6 +848,7 @@ if (qrButton) {
       if (navReportes) navReportes.classList.toggle("is-active", panel === "reportes");
       if (navReferidos) navReferidos.classList.toggle("is-active", panel === "referidos");
       if (navMarketing) navMarketing.classList.toggle("is-active", panel === "marketing");
+      if (navStartup) navStartup.classList.toggle("is-active", panel === "startup");
 
       
       const mobClientes = document.getElementById("aMobNavClientes");
@@ -908,6 +912,10 @@ if (qrButton) {
       switchPanel("marketing");
       loadMarketingUsers();
       loadRedeemedPromotions();
+    });
+    if (navStartup) navStartup.addEventListener("click", () => {
+      switchPanel("startup");
+      loadAdminPopupConfig();
     });
 
     const mobNavClientes = document.getElementById("aMobNavClientes");
