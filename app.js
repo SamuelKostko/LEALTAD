@@ -3025,15 +3025,18 @@ Esto eliminará también sus transacciones.`
     const before = Number.isFinite(Number(t.balanceBefore)) ? Number(t.balanceBefore) : null;
     const after = Number.isFinite(Number(t.balanceAfter)) ? Number(t.balanceAfter) : null;
     if (before !== null && after !== null) return after - before;
-    const pts = Number.isFinite(Number(t.points)) ? Number(t.points) : 0;
-    if (String(t.type || "") === "pos_charge") return -Math.abs(pts);
-    if (String(t.type || "").includes("credit")) return Math.abs(pts);
+    const pts = Number.isFinite(Number(t.points)) ? Number(t.points) : (Number.isFinite(Number(t.amount)) ? Number(t.amount) : 0);
+    const type = String(t.type || "");
+    if (type === "pos_charge" || type === "transfer_out") return -Math.abs(pts);
+    if (type.includes("credit") || type === "transfer_in") return Math.abs(pts);
     return pts;
   };
   const getTitle = (t, delta) => {
     const desc = String(t.description || "").trim();
     if (desc) return desc;
     const type = String(t.type || "").trim();
+    if (type === "transfer_out") return `Envío a ${t.recipientName || t.recipientEmail || 'Usuario'}`;
+    if (type === "transfer_in") return `Recibido de ${t.senderName || 'Usuario'}`;
     if (type === "pos_charge") return "Pago";
     if (type.includes("credit")) return "Cr\xE9dito";
     if (delta < 0) return "Pago";
