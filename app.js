@@ -382,13 +382,41 @@ if (qrButton) {
           }, { passive: true });
         }
 
-        const showPromoModal = () => {
+        const showPromoModal = async () => {
           const promoModal = document.getElementById("promoModal");
           const promoImg = document.getElementById("promoModalImage");
-          if (promoModal && promoImg) {
-            // Imagen única de promoción
-            const chosenImg = "/images/publi3.jpeg";
+          if (!promoModal || !promoImg) return;
+
+          try {
+            const res = await fetch('/api/popup-config');
+            const config = await res.json().catch(() => ({ type: 'none' }));
+
+            if (config.type === 'none' || !config.type) return;
+
+            let chosenImg = null;
+            let onImageClick = null;
+
+            if (config.type === 'custom_image' && config.imageUrl) {
+              chosenImg = config.imageUrl;
+            } else if (config.type === 'promotion' && config.promotionId) {
+              // Find the promotion from loaded state
+              const promo = window.walletState?.promotions?.find(p => p.id === config.promotionId);
+              if (promo && promo.image) {
+                chosenImg = promo.image;
+                onImageClick = () => {
+                  hidePromo();
+                  if (typeof window.showDetailModal === 'function') {
+                    window.showDetailModal(promo);
+                  }
+                };
+              }
+            }
+
+            if (!chosenImg) return;
+
             promoImg.src = chosenImg;
+            promoImg.onclick = onImageClick ? onImageClick : null;
+            promoImg.style.cursor = onImageClick ? 'pointer' : 'default';
 
             setTimeout(() => {
               promoModal.classList.add("promoModal--active");
@@ -405,6 +433,9 @@ if (qrButton) {
 
             const backdrop = document.getElementById("promoModalBackdrop");
             if (backdrop) backdrop.onclick = hidePromo;
+
+          } catch (err) {
+            console.error('Error loading popup config', err);
           }
         };
 
@@ -3025,8 +3056,8 @@ Esto eliminará también sus transacciones.`
     const before = Number.isFinite(Number(t.balanceBefore)) ? Number(t.balanceBefore) : null;
     const after = Number.isFinite(Number(t.balanceAfter)) ? Number(t.balanceAfter) : null;
     if (before !== null && after !== null) return after - before;
-    let pts = Number.isFinite(Number(t.points)) ? Number(t.points) : 0;
-    if (pts === 0 && Number.isFinite(Number(t.amount))) {
+    let pts = Number(t.points) || 0;
+    if (pts === 0 && t.amount != null) {
       pts = Number(t.amount);
     }
     const type = String(t.type || "");

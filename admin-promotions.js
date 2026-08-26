@@ -157,6 +157,9 @@ const fetchPromotions = async () => {
       card.querySelector('.ap-promo-action--del').addEventListener('click', () => deletePromotion(p.id));
       container.appendChild(card);
     });
+    
+    // Load popup config after promos are loaded
+    await loadPopupConfig(promos);
 
   } catch (err) {
     container.innerHTML = `<div style="color:#ef4444; font-size:13px; text-align:center;">${err.message}</div>`;
