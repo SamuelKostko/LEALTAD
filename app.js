@@ -3208,8 +3208,8 @@ Esto eliminará también sus transacciones.`
     targetList.appendChild(li);
   };
   const computeDelta = (t) => {
-    const before = Number.isFinite(Number(t.balanceBefore)) ? Number(t.balanceBefore) : null;
-    const after = Number.isFinite(Number(t.balanceAfter)) ? Number(t.balanceAfter) : null;
+    const before = t.balanceBefore != null && Number.isFinite(Number(t.balanceBefore)) ? Number(t.balanceBefore) : null;
+    const after = t.balanceAfter != null && Number.isFinite(Number(t.balanceAfter)) ? Number(t.balanceAfter) : null;
     if (before !== null && after !== null) return after - before;
     let pts = Number(t.points) || 0;
     if (pts === 0 && t.amount != null) {
