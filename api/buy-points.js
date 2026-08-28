@@ -38,6 +38,7 @@ export default async function handler(req, res) {
 
     // If autoMatchOnly, we need the user's registered ID to match securely
     let clientCedula = '';
+    let clientPhone = '';
     let clientDocRef = null;
     let clientDataSnapshot = null;
     
@@ -56,6 +57,7 @@ export default async function handler(req, res) {
     if (clientDataSnapshot && clientDataSnapshot.exists) {
       const cData = clientDataSnapshot.data();
       clientCedula = extractDigits(cData.idNumber || cData.cedula || '');
+      clientPhone = extractDigits(cData.telefono || '');
     }
 
     // Polling Loop
@@ -67,6 +69,7 @@ export default async function handler(req, res) {
           body: JSON.stringify({
             amount: amountClient,
             cedula: clientCedula,
+            phone: clientPhone,
             reference: autoMatchOnly ? null : refClient
           })
         });

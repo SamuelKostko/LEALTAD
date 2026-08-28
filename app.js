@@ -440,63 +440,116 @@ if (qrButton) {
           }
         };
 
-        // Control del Modal de Primera Vez
-        if (data.isFirstOpen) {
-          const firstModal = document.getElementById("firstOpenModal");
-          if (firstModal) {
-            firstModal.classList.add("firstOpenModal--active");
-            firstModal.setAttribute("aria-hidden", "false");
-
-            const hideFirstModal = () => {
-              firstModal.classList.remove("firstOpenModal--active");
-              firstModal.setAttribute("aria-hidden", "true");
-            };
-
-            const triggerPromoAfterFirstModal = () => {
-              hideFirstModal();
-              showPromoModal();
-            };
-
-            const installBtn = document.getElementById("firstOpenInstallBtn");
-            if (installBtn) {
-              installBtn.onclick = async () => {
-                try {
-                  const prompt = window.deferredInstallPrompt;
-                  if (prompt && typeof prompt.prompt === "function") {
-                    prompt.prompt();
-                    try {
-                      await prompt.userChoice;
-                    } catch {
+        const runFirstOpenFlow = () => {
+          if (data.isFirstOpen) {
+            const firstModal = document.getElementById("firstOpenModal");
+            if (firstModal) {
+              firstModal.classList.add("firstOpenModal--active");
+              firstModal.setAttribute("aria-hidden", "false");
+  
+              const hideFirstModal = () => {
+                firstModal.classList.remove("firstOpenModal--active");
+                firstModal.setAttribute("aria-hidden", "true");
+              };
+  
+              const triggerPromoAfterFirstModal = () => {
+                hideFirstModal();
+                showPromoModal();
+              };
+  
+              const installBtn = document.getElementById("firstOpenInstallBtn");
+              if (installBtn) {
+                installBtn.onclick = async () => {
+                  try {
+                    const prompt = window.deferredInstallPrompt;
+                    if (prompt && typeof prompt.prompt === "function") {
+                      prompt.prompt();
+                      try {
+                        await prompt.userChoice;
+                      } catch {
+                      }
+                      window.deferredInstallPrompt = null;
+                      triggerPromoAfterFirstModal();
+                      return;
                     }
-                    window.deferredInstallPrompt = null;
+  
+                    // Fallback: mostrar el banner de instalación (con instrucciones según el navegador)
+                    const banner = document.getElementById("installBanner");
+                    if (banner) {
+                      banner.classList.add("installBanner--show");
+                      banner.setAttribute("aria-hidden", "false");
+                    }
                     triggerPromoAfterFirstModal();
-                    return;
+                  } catch {
+                    triggerPromoAfterFirstModal();
                   }
-
-                  // Fallback: mostrar el banner de instalación (con instrucciones según el navegador)
-                  const banner = document.getElementById("installBanner");
-                  if (banner) {
-                    banner.classList.add("installBanner--show");
-                    banner.setAttribute("aria-hidden", "false");
-                  }
+                };
+              }
+              
+              const btnClose = document.getElementById("firstOpenCloseBtn");
+              if (btnClose) {
+                btnClose.onclick = () => {
                   triggerPromoAfterFirstModal();
-                } catch {
-                  triggerPromoAfterFirstModal();
-                }
-              };
-            }
-            
-            const btnClose = document.getElementById("firstOpenCloseBtn");
-            if (btnClose) {
-              btnClose.onclick = () => {
-                triggerPromoAfterFirstModal();
-              };
+                };
+              }
+            } else {
+              showPromoModal();
             }
           } else {
             showPromoModal();
           }
+        };
+
+        // Control del Modal de Teléfono
+        if (!data.telefono) {
+          const phoneModal = document.getElementById("phoneModal");
+          if (phoneModal) {
+            phoneModal.style.display = "block";
+            setTimeout(() => {
+              phoneModal.classList.add("firstOpenModal--active");
+              phoneModal.setAttribute("aria-hidden", "false");
+            }, 100);
+
+            const saveBtn = document.getElementById("phoneModalSaveBtn");
+            const input = document.getElementById("phoneModalInput");
+
+            if (saveBtn && input) {
+              saveBtn.onclick = async () => {
+                const tel = input.value.trim();
+                if (tel.length < 10) {
+                  alert("Por favor ingresa un número de teléfono válido.");
+                  return;
+                }
+                
+                saveBtn.disabled = true;
+                saveBtn.textContent = "Guardando...";
+
+                try {
+                  const res = await fetch("/api/client/update-phone", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ token: data.token, telefono: tel })
+                  });
+                  if (!res.ok) throw new Error("Error al guardar");
+                  
+                  phoneModal.classList.remove("firstOpenModal--active");
+                  phoneModal.setAttribute("aria-hidden", "true");
+                  setTimeout(() => {
+                    phoneModal.style.display = "none";
+                    runFirstOpenFlow();
+                  }, 300);
+                } catch (err) {
+                  alert("Error al guardar el teléfono. Intenta nuevamente.");
+                  saveBtn.disabled = false;
+                  saveBtn.textContent = "Guardar Teléfono";
+                }
+              };
+            }
+          } else {
+            runFirstOpenFlow();
+          }
         } else {
-          showPromoModal();
+          runFirstOpenFlow();
         }
 
         // Control de Primera Vez Completado
