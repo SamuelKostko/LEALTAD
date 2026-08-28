@@ -504,7 +504,6 @@ if (qrButton) {
         if (!data.telefono) {
           const phoneModal = document.getElementById("phoneModal");
           if (phoneModal) {
-            phoneModal.style.display = "block";
             setTimeout(() => {
               phoneModal.classList.add("firstOpenModal--active");
               phoneModal.setAttribute("aria-hidden", "false");
@@ -535,7 +534,6 @@ if (qrButton) {
                   phoneModal.classList.remove("firstOpenModal--active");
                   phoneModal.setAttribute("aria-hidden", "true");
                   setTimeout(() => {
-                    phoneModal.style.display = "none";
                     runFirstOpenFlow();
                   }, 300);
                 } catch (err) {
