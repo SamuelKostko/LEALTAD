@@ -519,6 +519,10 @@ if (qrButton) {
                   alert("Por favor ingresa un número de teléfono válido.");
                   return;
                 }
+
+                if (!confirm(`Confirma tu número: ${tel}`)) {
+                  return;
+                }
                 
                 saveBtn.disabled = true;
                 saveBtn.textContent = "Guardando...";
