@@ -22,11 +22,18 @@ export default async function handler(req, res) {
     const db = await getFirestoreDb();
     
     // Check if client exists
-    const docRef = db.collection('clientes').doc(String(token));
-    const docSnap = await docRef.get();
+    let docRef = db.collection('clientes').doc(String(token));
+    let docSnap = await docRef.get();
     
     if (!docSnap.exists) {
-      return sendJson(res, 404, { error: 'Cliente no encontrado.' });
+      // Try searching by token field
+      const querySnap = await db.collection('clientes').where('token', '==', String(token)).limit(1).get();
+      if (!querySnap.empty) {
+        docRef = querySnap.docs[0].ref;
+        docSnap = querySnap.docs[0];
+      } else {
+        return sendJson(res, 404, { error: 'Cliente no encontrado.' });
+      }
     }
 
     await docRef.set({ telefono: cleanTelefono }, { merge: true });
