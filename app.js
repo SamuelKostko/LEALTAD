@@ -4454,7 +4454,58 @@ document.addEventListener("DOMContentLoaded", () => {
       if (bpvDot2) bpvDot2.classList.add("bpv__step-dot--active");
     });
 
-    buyPointsBtnNext2.addEventListener("click", () => {
+    buyPointsBtnNext2.addEventListener("click", async () => {
+      const originalText = buyPointsBtnNext2.textContent;
+      buyPointsBtnNext2.disabled = true;
+      buyPointsBtnNext2.textContent = "Buscando transferencia...";
+
+      try {
+        let clientToken = "";
+        try {
+          const url = new URL(window.location.href);
+          clientToken = (url.searchParams.get("token") || url.searchParams.get("t") || "").trim();
+          if (!clientToken && url.pathname.startsWith("/card/")) {
+            clientToken = decodeURIComponent(url.pathname.slice("/card/".length)).trim();
+          }
+        } catch(e) {}
+
+        const totalBsText = currentTotalBs.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        
+        const res = await fetch("/api/buy-points", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            cardNumber: clientToken,
+            amount: currentTotalPts,
+            totalBs: totalBsText,
+            autoMatchOnly: true
+          })
+        });
+
+        const data = await res.json();
+        
+        if (res.ok && data.success && data.status === 'approved') {
+          step2.style.display = "none";
+          
+          const successTitle = stepSuccess.querySelector(".bpv__success-title");
+          const successText = stepSuccess.querySelector(".bpv__success-text");
+          if (successTitle && successText) {
+            successTitle.textContent = "¡Pago Verificado!";
+            successText.textContent = "Tu transferencia fue conciliada automáticamente. Los puntos han sido acreditados.";
+          }
+          stepSuccess.style.display = "block";
+          
+          buyPointsBtnNext2.disabled = false;
+          buyPointsBtnNext2.textContent = originalText;
+          return;
+        }
+      } catch (e) {
+        console.error("AutoMatch error:", e);
+      }
+
+      // Si falla, se muestra el formulario del paso 3 sin decir nada, de forma silenciosa
+      buyPointsBtnNext2.disabled = false;
+      buyPointsBtnNext2.textContent = originalText;
       step2.style.display = "none";
       step3.style.display = "flex";
       if (bpvDot3) bpvDot3.classList.add("bpv__step-dot--active");
@@ -4483,7 +4534,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (isNaN(amount) || amount <= 0 || bank.length <= 2 || phoneNum.length !== 7 || idNum.length <= 5 || ref.length < 4) return;
       
       buyPointsSubmitBtn.disabled = true;
-      buyPointsSubmitBtn.textContent = "Enviando...";
+      buyPointsSubmitBtn.textContent = "Verificando pago en el banco...";
 
       try {
         const nameEl = document.getElementById("clientName");
@@ -4502,7 +4553,7 @@ document.addEventListener("DOMContentLoaded", () => {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            cardNumber: clientToken, // Token extraído correctamente
+            cardNumber: clientToken,
             clientName: clientName,
             amount,
             totalBs: totalBsText,
@@ -4514,9 +4565,25 @@ document.addEventListener("DOMContentLoaded", () => {
           })
         });
 
-        if (!res.ok) throw new Error("Error al notificar");
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Error al notificar");
 
         step3.style.display = "none";
+        
+        // Update success message based on status
+        const successTitle = stepSuccess.querySelector(".bpv__success-title");
+        const successText = stepSuccess.querySelector(".bpv__success-text");
+        
+        if (successTitle && successText) {
+          if (data.status === 'approved') {
+            successTitle.textContent = "¡Pago Verificado!";
+            successText.textContent = "Tu transferencia fue conciliada automáticamente. Los puntos han sido acreditados.";
+          } else {
+            successTitle.textContent = "¡Pago Reportado!";
+            successText.textContent = "Estamos esperando confirmación del banco. Te notificaremos pronto.";
+          }
+        }
+
         stepSuccess.style.display = "block";
       } catch (err) {
         console.error(err);
@@ -4553,7 +4620,8 @@ document.addEventListener("DOMContentLoaded", () => {
         const bank = document.getElementById("pmBank")?.textContent.trim() || "";
         const phone = document.getElementById("pmPhone")?.textContent.trim() || "";
         const id = document.getElementById("pmId")?.textContent.trim() || "";
-        const text = `Banco: ${bank}\nTeléfono: ${phone}\nCédula/RIF: ${id}`;
+        const montoStr = currentTotalBs.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const text = `Banco: ${bank}\nTeléfono: ${phone}\nCédula/RIF: ${id}\nMonto: ${montoStr} Bs`;
         navigator.clipboard.writeText(text).then(() => {
           const original = copyAllBtn.innerHTML;
           copyAllBtn.textContent = "✓ ¡Todo copiado!";
