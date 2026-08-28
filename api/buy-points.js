@@ -61,7 +61,7 @@ export default async function handler(req, res) {
     // Polling Loop
     for (let i = 0; i < maxRetries; i++) {
       try {
-        const verifyRes = await fetch('https://conciliacion.nexuslealtad.com/api/verify-payment', {
+        const verifyRes = await fetch('https://develop.conciliacion.nexuslealtad.com/api/verify-payment', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
