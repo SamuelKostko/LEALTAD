@@ -440,63 +440,118 @@ if (qrButton) {
           }
         };
 
-        // Control del Modal de Primera Vez
-        if (data.isFirstOpen) {
-          const firstModal = document.getElementById("firstOpenModal");
-          if (firstModal) {
-            firstModal.classList.add("firstOpenModal--active");
-            firstModal.setAttribute("aria-hidden", "false");
-
-            const hideFirstModal = () => {
-              firstModal.classList.remove("firstOpenModal--active");
-              firstModal.setAttribute("aria-hidden", "true");
-            };
-
-            const triggerPromoAfterFirstModal = () => {
-              hideFirstModal();
-              showPromoModal();
-            };
-
-            const installBtn = document.getElementById("firstOpenInstallBtn");
-            if (installBtn) {
-              installBtn.onclick = async () => {
-                try {
-                  const prompt = window.deferredInstallPrompt;
-                  if (prompt && typeof prompt.prompt === "function") {
-                    prompt.prompt();
-                    try {
-                      await prompt.userChoice;
-                    } catch {
+        const runFirstOpenFlow = () => {
+          if (data.isFirstOpen) {
+            const firstModal = document.getElementById("firstOpenModal");
+            if (firstModal) {
+              firstModal.classList.add("firstOpenModal--active");
+              firstModal.setAttribute("aria-hidden", "false");
+  
+              const hideFirstModal = () => {
+                firstModal.classList.remove("firstOpenModal--active");
+                firstModal.setAttribute("aria-hidden", "true");
+              };
+  
+              const triggerPromoAfterFirstModal = () => {
+                hideFirstModal();
+                showPromoModal();
+              };
+  
+              const installBtn = document.getElementById("firstOpenInstallBtn");
+              if (installBtn) {
+                installBtn.onclick = async () => {
+                  try {
+                    const prompt = window.deferredInstallPrompt;
+                    if (prompt && typeof prompt.prompt === "function") {
+                      prompt.prompt();
+                      try {
+                        await prompt.userChoice;
+                      } catch {
+                      }
+                      window.deferredInstallPrompt = null;
+                      triggerPromoAfterFirstModal();
+                      return;
                     }
-                    window.deferredInstallPrompt = null;
+  
+                    // Fallback: mostrar el banner de instalación (con instrucciones según el navegador)
+                    const banner = document.getElementById("installBanner");
+                    if (banner) {
+                      banner.classList.add("installBanner--show");
+                      banner.setAttribute("aria-hidden", "false");
+                    }
                     triggerPromoAfterFirstModal();
-                    return;
+                  } catch {
+                    triggerPromoAfterFirstModal();
                   }
-
-                  // Fallback: mostrar el banner de instalación (con instrucciones según el navegador)
-                  const banner = document.getElementById("installBanner");
-                  if (banner) {
-                    banner.classList.add("installBanner--show");
-                    banner.setAttribute("aria-hidden", "false");
-                  }
+                };
+              }
+              
+              const btnClose = document.getElementById("firstOpenCloseBtn");
+              if (btnClose) {
+                btnClose.onclick = () => {
                   triggerPromoAfterFirstModal();
-                } catch {
-                  triggerPromoAfterFirstModal();
-                }
-              };
-            }
-            
-            const btnClose = document.getElementById("firstOpenCloseBtn");
-            if (btnClose) {
-              btnClose.onclick = () => {
-                triggerPromoAfterFirstModal();
-              };
+                };
+              }
+            } else {
+              showPromoModal();
             }
           } else {
             showPromoModal();
           }
+        };
+
+        // Control del Modal de Teléfono
+        if (!data.telefono) {
+          const phoneModal = document.getElementById("phoneModal");
+          if (phoneModal) {
+            setTimeout(() => {
+              phoneModal.classList.add("firstOpenModal--active");
+              phoneModal.setAttribute("aria-hidden", "false");
+            }, 100);
+
+            const saveBtn = document.getElementById("phoneModalSaveBtn");
+            const input = document.getElementById("phoneModalInput");
+
+            if (saveBtn && input) {
+              saveBtn.onclick = async () => {
+                const tel = input.value.trim();
+                if (tel.length < 10) {
+                  alert("Por favor ingresa un número de teléfono válido.");
+                  return;
+                }
+
+                if (!confirm(`Confirma tu número: ${tel}`)) {
+                  return;
+                }
+                
+                saveBtn.disabled = true;
+                saveBtn.textContent = "Guardando...";
+
+                try {
+                  const res = await fetch("/api/client/update-phone", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ token: data.token, telefono: tel })
+                  });
+                  if (!res.ok) throw new Error("Error al guardar");
+                  
+                  phoneModal.classList.remove("firstOpenModal--active");
+                  phoneModal.setAttribute("aria-hidden", "true");
+                  setTimeout(() => {
+                    runFirstOpenFlow();
+                  }, 300);
+                } catch (err) {
+                  alert("Error al guardar el teléfono. Intenta nuevamente.");
+                  saveBtn.disabled = false;
+                  saveBtn.textContent = "Guardar Teléfono";
+                }
+              };
+            }
+          } else {
+            runFirstOpenFlow();
+          }
         } else {
-          showPromoModal();
+          runFirstOpenFlow();
         }
 
         // Control de Primera Vez Completado
@@ -4285,6 +4340,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const buyPointsOriginPhoneNum = document.getElementById("buyPointsOriginPhoneNum");
   const buyPointsOriginId = document.getElementById("buyPointsOriginId");
   const buyPointsRef = document.getElementById("buyPointsRef");
+  const buyPointsDate = document.getElementById("buyPointsDate");
   const buyPointsSubmitBtn = document.getElementById("buyPointsSubmitBtn");
   const buyPointsBtnDone = document.getElementById("buyPointsBtnDone");
 
@@ -4307,6 +4363,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (buyPointsOriginPhoneNum) buyPointsOriginPhoneNum.value = "";
     if (buyPointsOriginId) buyPointsOriginId.value = "";
     if (buyPointsRef) buyPointsRef.value = "";
+    if (buyPointsDate) buyPointsDate.value = "";
     
     buyPointsBtnNext1.disabled = true;
     buyPointsSubmitBtn.disabled = true;
@@ -4425,8 +4482,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const phoneNum = buyPointsOriginPhoneNum.value.trim();
     const idNum = buyPointsOriginId.value.trim();
     const ref = buyPointsRef.value.trim();
+    const dateVal = buyPointsDate ? buyPointsDate.value : "";
     
-    if (bank.length > 2 && phoneNum.length === 7 && idNum.length > 5 && ref.length >= 4) {
+    if (bank.length > 2 && phoneNum.length === 7 && idNum.length > 5 && ref.length >= 4 && dateVal !== "") {
       buyPointsSubmitBtn.disabled = false;
     } else {
       buyPointsSubmitBtn.disabled = true;
@@ -4454,7 +4512,58 @@ document.addEventListener("DOMContentLoaded", () => {
       if (bpvDot2) bpvDot2.classList.add("bpv__step-dot--active");
     });
 
-    buyPointsBtnNext2.addEventListener("click", () => {
+    buyPointsBtnNext2.addEventListener("click", async () => {
+      const originalText = buyPointsBtnNext2.textContent;
+      buyPointsBtnNext2.disabled = true;
+      buyPointsBtnNext2.textContent = "Buscando transferencia...";
+
+      try {
+        let clientToken = "";
+        try {
+          const url = new URL(window.location.href);
+          clientToken = (url.searchParams.get("token") || url.searchParams.get("t") || "").trim();
+          if (!clientToken && url.pathname.startsWith("/card/")) {
+            clientToken = decodeURIComponent(url.pathname.slice("/card/".length)).trim();
+          }
+        } catch(e) {}
+
+        const totalBsText = currentTotalBs.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        
+        const res = await fetch("/api/buy-points", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            cardNumber: clientToken,
+            amount: currentTotalPts,
+            totalBs: totalBsText,
+            autoMatchOnly: true
+          })
+        });
+
+        const data = await res.json();
+        
+        if (res.ok && data.success && data.status === 'approved') {
+          step2.style.display = "none";
+          
+          const successTitle = stepSuccess.querySelector(".bpv__success-title");
+          const successText = stepSuccess.querySelector(".bpv__success-text");
+          if (successTitle && successText) {
+            successTitle.textContent = "¡Pago Verificado!";
+            successText.textContent = "Tu transferencia fue conciliada automáticamente. Los puntos han sido acreditados.";
+          }
+          stepSuccess.style.display = "block";
+          
+          buyPointsBtnNext2.disabled = false;
+          buyPointsBtnNext2.textContent = originalText;
+          return;
+        }
+      } catch (e) {
+        console.error("AutoMatch error:", e);
+      }
+
+      // Si falla, se muestra el formulario del paso 3 sin decir nada, de forma silenciosa
+      buyPointsBtnNext2.disabled = false;
+      buyPointsBtnNext2.textContent = originalText;
       step2.style.display = "none";
       step3.style.display = "flex";
       if (bpvDot3) bpvDot3.classList.add("bpv__step-dot--active");
@@ -4464,6 +4573,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (buyPointsOriginPhoneNum) buyPointsOriginPhoneNum.addEventListener("input", validateBuyPointsStep3);
     if (buyPointsOriginId) buyPointsOriginId.addEventListener("input", validateBuyPointsStep3);
     if (buyPointsRef) buyPointsRef.addEventListener("input", validateBuyPointsStep3);
+    if (buyPointsDate) buyPointsDate.addEventListener("change", validateBuyPointsStep3);
 
     const term1 = document.getElementById("bpvTerm1");
     const term2 = document.getElementById("bpvTerm2");
@@ -4478,12 +4588,13 @@ document.addEventListener("DOMContentLoaded", () => {
       const phone = phoneCode + phoneNum;
       const idNum = buyPointsOriginId.value.trim();
       const ref = buyPointsRef.value.trim();
+      const dateVal = buyPointsDate ? buyPointsDate.value : "";
       const totalBsText = currentTotalBs.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
       
-      if (isNaN(amount) || amount <= 0 || bank.length <= 2 || phoneNum.length !== 7 || idNum.length <= 5 || ref.length < 4) return;
+      if (isNaN(amount) || amount <= 0 || bank.length <= 2 || phoneNum.length !== 7 || idNum.length <= 5 || ref.length < 4 || dateVal === "") return;
       
       buyPointsSubmitBtn.disabled = true;
-      buyPointsSubmitBtn.textContent = "Enviando...";
+      buyPointsSubmitBtn.textContent = "Verificando pago en el banco...";
 
       try {
         const nameEl = document.getElementById("clientName");
@@ -4502,7 +4613,7 @@ document.addEventListener("DOMContentLoaded", () => {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            cardNumber: clientToken, // Token extraído correctamente
+            cardNumber: clientToken,
             clientName: clientName,
             amount,
             totalBs: totalBsText,
@@ -4510,13 +4621,30 @@ document.addEventListener("DOMContentLoaded", () => {
             originPhone: phone,
             originId: idNum,
             reference: ref,
+            date: dateVal,
             rate: currentBcvRate
           })
         });
 
-        if (!res.ok) throw new Error("Error al notificar");
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Error al notificar");
 
         step3.style.display = "none";
+        
+        // Update success message based on status
+        const successTitle = stepSuccess.querySelector(".bpv__success-title");
+        const successText = stepSuccess.querySelector(".bpv__success-text");
+        
+        if (successTitle && successText) {
+          if (data.status === 'approved') {
+            successTitle.textContent = "¡Pago Verificado!";
+            successText.textContent = "Tu transferencia fue conciliada automáticamente. Los puntos han sido acreditados.";
+          } else {
+            successTitle.textContent = "¡Pago Reportado!";
+            successText.textContent = "Estamos esperando confirmación del banco. Te notificaremos pronto.";
+          }
+        }
+
         stepSuccess.style.display = "block";
       } catch (err) {
         console.error(err);
@@ -4553,7 +4681,8 @@ document.addEventListener("DOMContentLoaded", () => {
         const bank = document.getElementById("pmBank")?.textContent.trim() || "";
         const phone = document.getElementById("pmPhone")?.textContent.trim() || "";
         const id = document.getElementById("pmId")?.textContent.trim() || "";
-        const text = `Banco: ${bank}\nTeléfono: ${phone}\nCédula/RIF: ${id}`;
+        const montoStr = currentTotalBs.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const text = `Banco: ${bank}\nTeléfono: ${phone}\nCédula/RIF: ${id}\nMonto: ${montoStr} Bs`;
         navigator.clipboard.writeText(text).then(() => {
           const original = copyAllBtn.innerHTML;
           copyAllBtn.textContent = "✓ ¡Todo copiado!";

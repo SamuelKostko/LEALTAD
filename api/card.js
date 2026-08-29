@@ -205,6 +205,7 @@ export default async function handler(req, res) {
       token,
       name: data.nombre || 'Sin nombre',
       cedula: data.idNumber || data.cedula || '—',
+      telefono: data.telefono || '',
       balance: data.totalPoints || 0,
       merchantBalances: balances,
       updatedAt: toIso(data.updatedAt),
