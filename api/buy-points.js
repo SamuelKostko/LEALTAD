@@ -13,7 +13,7 @@ export default async function handler(req, res) {
 
   try {
     const body = await readJsonBody(req);
-    const { cardNumber, clientName, amount, totalBs, originBank, originPhone, originId, reference, rate, autoMatchOnly } = body || {};
+    const { cardNumber, clientName, amount, totalBs, originBank, originPhone, originId, reference, date, rate, autoMatchOnly } = body || {};
 
     if (!cardNumber || !amount || !totalBs) {
       return sendJson(res, 400, { error: 'Faltan campos básicos (cardNumber, amount, totalBs)' });
@@ -70,6 +70,7 @@ export default async function handler(req, res) {
             amount: amountClient,
             cedula: clientCedula,
             phone: clientPhone,
+            date: autoMatchOnly ? null : date,
             reference: autoMatchOnly ? null : refClient
           })
         });

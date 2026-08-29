@@ -4340,6 +4340,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const buyPointsOriginPhoneNum = document.getElementById("buyPointsOriginPhoneNum");
   const buyPointsOriginId = document.getElementById("buyPointsOriginId");
   const buyPointsRef = document.getElementById("buyPointsRef");
+  const buyPointsDate = document.getElementById("buyPointsDate");
   const buyPointsSubmitBtn = document.getElementById("buyPointsSubmitBtn");
   const buyPointsBtnDone = document.getElementById("buyPointsBtnDone");
 
@@ -4362,6 +4363,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (buyPointsOriginPhoneNum) buyPointsOriginPhoneNum.value = "";
     if (buyPointsOriginId) buyPointsOriginId.value = "";
     if (buyPointsRef) buyPointsRef.value = "";
+    if (buyPointsDate) buyPointsDate.value = "";
     
     buyPointsBtnNext1.disabled = true;
     buyPointsSubmitBtn.disabled = true;
@@ -4480,8 +4482,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const phoneNum = buyPointsOriginPhoneNum.value.trim();
     const idNum = buyPointsOriginId.value.trim();
     const ref = buyPointsRef.value.trim();
+    const dateVal = buyPointsDate ? buyPointsDate.value : "";
     
-    if (bank.length > 2 && phoneNum.length === 7 && idNum.length > 5 && ref.length >= 4) {
+    if (bank.length > 2 && phoneNum.length === 7 && idNum.length > 5 && ref.length >= 4 && dateVal !== "") {
       buyPointsSubmitBtn.disabled = false;
     } else {
       buyPointsSubmitBtn.disabled = true;
@@ -4570,6 +4573,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (buyPointsOriginPhoneNum) buyPointsOriginPhoneNum.addEventListener("input", validateBuyPointsStep3);
     if (buyPointsOriginId) buyPointsOriginId.addEventListener("input", validateBuyPointsStep3);
     if (buyPointsRef) buyPointsRef.addEventListener("input", validateBuyPointsStep3);
+    if (buyPointsDate) buyPointsDate.addEventListener("change", validateBuyPointsStep3);
 
     const term1 = document.getElementById("bpvTerm1");
     const term2 = document.getElementById("bpvTerm2");
@@ -4584,9 +4588,10 @@ document.addEventListener("DOMContentLoaded", () => {
       const phone = phoneCode + phoneNum;
       const idNum = buyPointsOriginId.value.trim();
       const ref = buyPointsRef.value.trim();
+      const dateVal = buyPointsDate ? buyPointsDate.value : "";
       const totalBsText = currentTotalBs.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
       
-      if (isNaN(amount) || amount <= 0 || bank.length <= 2 || phoneNum.length !== 7 || idNum.length <= 5 || ref.length < 4) return;
+      if (isNaN(amount) || amount <= 0 || bank.length <= 2 || phoneNum.length !== 7 || idNum.length <= 5 || ref.length < 4 || dateVal === "") return;
       
       buyPointsSubmitBtn.disabled = true;
       buyPointsSubmitBtn.textContent = "Verificando pago en el banco...";
@@ -4616,6 +4621,7 @@ document.addEventListener("DOMContentLoaded", () => {
             originPhone: phone,
             originId: idNum,
             reference: ref,
+            date: dateVal,
             rate: currentBcvRate
           })
         });
