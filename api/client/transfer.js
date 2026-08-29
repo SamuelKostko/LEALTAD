@@ -218,8 +218,8 @@ export default async function handler(req, res) {
           points: transferAmount,
           recipientEmail: lowerEmail,
           recipientName: recipientData.nombre,
-          createdAt: new Date().toISOString(),
-          processedAt: new Date().toISOString(),
+          createdAt: FieldValue.serverTimestamp(),
+          processedAt: FieldValue.serverTimestamp(),
           description: `Envío a ${recipientData.nombre}`,
           reference: refNumber
         });
@@ -231,8 +231,8 @@ export default async function handler(req, res) {
           amount: transferAmount,
           points: transferAmount,
           senderName: senderData.nombre,
-          createdAt: new Date().toISOString(),
-          processedAt: new Date().toISOString(),
+          createdAt: FieldValue.serverTimestamp(),
+          processedAt: FieldValue.serverTimestamp(),
           description: `Recibido de ${senderData.nombre}`,
           reference: refNumber
         });
