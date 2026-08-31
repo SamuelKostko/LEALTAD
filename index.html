@@ -1320,6 +1320,14 @@
           Transferir Puntos
         </button>
 
+        <button class="profileMenu__item" id="profileUpdatePhoneBtn" type="button"
+          style="color: #3b82f6;">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 10px;">
+            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+          </svg>
+          Actualizar Teléfono
+        </button>
+
         <button class="profileMenu__item profileMenu__item--install" id="profileInstallBtn" type="button" hidden>
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" style="margin-right: 10px;">
             <path d="M12 15V3m0 12l-4-4m4 4l4-4M5 21h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
@@ -1825,8 +1833,9 @@
       <div style="margin: 16px 0;">
         <input type="tel" id="phoneModalInput" placeholder="04141234567" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.5); color: #fff; font-size: 16px; text-align: center; font-family: monospace;" />
       </div>
-      <div class="firstOpenModal__actions" style="flex-direction: column;">
+      <div class="firstOpenModal__actions" style="flex-direction: column; gap: 8px;">
         <button class="firstOpenModal__btn" id="phoneModalSaveBtn" type="button" style="width: 100%;">Guardar Teléfono</button>
+        <button class="firstOpenModal__btn" id="phoneModalCancelBtn" type="button" style="width: 100%; background: transparent; border: 1px solid rgba(255,255,255,0.2); display: none;">Cancelar</button>
       </div>
     </div>
   </div>

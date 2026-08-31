@@ -500,8 +500,12 @@ if (qrButton) {
           }
         };
 
-        // Control del Modal de Teléfono
-        if (!data.telefono) {
+          // Control del Modal de Teléfono
+          if (data.telefono && document.getElementById("phoneModalInput")) {
+            document.getElementById("phoneModalInput").value = data.telefono;
+          }
+          
+          if (!data.telefono) {
           const phoneModal = document.getElementById("phoneModal");
           if (phoneModal) {
             setTimeout(() => {
@@ -4924,3 +4928,48 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("transferBackTo2Btn")?.addEventListener("click", () => showStep(2));
 })();
 
+
+  (() => {
+    const btn = document.getElementById("profileUpdatePhoneBtn");
+    const modal = document.getElementById("phoneModal");
+    const saveBtn = document.getElementById("phoneModalSaveBtn");
+    const cancelBtn = document.getElementById("phoneModalCancelBtn");
+    const input = document.getElementById("phoneModalInput");
+    if (!btn || !modal) return;
+    btn.addEventListener("click", () => {
+      const menu = document.getElementById("profileMenu");
+      if (menu) { menu.classList.remove("profileMenu--active"); menu.setAttribute("aria-hidden", "true"); }
+      if (cancelBtn) cancelBtn.style.display = "block";
+      modal.classList.add("firstOpenModal--active");
+      modal.setAttribute("aria-hidden", "false");
+    });
+    if (cancelBtn) {
+      cancelBtn.addEventListener("click", () => {
+        modal.classList.remove("firstOpenModal--active");
+        modal.setAttribute("aria-hidden", "true");
+        if (cancelBtn) cancelBtn.style.display = "none";
+      });
+    }
+    if (saveBtn && input) {
+      saveBtn.onclick = async () => {
+        const tel = input.value.trim();
+        if (tel.length < 10) return alert("Ingresa un número válido.");
+        if (!confirm("Confirma tu número: " + tel)) return;
+        saveBtn.disabled = true; saveBtn.textContent = "Guardando...";
+        try {
+          let token = ""; try { const u = new URL(window.location.href); token = (u.searchParams.get("token") || u.searchParams.get("t") || "").trim(); if (!token && u.pathname.startsWith("/card/")) token = decodeURIComponent(u.pathname.slice(6)).trim(); } catch(e){}
+          const res = await fetch("/api/client/update-phone", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token: token, telefono: tel }) });
+          if (!res.ok) throw new Error("Error");
+          modal.classList.remove("firstOpenModal--active");
+          modal.setAttribute("aria-hidden", "true");
+          if (cancelBtn) cancelBtn.style.display = "none";
+          saveBtn.disabled = false; saveBtn.textContent = "Guardar Teléfono";
+          alert("Teléfono actualizado.");
+          if (typeof runFirstOpenFlow === "function") setTimeout(() => runFirstOpenFlow(), 300);
+        } catch (err) {
+          alert("Error al guardar.");
+          saveBtn.disabled = false; saveBtn.textContent = "Guardar Teléfono";
+        }
+      };
+    }
+  })();
