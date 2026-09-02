@@ -405,8 +405,8 @@ if (qrButton) {
                 if (config.promotion) {
                   onImageClick = () => {
                     hidePromo();
-                    if (typeof window.showDetailModal === 'function') {
-                      window.showDetailModal(config.promotion);
+                    if (typeof window.openPromoDetailsModal === 'function') {
+                      window.openPromoDetailsModal(config.promotion);
                     }
                   };
                 }
@@ -4040,7 +4040,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
-  const openPromoDetailsModal = (p) => {
+  const openPromoDetailsModal = window.openPromoDetailsModal = (p) => {
     try {
       let view = promoDetailsView || document.getElementById("promoDetailsView");
       if (!view) {
