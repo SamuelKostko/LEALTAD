@@ -69,7 +69,6 @@ const handleImageSelect = (file, target) => {
   
   const url = URL.createObjectURL(file);
   const targetImg = $('cropImageTarget');
-  targetImg.src = url;
   currentCropTarget = target;
   
   $('cropModalOverlay').classList.add('is-open');
@@ -88,6 +87,8 @@ const handleImageSelect = (file, target) => {
       restore: false,
     });
   };
+
+  targetImg.src = url;
 };
 
 if ($('cropModalClose')) {
