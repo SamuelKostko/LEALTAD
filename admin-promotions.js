@@ -52,6 +52,83 @@ const formatExpiry = (ts) => {
   return `⏱ Vence en ${hours}h ${mins}m`;
 };
 
+/* ─── Cropper Setup ───────────────────────────────────────────────────────── */
+
+let currentCropper = null;
+let croppedImageDataUrl = null;
+let currentCropTarget = null;
+
+const handleImageSelect = (file, target) => {
+  if (!file) return;
+  if (file.size > 15 * 1024 * 1024) {
+    alert('La imagen excede el límite de 15 MB.');
+    if (target === 'create') $('promoImage').value = '';
+    if (target === 'edit') $('editPromoImage').value = '';
+    return;
+  }
+  
+  const url = URL.createObjectURL(file);
+  const targetImg = $('cropImageTarget');
+  targetImg.src = url;
+  currentCropTarget = target;
+  
+  $('cropModalOverlay').classList.add('is-open');
+  
+  if (currentCropper) {
+    currentCropper.destroy();
+    currentCropper = null;
+  }
+  
+  targetImg.onload = () => {
+    if (currentCropper) currentCropper.destroy();
+    currentCropper = new Cropper(targetImg, {
+      viewMode: 1,
+      autoCropArea: 1,
+      responsive: true,
+      restore: false,
+    });
+  };
+};
+
+if ($('cropModalClose')) {
+  $('cropModalClose').addEventListener('click', () => {
+    $('cropModalOverlay').classList.remove('is-open');
+    if (currentCropper) { currentCropper.destroy(); currentCropper = null; }
+    if (currentCropTarget === 'create') {
+        $('promoImage').value = '';
+        $('promoImagePreview').classList.remove('is-visible');
+    }
+    if (currentCropTarget === 'edit') {
+        $('editPromoImage').value = '';
+    }
+  });
+}
+
+if ($('cropConfirmBtn')) {
+  $('cropConfirmBtn').addEventListener('click', () => {
+    if (!currentCropper) return;
+    croppedImageDataUrl = currentCropper.getCroppedCanvas({
+      maxWidth: 1080,
+      maxHeight: 1080,
+    }).toDataURL('image/webp', 0.85);
+
+    $('cropModalOverlay').classList.remove('is-open');
+    currentCropper.destroy();
+    currentCropper = null;
+
+    if (currentCropTarget === 'create') {
+      const preview = $('promoImagePreview');
+      preview.src = croppedImageDataUrl;
+      preview.classList.add('is-visible');
+    } else if (currentCropTarget === 'edit') {
+      const preview = $('editPromoImagePreview');
+      preview.src = croppedImageDataUrl;
+      preview.classList.add('is-visible');
+    }
+  });
+}
+
+
 /* ─── Auth ────────────────────────────────────────────────────────────────── */
 
 const setAuthenticated = (ok) => {
@@ -189,18 +266,7 @@ const promoImageInput = $('promoImage');
 const promoImagePreview = $('promoImagePreview');
 if (promoImageInput && promoImagePreview) {
   promoImageInput.addEventListener('change', () => {
-    const file = promoImageInput.files[0];
-    if (!file) { promoImagePreview.classList.remove('is-visible'); return; }
-
-    if (file.size > 15 * 1024 * 1024) {
-      alert('La imagen excede el límite de 15 MB.');
-      promoImageInput.value = '';
-      promoImagePreview.classList.remove('is-visible');
-      return;
-    }
-
-    promoImagePreview.src = URL.createObjectURL(file);
-    promoImagePreview.classList.add('is-visible');
+    handleImageSelect(promoImageInput.files[0], 'create');
   });
 }
 
@@ -210,7 +276,7 @@ if (promoForm) {
     e.preventDefault();
     const file = $('promoImage').files[0];
     const promoResult = $('promoResult');
-    if (!file) { setResult(promoResult, 'err', 'Selecciona una imagen'); return; }
+    if (!file || !croppedImageDataUrl) { setResult(promoResult, 'err', 'Selecciona y recorta una imagen'); return; }
     if (file.size > 15 * 1024 * 1024) { setResult(promoResult, 'err', 'La imagen no debe superar 15 MB'); return; }
 
     const title = $('promoTitle').value.trim();
@@ -232,7 +298,7 @@ if (promoForm) {
     setResult(promoResult, 'info', 'Comprimiendo imagen...');
 
     try {
-      const image = await compressImageToBase64(file);
+      const image = croppedImageDataUrl;
       setResult(promoResult, 'info', 'Subiendo promoción...');
 
       const res = await fetch('/api/admin/promotions', {
@@ -250,6 +316,7 @@ if (promoForm) {
 
       setResult(promoResult, 'ok', '¡Promoción creada exitosamente!');
       promoForm.reset();
+      croppedImageDataUrl = null;
       if (promoImagePreview) promoImagePreview.classList.remove('is-visible');
       fetchPromotions();
       setTimeout(() => setResult(promoResult, '', ''), 3500);
@@ -269,6 +336,8 @@ const editImageInput = $('editPromoImage');
 const editImagePreview = $('editPromoImagePreview');
 
 const openEditModal = (promo) => {
+  croppedImageDataUrl = null;
+  if ($('editPromoImage')) $('editPromoImage').value = '';
   $('editPromoId').value = promo.id;
   $('editPromoTitle').value = promo.title;
   $('editPromoDesc').value = promo.description || '';
@@ -297,18 +366,7 @@ if (overlay) overlay.addEventListener('click', e => { if (e.target === overlay) 
 // Edit image preview
 if (editImageInput && editImagePreview) {
   editImageInput.addEventListener('change', () => {
-    const file = editImageInput.files[0];
-    if (!file) { editImagePreview.classList.remove('is-visible'); return; }
-
-    if (file.size > 15 * 1024 * 1024) {
-      alert('La imagen excede el límite de 15 MB.');
-      editImageInput.value = '';
-      editImagePreview.classList.remove('is-visible');
-      return;
-    }
-
-    editImagePreview.src = URL.createObjectURL(file);
-    editImagePreview.classList.add('is-visible');
+    handleImageSelect(editImageInput.files[0], 'edit');
   });
 }
 
@@ -339,9 +397,9 @@ if (editForm) {
       const payload = { id, title, description, branch, points, realPrice, units, expiresAt, maxPerUser };
 
       const newFile = editImageInput?.files[0];
-      if (newFile) {
-        setResult(editResult, 'info', 'Comprimiendo imagen...');
-        payload.image = await compressImageToBase64(newFile);
+      if (newFile && croppedImageDataUrl) {
+        setResult(editResult, 'info', 'Subiendo nueva imagen...');
+        payload.image = croppedImageDataUrl;
       }
 
       const res = await fetch('/api/admin/promotions', {
