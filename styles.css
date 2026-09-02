@@ -3735,7 +3735,7 @@ body.is-ready .bootSplash {
 .promoModal {
   position: fixed;
   inset: 0;
-  z-index: 3000;
+  z-index: 11000;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -4397,10 +4397,12 @@ body:has(.aDash:not([hidden])) {
   width: 100%;
   letter-spacing: -0.02em;
   -moz-appearance: textfield;
+  appearance: textfield;
 }
 .bpv__calc-input::-webkit-outer-spin-button,
 .bpv__calc-input::-webkit-inner-spin-button {
   -webkit-appearance: none;
+  appearance: none;
   margin: 0;
 }
 
@@ -4601,6 +4603,7 @@ body:has(.aDash:not([hidden])) {
   transition: border-color 0.2s, background 0.2s;
   width: 100%;
   -webkit-appearance: none;
+  appearance: none;
 }
 
 .bpv__input::placeholder {

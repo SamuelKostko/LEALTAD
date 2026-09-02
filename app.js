@@ -405,8 +405,8 @@ if (qrButton) {
                 if (config.promotion) {
                   onImageClick = () => {
                     hidePromo();
-                    if (typeof window.showDetailModal === 'function') {
-                      window.showDetailModal(config.promotion);
+                    if (typeof window.openPromoDetailsModal === 'function') {
+                      window.openPromoDetailsModal(config.promotion);
                     }
                   };
                 }
@@ -3939,42 +3939,44 @@ document.addEventListener("DOMContentLoaded", () => {
     const countdownId = `promo-cd-${p.id}`;
 
     card.innerHTML = `
-      <div style="position:relative; height: 180px; background: #000; overflow: hidden; border-radius: 16px;">
+      <div style="aspect-ratio: 1 / 1; width: 100%; background: #000; overflow: hidden; border-radius: 20px 20px 0 0;">
         <img src="${p.image}" alt="${p.title}"
           style="width:100%; height:100%; object-fit:cover; display:block; transition: transform 0.4s;"
           loading="lazy"
         />
-        <div style="position:absolute; inset:0; background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 60%); pointer-events: none;"></div>
-        <div style="position:absolute; bottom:10px; left:12px; right:12px; pointer-events: none;">
-          ${hasExpiry ? `<div id="${countdownId}" style="font-size:10px; font-weight:800; letter-spacing:0.05em; text-transform:uppercase; margin-bottom:4px;"></div>` : ""}
-          <span style="font-size:16px; font-weight:800; color:#fff; line-height:1.1; text-shadow:0 2px 8px rgba(0,0,0,0.6); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${p.title}</span>
-        </div>
-        <div style="position:absolute; top:8px; right:8px; display:flex; flex-direction:column; align-items:flex-end; gap:4px; pointer-events: none;">
-          ${p.realPrice ? `<span style="background: rgba(239,68,68,0.8); backdrop-filter: blur(4px); color:#fff; font-weight:700; font-size:10px; padding:2px 6px; border-radius:8px; text-decoration: line-through;">${Number(p.realPrice).toLocaleString("es-VE")} Pts</span>` : ''}
-          <span style="background: rgba(9,9,11,0.7); backdrop-filter: blur(4px); color:#06b6d4; font-weight:800; font-size:11px; padding:4px 8px; border-radius:12px; white-space:nowrap;">
-            ${Number(p.points).toLocaleString("es-VE")} Pts
-          </span>
+      </div>
+      <div style="padding: 12px; display: flex; flex-direction: column; gap: 8px;">
+        <span style="font-size:15px; font-weight:800; color:#fff; line-height:1.2; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${p.title}</span>
+        
+        <div style="display: flex; flex-direction: column; gap: 4px;">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            ${p.realPrice ? `<span style="color:rgba(255,255,255,0.4); font-weight:600; font-size:11px; text-decoration: line-through;">${Number(p.realPrice).toLocaleString("es-VE")} Pts</span>` : ''}
+            <span style="color:#06b6d4; font-weight:800; font-size:14px;">
+              ${Number(p.points).toLocaleString("es-VE")} Pts
+            </span>
+          </div>
+          ${hasExpiry ? `<div id="${countdownId}" style="font-size:11px; font-weight:600; letter-spacing:0.02em;"></div>` : ""}
         </div>
       </div>
-      ${p.description ? `<div style="padding: 12px;"><p style="margin:0; font-size:11px; color:rgba(255,255,255,0.6); line-height:1.4; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">${p.description}</p></div>` : ""}
     `;
 
     card.addEventListener("click", () => openPromoDetailsModal(p));
     container.appendChild(card);
 
-    // Start live countdown
     if (hasExpiry) {
       const el = document.getElementById(countdownId);
-      const tick = () => {
-        const { label, cls } = formatCountdown(new Date(p.expiresAt).getTime() - Date.now());
-        el.textContent = label;
-        el.style.color = cls === "promo-critical" ? "#ef4444"
-          : cls === "promo-urgent" ? "#f59e0b"
-          : cls === "promo-soon" ? "#fbbf24"
-          : "rgba(255,255,255,0.3)";
-      };
-      tick();
-      promoCountdownIntervals.push(setInterval(tick, 1000));
+      if (el) {
+        const tick = () => {
+          const { label, cls } = formatCountdown(new Date(p.expiresAt).getTime() - Date.now());
+          el.textContent = label;
+          el.style.color = cls === "promo-critical" ? "#ef4444"
+            : cls === "promo-urgent" ? "#f59e0b"
+            : cls === "promo-soon" ? "#fbbf24"
+            : "rgba(255,255,255,0.5)";
+        };
+        tick();
+        promoCountdownIntervals.push(setInterval(tick, 1000));
+      }
     }
   };
 
@@ -4038,7 +4040,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
-  const openPromoDetailsModal = (p) => {
+  const openPromoDetailsModal = window.openPromoDetailsModal = (p) => {
     try {
       let view = promoDetailsView || document.getElementById("promoDetailsView");
       if (!view) {
