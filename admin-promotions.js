@@ -81,6 +81,7 @@ const handleImageSelect = (file, target) => {
   targetImg.onload = () => {
     if (currentCropper) currentCropper.destroy();
     currentCropper = new Cropper(targetImg, {
+      aspectRatio: 4 / 3,
       viewMode: 1,
       autoCropArea: 1,
       responsive: true,
