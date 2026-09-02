@@ -3939,7 +3939,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const countdownId = `promo-cd-${p.id}`;
 
     card.innerHTML = `
-      <div style="aspect-ratio: 4 / 3; width: 100%; background: #000; overflow: hidden; border-radius: 20px 20px 0 0;">
+      <div style="aspect-ratio: 1 / 1; width: 100%; background: #000; overflow: hidden; border-radius: 20px 20px 0 0;">
         <img src="${p.image}" alt="${p.title}"
           style="width:100%; height:100%; object-fit:cover; display:block; transition: transform 0.4s;"
           loading="lazy"
