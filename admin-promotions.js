@@ -136,8 +136,10 @@ if ($('cropConfirmBtn')) {
 const setAuthenticated = (ok) => {
   const loginCard = $('loginCard');
   const promoSection = $('promoSection');
+  const logoutBtn = $('logoutBtn');
   if (loginCard) loginCard.hidden = ok;
   if (promoSection) promoSection.hidden = !ok;
+  if (logoutBtn) logoutBtn.style.display = ok ? 'inline-block' : 'none';
 };
 
 const checkAuth = async () => {
@@ -424,5 +426,14 @@ if (editForm) {
 }
 
 /* ─── Boot ────────────────────────────────────────────────────────────────── */
+if ($('logoutBtn')) {
+  $('logoutBtn').addEventListener('click', async () => {
+    try {
+      await fetch('/api/admin/logout', { method: 'POST', credentials: 'include' });
+    } catch {}
+    setAuthenticated(false);
+  });
+}
+
 checkAuth();
 
