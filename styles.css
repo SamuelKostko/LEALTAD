@@ -5316,3 +5316,96 @@ body:has(.aDash:not([hidden])) {
   margin: 0;
 }
 
+/* ── Promotion Comments & Feedback ── */
+.pdRatingStars {
+  display: flex;
+  gap: 4px;
+  user-select: none;
+}
+
+.pdStar {
+  font-size: 24px;
+  color: rgba(255, 255, 255, 0.2);
+  transition: color 0.15s ease, transform 0.15s ease;
+  line-height: 1;
+}
+
+.pdStar.is-active,
+.pdStar.is-hover {
+  color: #fbbf24;
+  text-shadow: 0 0 10px rgba(251, 191, 36, 0.4);
+}
+
+.pdStar:hover {
+  transform: scale(1.2);
+}
+
+.pdCommentCard {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 14px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.pdCommentCard:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.pdCommentHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pdCommentUser {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pdCommentAvatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #0891b2, #7c3aed);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.pdCommentName {
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.pdCommentStars {
+  color: #fbbf24;
+  font-size: 12px;
+  letter-spacing: 2px;
+}
+
+.pdCommentDate {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.pdCommentText {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.75);
+  line-height: 1.5;
+  word-break: break-word;
+  white-space: pre-line;
+}
+
+

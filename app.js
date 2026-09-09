@@ -4249,12 +4249,212 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       }
 
+      // Cargar comentarios de la promoción
+      if (typeof loadPromoComments === "function") {
+        loadPromoComments(p.id);
+      }
+      
+      // Auto-completar nombre si existe en la tarjeta del cliente
+      const nameField = document.getElementById("pdCommentUserName");
+      if (nameField) {
+        let clientName = "";
+        const cNameEl = document.getElementById("clientName");
+        if (cNameEl && cNameEl.textContent && cNameEl.textContent !== "Cargando...") {
+          clientName = cNameEl.textContent.trim();
+        } else if (typeof clientDataCache !== 'undefined' && clientDataCache?.nombre) {
+          clientName = clientDataCache.nombre;
+        }
+        nameField.value = clientName || "";
+      }
+
+      const commentInput = document.getElementById("pdCommentText");
+      if (commentInput) commentInput.value = "";
+      const commentResEl = document.getElementById("pdCommentResult");
+      if (commentResEl) commentResEl.textContent = "";
+      
+      selectedRating = 5;
+      const starsContainer = document.getElementById("pdRatingStars");
+      if (starsContainer) {
+        starsContainer.querySelectorAll(".pdStar").forEach(s => {
+          s.classList.add("is-active");
+          s.classList.remove("is-hover");
+        });
+      }
+
       view.style.display = "flex";
       view.setAttribute("aria-hidden", "false");
     } catch (err) {
       alert("Error al abrir detalles: " + err.message);
     }
   };
+
+  // ── Promotion Comments & Feedback Logic ──
+  let selectedRating = 5;
+  const initPromoRatingStars = () => {
+    const starsContainer = document.getElementById("pdRatingStars");
+    if (!starsContainer) return;
+    const stars = starsContainer.querySelectorAll(".pdStar");
+
+    const updateStarsVisual = (val, isHover = false) => {
+      stars.forEach(s => {
+        const starVal = parseInt(s.getAttribute("data-val"), 10);
+        if (isHover) {
+          s.classList.toggle("is-hover", starVal <= val);
+        } else {
+          s.classList.toggle("is-active", starVal <= val);
+          s.classList.remove("is-hover");
+        }
+      });
+    };
+
+    stars.forEach(s => {
+      s.addEventListener("mouseenter", () => {
+        const val = parseInt(s.getAttribute("data-val"), 10);
+        updateStarsVisual(val, true);
+      });
+      s.addEventListener("click", () => {
+        selectedRating = parseInt(s.getAttribute("data-val"), 10);
+        updateStarsVisual(selectedRating, false);
+      });
+    });
+
+    starsContainer.addEventListener("mouseleave", () => {
+      updateStarsVisual(selectedRating, false);
+    });
+  };
+
+  const loadPromoComments = async (promoId) => {
+    const listEl = document.getElementById("pdCommentsList");
+    const countEl = document.getElementById("pdCommentsCount");
+    const avgEl = document.getElementById("pdCommentsAvg");
+    if (!listEl) return;
+
+    listEl.innerHTML = `<div style="text-align:center; padding:16px; font-size:13px; color:rgba(255,255,255,0.4);">Cargando opiniones...</div>`;
+
+    try {
+      const res = await fetch(`/api/client/promotion-comments?promotionId=${encodeURIComponent(promoId)}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Error al cargar comentarios");
+
+      const comments = data.comments || [];
+      const stats = data.stats || { total: 0, averageRating: 5.0 };
+
+      if (countEl) countEl.textContent = `${stats.total} ${stats.total === 1 ? 'opinión' : 'opiniones'}`;
+      if (avgEl) avgEl.textContent = `★ ${stats.averageRating.toFixed(1)}`;
+
+      if (comments.length === 0) {
+        listEl.innerHTML = `
+          <div style="text-align: center; padding: 24px 16px; background: rgba(255,255,255,0.02); border-radius: 14px; border: 1px dashed rgba(255,255,255,0.08);">
+            <div style="font-size: 24px; margin-bottom: 6px;">💬</div>
+            <div style="font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.7);">Aún no hay opiniones</div>
+            <div style="font-size: 12px; color: rgba(255,255,255,0.4); margin-top: 2px;">¡Sé el primero en compartir tu experiencia!</div>
+          </div>
+        `;
+        return;
+      }
+
+      listEl.innerHTML = comments.map(c => {
+        const initials = (c.userName || "C").slice(0, 2).toUpperCase();
+        const dateStr = c.createdAt ? new Date(c.createdAt).toLocaleDateString("es-VE", { day: "2-digit", month: "short", year: "numeric" }) : "";
+        const starsStr = "★".repeat(c.rating || 5) + "☆".repeat(Math.max(0, 5 - (c.rating || 5)));
+        
+        return `
+          <div class="pdCommentCard">
+            <div class="pdCommentHeader">
+              <div class="pdCommentUser">
+                <div class="pdCommentAvatar">${initials}</div>
+                <div>
+                  <div class="pdCommentName">${c.userName || "Cliente"}</div>
+                  <div class="pdCommentStars">${starsStr}</div>
+                </div>
+              </div>
+              <div class="pdCommentDate">${dateStr}</div>
+            </div>
+            <div class="pdCommentText">${c.comment || ""}</div>
+          </div>
+        `;
+      }).join("");
+
+    } catch (err) {
+      listEl.innerHTML = `<div style="text-align:center; padding:12px; font-size:12px; color:#ef4444;">Error al cargar opiniones.</div>`;
+    }
+  };
+
+  const setupPromoCommentSubmission = () => {
+    const submitBtn = document.getElementById("pdCommentSubmitBtn");
+    const commentInput = document.getElementById("pdCommentText");
+    const nameInput = document.getElementById("pdCommentUserName");
+    const resultEl = document.getElementById("pdCommentResult");
+
+    if (!submitBtn || !commentInput) return;
+
+    submitBtn.addEventListener("click", async () => {
+      if (!currentSelectedPromo) return;
+      const text = commentInput.value.trim();
+      const userName = nameInput ? nameInput.value.trim() : "";
+
+      if (!text || text.length < 2) {
+        if (resultEl) {
+          resultEl.style.color = "#ef4444";
+          resultEl.textContent = "Por favor escribe un comentario.";
+        }
+        commentInput.focus();
+        return;
+      }
+
+      submitBtn.disabled = true;
+      if (resultEl) {
+        resultEl.style.color = "#06b6d4";
+        resultEl.textContent = "Publicando opinión...";
+      }
+
+      try {
+        let tk = new URLSearchParams(window.location.search).get("token") || new URLSearchParams(window.location.search).get("t");
+        if (!tk && window.location.pathname.startsWith("/card/")) {
+          tk = decodeURIComponent(window.location.pathname.slice(6));
+        }
+
+        const res = await fetch("/api/client/promotion-comments", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            promotionId: currentSelectedPromo.id,
+            comment: text,
+            rating: selectedRating,
+            userName,
+            token: tk || ""
+          })
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Error al publicar");
+
+        if (resultEl) {
+          resultEl.style.color = "#10b981";
+          resultEl.textContent = "¡Gracias por tu opinión!";
+        }
+        commentInput.value = "";
+        
+        // Reload comments
+        await loadPromoComments(currentSelectedPromo.id);
+
+        setTimeout(() => {
+          if (resultEl) resultEl.textContent = "";
+        }, 3000);
+
+      } catch (err) {
+        if (resultEl) {
+          resultEl.style.color = "#ef4444";
+          resultEl.textContent = err.message || "Error al publicar comentario";
+        }
+      } finally {
+        submitBtn.disabled = false;
+      }
+    });
+  };
+
+  initPromoRatingStars();
+  setupPromoCommentSubmission();
 
   if (document.getElementById("pdQtyMinus")) {
     document.getElementById("pdQtyMinus").addEventListener("click", () => {
