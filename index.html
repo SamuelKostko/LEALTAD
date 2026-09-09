@@ -377,8 +377,18 @@
             <div class="aPanel__header">
               <div>
                 <h2 class="aPanel__title">Clientes</h2>
-                <p class="aPanel__sub">Busca un cliente por nombre o cédula</p>
+                <p class="aPanel__sub">Busca un cliente o revisa los 50 con más puntos</p>
               </div>
+              <button class="aIconBtn" id="adminClientsRefresh" type="button" aria-label="Recargar clientes">
+                <svg viewBox="0 0 24 24" width="17" height="17" fill="none">
+                  <path d="M20 12a8 8 0 0 1-14.3 4.9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+                  <path d="M4 12a8 8 0 0 1 14.3-4.9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+                    opacity=".55" />
+                  <path d="M17.8 3.8V7.6h-3.8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+                    opacity=".55" />
+                  <path d="M6.2 20.2V16.4H10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+                </svg>
+              </button>
             </div>
             <div class="aSearch">
               <svg class="aSearch__icon" viewBox="0 0 24 24" width="16" height="16" fill="none">
@@ -422,6 +432,16 @@
               <button class="aBtn aBtn--ghost" id="adminCardTxLoadMore" style="margin-top: 16px; width: 100%;"
                 hidden>Cargar más</button>
               <div class="aResult" id="adminCardTxResult" aria-live="polite"></div>
+            </div>
+
+            <!-- Top 50 Clientes con más Puntos Section -->
+            <div id="adminTopClientsSection" style="margin-top: 24px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <div class="aSection__label" style="margin: 0; display: flex; align-items: center; gap: 6px;">
+                  <span>🏆 Top 50 Clientes con más Puntos</span>
+                </div>
+              </div>
+              <div id="adminTopClientsList"></div>
             </div>
           </section>
 

@@ -2894,6 +2894,17 @@ body {
   min-width: 580px;
 }
 
+.aTxRow--topClients {
+  grid-template-columns: 46px minmax(160px, 1.5fr) 100px minmax(130px, 1fr) 120px 105px;
+  min-width: 680px;
+  transition: background 150ms ease, border-color 150ms ease;
+}
+
+.aTxRow--topClients:not(.aTxRow--head):hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(165, 180, 252, 0.3);
+}
+
 .aTxRow--head {
   background: transparent;
   border: none;
@@ -3346,6 +3357,35 @@ body {
   .aTxRow--card {
     grid-template-columns: 1fr 1fr;
     min-width: 0;
+  }
+
+  .aTxRow--topClients {
+    grid-template-columns: 36px 1fr;
+    min-width: 0;
+    gap: 8px;
+  }
+
+  .aTxRow--topClients .aTxCell:nth-child(2) {
+    grid-column: 2;
+  }
+
+  .aTxRow--topClients .aTxCell:nth-child(3),
+  .aTxRow--topClients .aTxCell:nth-child(4) {
+    grid-column: 1 / -1;
+  }
+
+  .aTxRow--topClients .aTxCell:nth-child(5) {
+    grid-column: 1 / -1;
+    text-align: left;
+  }
+
+  .aTxRow--topClients .aTxCell:nth-child(6) {
+    grid-column: 1 / -1;
+  }
+
+  .aTxRow--topClients .aTxCell:nth-child(6) .aBtn {
+    width: 100%;
+    margin-top: 4px;
   }
 
   /* Sedes table: stack vertically on mobile */

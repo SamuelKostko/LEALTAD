@@ -639,6 +639,8 @@ if (qrButton) {
     const clientResendBtn = document.getElementById("adminClientResendBtn");
     const clientDeleteBtn = document.getElementById("adminClientDeleteBtn");
     const clientsResult = document.getElementById("adminClientsResult");
+    const clientsRefresh = document.getElementById("adminClientsRefresh");
+    const topClientsList = document.getElementById("adminTopClientsList");
     const cardTxSection = document.getElementById("adminRootCardTx");
     const cardTxHint = document.getElementById("adminCardTxHint");
     const cardTxList = document.getElementById("adminCardTxList");
@@ -934,7 +936,10 @@ if (qrButton) {
       const main = document.querySelector(".aDash__main");
       if (main) main.scrollTop = 0;
     };
-    if (navClientes) navClientes.addEventListener("click", () => switchPanel("clientes"));
+    if (navClientes) navClientes.addEventListener("click", () => {
+      switchPanel("clientes");
+      loadClients();
+    });
     if (navTx) navTx.addEventListener("click", () => {
       switchPanel("transacciones");
       currentTxLimit = 10;
@@ -983,7 +988,10 @@ if (qrButton) {
     const mobNavStats = document.getElementById("aMobNavStats");
     const mobNavCajerosLocal = document.getElementById("aMobNavCajeros");
     const mobNavLogout = document.getElementById("aMobNavLogout");
-    if (mobNavClientes) mobNavClientes.addEventListener("click", () => switchPanel("clientes"));
+    if (mobNavClientes) mobNavClientes.addEventListener("click", () => {
+      switchPanel("clientes");
+      loadClients();
+    });
     if (mobNavTx) mobNavTx.addEventListener("click", () => {
       switchPanel("transacciones");
       currentTxLimit = 10;
@@ -1535,11 +1543,128 @@ Esto eliminará también sus transacciones.`
         }
       });
     }
+    const renderTopClients = (container, list) => {
+      if (!container) return;
+      container.innerHTML = "";
+      if (!list || !list.length) {
+        const empty = document.createElement("div");
+        empty.className = "aTxEmpty";
+        empty.textContent = "No hay clientes registrados.";
+        container.appendChild(empty);
+        return;
+      }
+
+      const wrap = document.createElement("div");
+      wrap.className = "aTxTable";
+
+      const head = document.createElement("div");
+      head.className = "aTxRow aTxRow--topClients aTxRow--head";
+      ["#", "Cliente", "Cédula", "Sede", "Puntos", "Acción"].forEach(lbl => {
+        const c = document.createElement("div");
+        c.className = "aTxCell" + (lbl === "Acción" ? " aTxCell--actions" : "") + (lbl === "Puntos" ? " aTxCell--ptsHead" : "");
+        c.textContent = lbl;
+        head.appendChild(c);
+      });
+      wrap.appendChild(head);
+
+      list.forEach((c, index) => {
+        const rank = index + 1;
+        const row = document.createElement("div");
+        row.className = "aTxRow aTxRow--topClients";
+        row.style.cursor = "pointer";
+
+        // Rank cell
+        const rankCell = document.createElement("div");
+        rankCell.className = "aTxCell";
+        rankCell.setAttribute("data-label", "Puesto");
+        let badgeStyle = "display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; font-size: 11px; font-weight: 700;";
+        if (rank === 1) {
+          badgeStyle += " background: linear-gradient(135deg, #fbbf24, #d97706); color: #000; box-shadow: 0 0 10px rgba(251, 191, 36, 0.4);";
+        } else if (rank === 2) {
+          badgeStyle += " background: linear-gradient(135deg, #e2e8f0, #94a3b8); color: #000;";
+        } else if (rank === 3) {
+          badgeStyle += " background: linear-gradient(135deg, #f97316, #b45309); color: #fff;";
+        } else {
+          badgeStyle += " background: rgba(255, 255, 255, 0.08); color: rgba(255, 255, 255, 0.7);";
+        }
+        rankCell.innerHTML = `<span style="${badgeStyle}">${rank}</span>`;
+        row.appendChild(rankCell);
+
+        // Cliente cell
+        const nameCell = document.createElement("div");
+        nameCell.className = "aTxCell aTxCell--strong";
+        nameCell.setAttribute("data-label", "Cliente");
+        nameCell.innerHTML = `
+          <div style="font-weight: 600; color: #fff;">${c.name || "Sin nombre"}</div>
+          ${c.email ? `<div style="font-size: 11px; color: rgba(255, 255, 255, 0.4); margin-top: 1px;">${c.email}</div>` : ""}
+        `;
+        row.appendChild(nameCell);
+
+        // Cédula cell
+        const ciCell = document.createElement("div");
+        ciCell.className = "aTxCell";
+        ciCell.setAttribute("data-label", "Cédula");
+        ciCell.textContent = c.cedula || "—";
+        row.appendChild(ciCell);
+
+        // Sede cell
+        const sedeCell = document.createElement("div");
+        sedeCell.className = "aTxCell";
+        sedeCell.setAttribute("data-label", "Sede");
+        sedeCell.textContent = c.sedes || "Sin sede";
+        row.appendChild(sedeCell);
+
+        // Puntos cell
+        const ptsCell = document.createElement("div");
+        ptsCell.className = "aTxCell aTxCell--pts";
+        ptsCell.setAttribute("data-label", "Puntos");
+        const approxCash = (Number(c.balance || 0) / 100).toFixed(2);
+        ptsCell.innerHTML = `
+          <div style="font-weight: 700; color: #a5b4fc;">${formatPts(c.balance)} pts</div>
+          <div style="font-size: 10px; font-weight: normal; color: rgba(165, 180, 252, 0.7); margin-top: 1px;">≈ ${approxCash} $</div>
+        `;
+        row.appendChild(ptsCell);
+
+        // Acciones cell
+        const actionCell = document.createElement("div");
+        actionCell.className = "aTxCell aTxCell--actions";
+        const viewBtn = document.createElement("button");
+        viewBtn.type = "button";
+        viewBtn.className = "aBtn aBtn--ghost";
+        viewBtn.style.padding = "5px 10px";
+        viewBtn.style.fontSize = "11px";
+        viewBtn.style.height = "auto";
+        viewBtn.textContent = "Ver detalle";
+        viewBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          selectClient(c);
+          if (clientCard) clientCard.scrollIntoView({ behavior: "smooth", block: "start" });
+        });
+        actionCell.appendChild(viewBtn);
+        row.appendChild(actionCell);
+
+        row.addEventListener("click", () => {
+          selectClient(c);
+          if (clientCard) clientCard.scrollIntoView({ behavior: "smooth", block: "start" });
+        });
+
+        wrap.appendChild(row);
+      });
+
+      container.appendChild(wrap);
+    };
+
+    if (clientsRefresh) clientsRefresh.addEventListener("click", loadClients);
+
     const loadClients = async () => {
       var _a;
-      setResult(clientsResult, "info", "Cargando clientes\u2026");
+      setResult(clientsResult, "info", "Cargando clientes…");
+      const topListEl = document.getElementById("adminTopClientsList");
+      if (topListEl && topListEl.children.length === 0) {
+        topListEl.innerHTML = `<div class="aStatLoader">Cargando los 50 clientes con más puntos…</div>`;
+      }
       try {
-        const data = await apiGet("/api/admin/cards?limit=500");
+        const data = await apiGet("/api/admin/cards?limit=50");
         allCards = (Array.isArray(data == null ? void 0 : data.cards) ? data.cards : []).map((c) => {
           var _a2, _b, _c;
           return {
@@ -1551,6 +1676,8 @@ Esto eliminará también sus transacciones.`
             balance: Number.isFinite(Number(c == null ? void 0 : c.balance)) ? Number(c.balance) : 0
           };
         }).filter((c) => c.token);
+        
+        renderTopClients(topListEl, allCards);
         setResult(clientsResult, "", "");
       } catch (err) {
         if ((err == null ? void 0 : err.status) === 401) {
@@ -1558,6 +1685,9 @@ Esto eliminará también sus transacciones.`
           return;
         }
         setResult(clientsResult, "err", (_a = err == null ? void 0 : err.message) != null ? _a : "Error al cargar clientes");
+        if (topListEl) {
+          topListEl.innerHTML = `<div class="aTxEmpty">Error al cargar clientes.</div>`;
+        }
       }
     };
 
