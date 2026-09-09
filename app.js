@@ -1654,8 +1654,6 @@ Esto eliminará también sus transacciones.`
       container.appendChild(wrap);
     };
 
-    if (clientsRefresh) clientsRefresh.addEventListener("click", loadClients);
-
     const loadClients = async () => {
       var _a;
       setResult(clientsResult, "info", "Cargando clientes…");
@@ -1690,6 +1688,8 @@ Esto eliminará también sus transacciones.`
         }
       }
     };
+
+    if (clientsRefresh) clientsRefresh.addEventListener("click", () => loadClients());
 
     const loadPendingPayments = async () => {
       if (!pendingPaymentsList) return;
