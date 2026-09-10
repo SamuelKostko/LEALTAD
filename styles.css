@@ -5408,4 +5408,13 @@ body:has(.aDash:not([hidden])) {
   white-space: pre-line;
 }
 
+/* Prevent auto-zoom on mobile focus */
+.pdCommentForm input,
+.pdCommentForm textarea,
+#pdCommentUserName,
+#pdCommentText {
+  font-size: 16px !important;
+  touch-action: manipulation;
+}
+
 

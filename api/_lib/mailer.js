@@ -1,55 +1,119 @@
 import nodemailer from 'nodemailer';
 
-/**
- * Creates and returns the Nodemailer transporter for AWS SES.
- */
-function getTransporter() {
+let sesTransporter = null;
+
+function getSESTransporter() {
+  if (sesTransporter) return sesTransporter;
+
   const host = process.env.AWS_SES_SMTP_HOST;
-  const port = parseInt(process.env.AWS_SES_SMTP_PORT || '587', 10);
+  const port = parseInt(process.env.AWS_SES_SMTP_PORT || '465', 10);
   const user = process.env.AWS_SES_SMTP_USER;
   const pass = process.env.AWS_SES_SMTP_PASS;
 
   if (!host || !user || !pass) {
-    throw new Error('Faltan credenciales de AWS SES en las variables de entorno.');
+    return null;
   }
 
-  return nodemailer.createTransport({
+  sesTransporter = nodemailer.createTransport({
     host,
     port,
-    secure: port === 465, // true for 465, false for other ports
+    secure: port === 465,
     auth: {
       user,
       pass
     }
   });
+
+  return sesTransporter;
 }
 
 /**
- * Sends an email using Amazon SES via SMTP.
- * 
- * @param {Object} options
- * @param {string} options.to - Recipient email address
- * @param {string} options.subject - Email subject
- * @param {string} options.html - HTML content of the email
- * @param {string} [options.text] - Plain text fallback
+ * Send email using Amazon SES via SMTP.
  */
-export async function sendEmailSES({ to, subject, html, text }) {
-  const sender = process.env.AWS_SES_SENDER_EMAIL;
-
-  if (!sender) {
-    throw new Error('Falta la variable AWS_SES_SENDER_EMAIL en el entorno.');
+export async function sendEmailSES({ to, subject, html, text, fromName = 'V+ Puntos' }) {
+  const senderEmail = process.env.AWS_SES_SENDER_EMAIL;
+  if (!senderEmail) {
+    throw new Error('Variable AWS_SES_SENDER_EMAIL no configurada.');
   }
 
-  const transporter = getTransporter();
+  const transporter = getSESTransporter();
+  if (!transporter) {
+    throw new Error('Credenciales de AWS SES no configuradas.');
+  }
 
-  const mailOptions = {
-    from: sender,
-    to,
+  const recipients = Array.isArray(to) ? to.join(', ') : to;
+
+  const info = await transporter.sendMail({
+    from: `"${fromName}" <${senderEmail}>`,
+    to: recipients,
     subject,
     html,
     text
-  };
+  });
 
-  const info = await transporter.sendMail(mailOptions);
   return info;
+}
+
+/**
+ * Send email using MailerSend REST API as fallback.
+ */
+export async function sendEmailMailerSend({ to, subject, html, fromName = 'V+ Puntos' }) {
+  const apiKey = process.env.MAILERSEND_API_KEY;
+  const senderEmail = process.env.MAILERSEND_SENDER_EMAIL || 'no-reply@vmaspuntos.com';
+
+  if (!apiKey) {
+    throw new Error('MAILERSEND_API_KEY no configurado.');
+  }
+
+  const rawRecipients = Array.isArray(to) ? to : [to];
+  const formattedTo = rawRecipients.map(item => {
+    if (typeof item === 'string') return { email: item.trim() };
+    return item;
+  });
+
+  const response = await fetch('https://api.mailersend.com/v1/email', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Requested-With': 'XMLHttpRequest',
+      'Authorization': `Bearer ${apiKey}`
+    },
+    body: JSON.stringify({
+      from: { email: senderEmail, name: fromName },
+      to: formattedTo,
+      subject,
+      html
+    })
+  });
+
+  if (!response.ok) {
+    const errText = await response.text();
+    throw new Error(`MailerSend Error (${response.status}): ${errText}`);
+  }
+
+  return { ok: true, provider: 'mailersend' };
+}
+
+/**
+ * Main email sender for new flows: Tries Amazon SES first, falls back to MailerSend.
+ */
+export async function sendEmail({ to, subject, html, text, fromName = 'V+ Puntos' }) {
+  // 1. Try Amazon SES
+  try {
+    const sesResult = await sendEmailSES({ to, subject, html, text, fromName });
+    console.log(`[Email] Enviado exitosamente vía Amazon SES a ${Array.isArray(to) ? to.join(', ') : to}`);
+    return { ok: true, provider: 'amazon-ses', details: sesResult };
+  } catch (sesErr) {
+    console.warn(`[Email] Amazon SES falló o no está listo (${sesErr.message}). Intentando MailerSend fallback...`);
+  }
+
+  // 2. Fallback to MailerSend
+  try {
+    const msResult = await sendEmailMailerSend({ to, subject, html, fromName });
+    console.log(`[Email] Enviado exitosamente vía MailerSend a ${Array.isArray(to) ? to.join(', ') : to}`);
+    return { ok: true, provider: 'mailersend', details: msResult };
+  } catch (msErr) {
+    console.error(`[Email] MailerSend también falló: ${msErr.message}`);
+    throw new Error(`Fallo en envío de correo (SES y MailerSend): ${msErr.message}`);
+  }
 }
