@@ -312,6 +312,18 @@
     </div>
   </div>
 
+  <!-- Comments Modal -->
+  <div class="ap-modal-overlay" id="commentsModalOverlay" style="z-index: 250;">
+    <div class="ap-modal" style="max-width: 550px; max-height: 80vh; display: flex; flex-direction: column;">
+      <div class="ap-modal__header">
+        <span class="ap-modal__title" id="commentsModalTitle">Opiniones de la Promoción</span>
+        <button class="ap-modal__close" id="commentsModalClose">✕</button>
+      </div>
+      <div id="adminCommentsList" style="overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding: 10px 0; max-height: 60vh;">
+      </div>
+    </div>
+  </div>
+
   <script src="/admin-promotions.js" defer></script>
 </body>
 </html>

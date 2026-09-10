@@ -229,18 +229,95 @@ const fetchPromotions = async () => {
           ${expiryText ? `<div class="ap-promo-item__expires">${expiryText}</div>` : ''}
           <div class="ap-promo-item__actions">
             <button class="ap-promo-action ap-promo-action--edit" data-id="${p.id}">✎ Editar</button>
+            <button class="ap-promo-action ap-promo-action--comments" style="background: rgba(251,191,36,0.12); color: #fbbf24;" data-id="${p.id}">💬 Opiniones</button>
             <button class="ap-promo-action ap-promo-action--del" data-id="${p.id}">✕ Eliminar</button>
           </div>
         </div>
       `;
 
       card.querySelector('.ap-promo-action--edit').addEventListener('click', () => openEditModal(p));
+      card.querySelector('.ap-promo-action--comments').addEventListener('click', () => openCommentsModal(p));
       card.querySelector('.ap-promo-action--del').addEventListener('click', () => deletePromotion(p.id));
       container.appendChild(card);
     });
 
   } catch (err) {
     container.innerHTML = `<div style="color:#ef4444; font-size:13px; text-align:center;">${err.message}</div>`;
+  }
+};
+
+/* ─── Comments Moderation ────────────────────────────────────────────────── */
+
+const openCommentsModal = async (promo) => {
+  const overlay = $('commentsModalOverlay');
+  const title = $('commentsModalTitle');
+  const list = $('adminCommentsList');
+
+  if (!overlay || !list) return;
+
+  title.textContent = `Opiniones · ${promo.title}`;
+  list.innerHTML = `<div style="text-align:center; padding: 20px; color: rgba(255,255,255,0.4); font-size:13px;">Cargando opiniones...</div>`;
+  overlay.classList.add('is-open');
+
+  const closeBtn = $('commentsModalClose');
+  if (closeBtn) {
+    closeBtn.onclick = () => overlay.classList.remove('is-open');
+  }
+
+  try {
+    const res = await fetch(`/api/client/promotion-comments?promotionId=${encodeURIComponent(promo.id)}`);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Error al cargar comentarios');
+
+    const comments = data.comments || [];
+    if (comments.length === 0) {
+      list.innerHTML = `<div style="text-align:center; padding: 30px 10px; color: rgba(255,255,255,0.4); font-size:13px;">No hay opiniones registradas para esta promoción.</div>`;
+      return;
+    }
+
+    list.innerHTML = '';
+    comments.forEach(c => {
+      const card = document.createElement('div');
+      card.style.cssText = 'background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 6px;';
+      const dateStr = c.createdAt ? new Date(c.createdAt).toLocaleString('es-VE') : '';
+      const starsStr = '★'.repeat(c.rating || 5) + '☆'.repeat(Math.max(0, 5 - (c.rating || 5)));
+
+      card.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
+          <div>
+            <strong style="color: #fff; font-size: 13px;">${c.userName || 'Cliente'}</strong>
+            <span style="color: #fbbf24; font-size: 12px; margin-left: 6px;">${starsStr}</span>
+            <div style="font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 2px;">${dateStr}</div>
+          </div>
+          <button class="delCommentBtn" style="background: rgba(239,68,68,0.15); color: #ef4444; border: 1px solid rgba(239,68,68,0.25); border-radius: 6px; padding: 4px 8px; font-size: 11px; font-weight: 600; cursor: pointer;">
+            Eliminar
+          </button>
+        </div>
+        <p style="font-size: 13px; color: rgba(255,255,255,0.8); margin: 4px 0 0; line-height: 1.4; white-space: pre-line;">${c.comment || ''}</p>
+      `;
+
+      card.querySelector('.delCommentBtn').addEventListener('click', async () => {
+        if (!confirm('¿Eliminar este comentario?')) return;
+        try {
+          const dRes = await fetch('/api/client/promotion-comments', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: c.id }),
+            credentials: 'include'
+          });
+          const dData = await dRes.json();
+          if (!dRes.ok) throw new Error(dData.error || 'Error al eliminar');
+          openCommentsModal(promo);
+        } catch (err) {
+          alert(err.message);
+        }
+      });
+
+      list.appendChild(card);
+    });
+
+  } catch (err) {
+    list.innerHTML = `<div style="color:#ef4444; font-size:13px; text-align:center;">${err.message}</div>`;
   }
 };
 

@@ -102,7 +102,7 @@ export default async function handler(req, res) {
       const currentBalance = Number(clientData.totalPoints || 0);
 
       if (!clientData.email) {
-         throw new Error('No tienes un correo registrado para recibir el código de validación.');
+        throw new Error('No tienes un correo registrado para recibir el código de validación.');
       }
 
       // 3. Verify points

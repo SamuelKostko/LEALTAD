@@ -2894,6 +2894,17 @@ body {
   min-width: 580px;
 }
 
+.aTxRow--topClients {
+  grid-template-columns: 46px minmax(160px, 1.5fr) 100px minmax(130px, 1fr) 120px 105px;
+  min-width: 680px;
+  transition: background 150ms ease, border-color 150ms ease;
+}
+
+.aTxRow--topClients:not(.aTxRow--head):hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(165, 180, 252, 0.3);
+}
+
 .aTxRow--head {
   background: transparent;
   border: none;
@@ -3346,6 +3357,35 @@ body {
   .aTxRow--card {
     grid-template-columns: 1fr 1fr;
     min-width: 0;
+  }
+
+  .aTxRow--topClients {
+    grid-template-columns: 36px 1fr;
+    min-width: 0;
+    gap: 8px;
+  }
+
+  .aTxRow--topClients .aTxCell:nth-child(2) {
+    grid-column: 2;
+  }
+
+  .aTxRow--topClients .aTxCell:nth-child(3),
+  .aTxRow--topClients .aTxCell:nth-child(4) {
+    grid-column: 1 / -1;
+  }
+
+  .aTxRow--topClients .aTxCell:nth-child(5) {
+    grid-column: 1 / -1;
+    text-align: left;
+  }
+
+  .aTxRow--topClients .aTxCell:nth-child(6) {
+    grid-column: 1 / -1;
+  }
+
+  .aTxRow--topClients .aTxCell:nth-child(6) .aBtn {
+    width: 100%;
+    margin-top: 4px;
   }
 
   /* Sedes table: stack vertically on mobile */
@@ -5275,4 +5315,106 @@ body:has(.aDash:not([hidden])) {
   line-height: 1.5;
   margin: 0;
 }
+
+/* ── Promotion Comments & Feedback ── */
+.pdRatingStars {
+  display: flex;
+  gap: 4px;
+  user-select: none;
+}
+
+.pdStar {
+  font-size: 24px;
+  color: rgba(255, 255, 255, 0.2);
+  transition: color 0.15s ease, transform 0.15s ease;
+  line-height: 1;
+}
+
+.pdStar.is-active,
+.pdStar.is-hover {
+  color: #fbbf24;
+  text-shadow: 0 0 10px rgba(251, 191, 36, 0.4);
+}
+
+.pdStar:hover {
+  transform: scale(1.2);
+}
+
+.pdCommentCard {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 14px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.pdCommentCard:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.pdCommentHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pdCommentUser {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pdCommentAvatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #0891b2, #7c3aed);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.pdCommentName {
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.pdCommentStars {
+  color: #fbbf24;
+  font-size: 12px;
+  letter-spacing: 2px;
+}
+
+.pdCommentDate {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.pdCommentText {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.75);
+  line-height: 1.5;
+  word-break: break-word;
+  white-space: pre-line;
+}
+
+/* Prevent auto-zoom on mobile focus */
+.pdCommentForm input,
+.pdCommentForm textarea,
+#pdCommentUserName,
+#pdCommentText {
+  font-size: 16px !important;
+  touch-action: manipulation;
+}
+
 

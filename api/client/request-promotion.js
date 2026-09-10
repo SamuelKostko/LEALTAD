@@ -130,7 +130,7 @@ export default async function handler(req, res) {
       if (promoData.expiresAt && promoData.expiresAt < Date.now()) {
         throw new Error('La promoción ha expirado.');
       }
-      
+
       if (promoData.units !== undefined) {
         if (promoData.units <= 0) {
           throw new Error('Esta promoción se ha agotado.');
@@ -152,10 +152,10 @@ export default async function handler(req, res) {
         );
         let dailyPurchased = 0;
         todayTxsSnap.forEach(doc => {
-           dailyPurchased += (doc.data().quantity || 1);
+          dailyPurchased += (doc.data().quantity || 1);
         });
         if (dailyPurchased + quantity > promoData.maxPerUser) {
-           throw new Error(`Excedes el límite diario de ${promoData.maxPerUser} para esta promoción. Ya has canjeado ${dailyPurchased} hoy.`);
+          throw new Error(`Excedes el límite diario de ${promoData.maxPerUser} para esta promoción. Ya has canjeado ${dailyPurchased} hoy.`);
         }
       }
 
@@ -175,30 +175,30 @@ export default async function handler(req, res) {
       // 2.5 Fetch order sequence
       const counterRef = firestore.collection('config').doc('order_sequence');
       const counterDoc = await tx.get(counterRef);
-      
+
       // OTP Verification
       const savedOtp = clientData.promoOtpCode;
       const otpExpiresAt = clientData.promoOtpExpiresAt || 0;
       let otpAttempts = clientData.promoOtpAttempts || 0;
 
       if (!savedOtp) {
-         throw new Error('No has solicitado un código OTP para esta compra.');
+        throw new Error('No has solicitado un código OTP para esta compra.');
       }
-      
+
       if (Date.now() > otpExpiresAt) {
-         tx.update(clientRef, { promoOtpCode: FieldValue.delete(), promoOtpExpiresAt: FieldValue.delete(), promoOtpAttempts: FieldValue.delete() });
-         throw new Error('El código OTP ha expirado. Solicita uno nuevo.');
+        tx.update(clientRef, { promoOtpCode: FieldValue.delete(), promoOtpExpiresAt: FieldValue.delete(), promoOtpAttempts: FieldValue.delete() });
+        throw new Error('El código OTP ha expirado. Solicita uno nuevo.');
       }
-      
+
       if (savedOtp !== otp) {
-         otpAttempts += 1;
-         if (otpAttempts >= 3) {
-             tx.update(clientRef, { promoOtpCode: FieldValue.delete(), promoOtpExpiresAt: FieldValue.delete(), promoOtpAttempts: FieldValue.delete() });
-             throw new Error('Demasiados intentos fallidos. Código cancelado, solicita uno nuevo.');
-         } else {
-             tx.update(clientRef, { promoOtpAttempts: otpAttempts });
-             throw new Error(`Código incorrecto. Te quedan ${3 - otpAttempts} intentos.`);
-         }
+        otpAttempts += 1;
+        if (otpAttempts >= 3) {
+          tx.update(clientRef, { promoOtpCode: FieldValue.delete(), promoOtpExpiresAt: FieldValue.delete(), promoOtpAttempts: FieldValue.delete() });
+          throw new Error('Demasiados intentos fallidos. Código cancelado, solicita uno nuevo.');
+        } else {
+          tx.update(clientRef, { promoOtpAttempts: otpAttempts });
+          throw new Error(`Código incorrecto. Te quedan ${3 - otpAttempts} intentos.`);
+        }
       }
 
       const currentBalance = Number(clientData.totalPoints || 0);
@@ -217,7 +217,7 @@ export default async function handler(req, res) {
         promoOtpAttempts: FieldValue.delete(),
         updatedAt: FieldValue.serverTimestamp()
       });
-      
+
       if (promoData.units !== undefined) {
         tx.update(promoRef, {
           units: promoData.units - quantity

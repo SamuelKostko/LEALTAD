@@ -1,38 +1,7 @@
 import { FieldValue } from 'firebase-admin/firestore';
 import { getFirestoreDb } from '../_lib/firestore.js';
 import { readJsonBody, sendJson } from '../_lib/http.js';
-
-const sendTransferEmail = async (toEmail, subject, html) => {
-  const mailerSendApiKey = process.env.MAILERSEND_API_KEY;
-  const mailerSendSender = process.env.MAILERSEND_SENDER_EMAIL;
-
-  if (!mailerSendApiKey || !mailerSendSender) {
-    console.log('--- SIMULADOR DE ENVÍO DE CORREO ---');
-    console.log(`To: ${toEmail}`);
-    console.log(`Subject: ${subject}`);
-    console.log(`HTML: ${html}`);
-    console.log('------------------------------------');
-    return;
-  }
-
-  try {
-    await fetch('https://api.mailersend.com/v1/email', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${mailerSendApiKey}`
-      },
-      body: JSON.stringify({
-        from: { email: mailerSendSender, name: 'V+ Puntos' },
-        to: [{ email: toEmail }],
-        subject,
-        html
-      })
-    });
-  } catch (err) {
-    console.error(`Error enviando email a ${toEmail}:`, err);
-  }
-};
+import { sendEmail } from '../_lib/mailer.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -71,7 +40,7 @@ export default async function handler(req, res) {
         sendJson(res, 400, { error: 'Faltan datos para la transferencia (token, email, monto)' });
         return;
       }
-      
+
       const transferAmount = Number(amount);
       if (transferAmount < 1) {
         sendJson(res, 400, { error: 'El monto a transferir debe ser al menos 1 punto.' });
@@ -112,7 +81,7 @@ export default async function handler(req, res) {
       // Generate OTP
       const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
       const otpRef = firestore.collection('transfer_otps').doc(token);
-      
+
       await otpRef.set({
         otp: generatedOtp,
         createdAt: Date.now(),
@@ -120,7 +89,7 @@ export default async function handler(req, res) {
         amount: transferAmount
       });
 
-      // Send email to sender
+      // Send email to sender via Amazon SES / fallback
       const senderEmail = senderData.email;
       if (senderEmail) {
         const subject = `Código de seguridad - Transferencia V+ Puntos`;
@@ -136,12 +105,17 @@ export default async function handler(req, res) {
             <div style="background: rgba(255,255,255,0.05); padding: 16px; border-radius: 8px; margin: 20px 0; text-align: center;">
               <h1 style="margin: 0; color: #fff; letter-spacing: 4px;">${generatedOtp}</h1>
             </div>
-            <p style="color: #a0aec0; font-size: 13px;">Si no has solicitado esta transferencia, ignora este correo.</p>
+            <p style="color: #a0aec0; font-size: 13px;">Este código expira en 10 minutos. Si no has solicitado esta transferencia, ignora este correo.</p>
           </div>
         </body>
         </html>
         `;
-        await sendTransferEmail(senderEmail, subject, html);
+        sendEmail({
+          to: senderEmail,
+          subject,
+          html,
+          fromName: 'V+ Puntos - Seguridad'
+        }).catch(e => console.error("Error enviando OTP de transferencia:", e));
       }
 
       sendJson(res, 200, { success: true, message: 'OTP enviado al correo asociado a tu cuenta.' });
@@ -155,13 +129,13 @@ export default async function handler(req, res) {
       }
 
       const otpRef = firestore.collection('transfer_otps').doc(token);
-      
+
       const result = await firestore.runTransaction(async (tx) => {
         const otpSnap = await tx.get(otpRef);
         if (!otpSnap.exists) {
           throw new Error('No hay una solicitud de transferencia pendiente.');
         }
-        
+
         const otpData = otpSnap.data();
         if (otpData.otp !== otp) {
           throw new Error('El código OTP es incorrecto.');
@@ -185,8 +159,9 @@ export default async function handler(req, res) {
           senderRef = senderSnap.ref;
         }
         const senderData = senderSnap.data();
-        
-        if (Number(senderData.totalPoints || 0) < transferAmount) {
+        const senderCurrentPoints = Number(senderData.totalPoints || 0);
+
+        if (senderCurrentPoints < transferAmount) {
           throw new Error('Saldo insuficiente.');
         }
 
@@ -196,6 +171,7 @@ export default async function handler(req, res) {
         const recipientSnap = recipientQuery.docs[0];
         const recipientRef = recipientSnap.ref;
         const recipientData = recipientSnap.data();
+        const recipientCurrentPoints = Number(recipientData.totalPoints || 0);
 
         // Perform transfer
         tx.update(senderRef, {
@@ -240,10 +216,64 @@ export default async function handler(req, res) {
         // Delete OTP
         tx.delete(otpRef);
 
-        return { transferAmount, recipientName: recipientData.nombre, reference: refNumber };
+        return {
+          transferAmount,
+          recipientName: recipientData.nombre,
+          recipientEmail: lowerEmail,
+          senderName: senderData.nombre,
+          senderEmail: senderData.email,
+          senderNewBalance: senderCurrentPoints - transferAmount,
+          recipientNewBalance: recipientCurrentPoints + transferAmount,
+          reference: refNumber
+        };
       });
 
-      sendJson(res, 200, { success: true, ...result });
+      // Send confirmation emails via Amazon SES / fallback
+      if (result.senderEmail) {
+        sendEmail({
+          to: result.senderEmail,
+          subject: "Comprobante de Transferencia Enviada - V+ Puntos",
+          html: `
+            <div style="font-family: sans-serif; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #eaeaea; border-radius: 8px; padding: 20px;">
+              <h2 style="color: #06b6d4; text-align: center;">Transferencia Exitosa</h2>
+              <p style="font-size: 16px;">Hola <strong>${result.senderName}</strong>,</p>
+              <p style="font-size: 15px;">Has transferido satisfactoriamente <strong>${result.transferAmount} puntos</strong>.</p>
+              <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                <p style="margin: 5px 0;"><strong>Destinatario:</strong> ${result.recipientName} (${result.recipientEmail})</p>
+                <p style="margin: 5px 0;"><strong>Monto Transferido:</strong> ${result.transferAmount} Pts</p>
+                <p style="margin: 5px 0;"><strong>Nuevo Saldo:</strong> ${result.senderNewBalance} Pts</p>
+                <p style="margin: 5px 0;"><strong>Referencia:</strong> #${result.reference}</p>
+              </div>
+              <p style="font-size: 13px; color: #64748b; text-align: center;">Gracias por utilizar V+ Puntos.</p>
+            </div>
+          `,
+          fromName: "V+ Puntos - Transferencias"
+        }).catch(e => console.error("Error enviando recibo a emisor:", e));
+      }
+
+      if (result.recipientEmail) {
+        sendEmail({
+          to: result.recipientEmail,
+          subject: "¡Has recibido una Transferencia de Puntos! - V+ Puntos",
+          html: `
+            <div style="font-family: sans-serif; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #eaeaea; border-radius: 8px; padding: 20px;">
+              <h2 style="color: #10b981; text-align: center;">¡Puntos Recibidos!</h2>
+              <p style="font-size: 16px;">Hola <strong>${result.recipientName}</strong>,</p>
+              <p style="font-size: 15px;">Has recibido <strong>${result.transferAmount} puntos</strong> de parte de <strong>${result.senderName}</strong>.</p>
+              <div style="background: #f8fafc; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                <p style="margin: 5px 0;"><strong>Remitente:</strong> ${result.senderName}</p>
+                <p style="margin: 5px 0;"><strong>Puntos Recibidos:</strong> +${result.transferAmount} Pts</p>
+                <p style="margin: 5px 0;"><strong>Nuevo Saldo:</strong> ${result.recipientNewBalance} Pts</p>
+                <p style="margin: 5px 0;"><strong>Referencia:</strong> #${result.reference}</p>
+              </div>
+              <p style="font-size: 13px; color: #64748b; text-align: center;">Puedes consultar tus puntos y beneficios en tu Wallet de V+ Puntos.</p>
+            </div>
+          `,
+          fromName: "V+ Puntos - Transferencias"
+        }).catch(e => console.error("Error enviando recibo a receptor:", e));
+      }
+
+      sendJson(res, 200, { success: true, transferAmount: result.transferAmount, recipientName: result.recipientName, reference: result.reference });
       return;
     }
 

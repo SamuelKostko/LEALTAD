@@ -221,8 +221,13 @@ export default async function handler(req, res) {
     let snap;
 
     if (!search) {
-      // Estado normal: solo cargar los más recientes para ahorrar lecturas (ej. limit=50)
-      snap = await query.orderBy('updatedAt', 'desc').limit(limit).get();
+      // Estado normal: cargar los clientes con más puntos
+      try {
+        snap = await query.orderBy('totalPoints', 'desc').limit(limit).get();
+      } catch (e) {
+        // Fallback en caso de que no exista índice o consulta por defecto
+        snap = await query.limit(limit).get();
+      }
     } else {
       // Estado de búsqueda
       const isNumeric = /^\d+$/.test(search);
@@ -267,8 +272,8 @@ export default async function handler(req, res) {
         c.email.toLowerCase().includes(search)
       );
     } else {
-      // Sort by updatedAt in memory if not searching
-      cards.sort((a, b) => (b.updatedAt > a.updatedAt ? 1 : -1));
+      // Ordenar por balance de puntos descendente
+      cards.sort((a, b) => Number(b.balance || 0) - Number(a.balance || 0));
     }
 
     sendJson(res, 200, { ok: true, cards: cards.slice(0, limit) });
