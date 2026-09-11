@@ -3243,6 +3243,14 @@ Esto eliminará también sus transacciones.`
       }
     };
 
+    // Expose selectStartupMode globally so inline onclick works instantly
+    window.selectStartupMode = (mode) => {
+      setPopupActiveMode(mode);
+    };
+
+    // Auto-bind controls on startup
+    bindStartupControls();
+
     // Expose loadAdminPopupConfig globally so it can be called from the sidebar
     window.loadAdminPopupConfig = loadAdminPopupConfig;
     const initAuthed = (role) => {

@@ -134,6 +134,34 @@
       box-shadow: 0 4px 20px rgba(99, 102, 241, 0.3) !important;
     }
 
+    .aStartupRadio {
+      width: 18px !important;
+      height: 18px !important;
+      border-radius: 50% !important;
+      border: 2px solid rgba(255, 255, 255, 0.25) !important;
+      display: inline-block !important;
+      transition: all 180ms ease !important;
+      position: relative !important;
+      flex-shrink: 0 !important;
+    }
+
+    .aStartupModeCard.is-active .aStartupRadio {
+      border-color: #6366f1 !important;
+      background: #6366f1 !important;
+      box-shadow: 0 0 10px rgba(99, 102, 241, 0.6) !important;
+    }
+
+    .aStartupModeCard.is-active .aStartupRadio::after {
+      content: '' !important;
+      position: absolute !important;
+      top: 4px !important;
+      left: 4px !important;
+      width: 6px !important;
+      height: 6px !important;
+      border-radius: 50% !important;
+      background: #fff !important;
+    }
+
     .aStartupModeCard__icon {
       font-size: 26px !important;
       line-height: 1 !important;
@@ -1185,36 +1213,51 @@
               <!-- Grid de Modos de Popup -->
               <div class="aStartupModesGrid" id="popupModeSelector">
                 <!-- Modo 1: Desactivado -->
-                <div class="aStartupModeCard is-active" data-mode="none">
-                  <div class="aStartupModeCard__icon">📴</div>
+                <div class="aStartupModeCard is-active" data-mode="none" onclick="window.selectStartupMode && window.selectStartupMode('none')">
+                  <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                    <span class="aStartupModeCard__icon">📴</span>
+                    <span class="aStartupRadio"></span>
+                  </div>
                   <div class="aStartupModeCard__title">Desactivado</div>
                   <div class="aStartupModeCard__desc">No mostrar ningún popup emergente al abrir la app.</div>
                 </div>
 
                 <!-- Modo 2: Promociones Aleatorias -->
-                <div class="aStartupModeCard" data-mode="random_promotion">
-                  <div class="aStartupModeCard__icon">🎲</div>
+                <div class="aStartupModeCard" data-mode="random_promotion" onclick="window.selectStartupMode && window.selectStartupMode('random_promotion')">
+                  <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                    <span class="aStartupModeCard__icon">🎲</span>
+                    <span class="aStartupRadio"></span>
+                  </div>
                   <div class="aStartupModeCard__title">Promociones Aleatorias</div>
                   <div class="aStartupModeCard__desc">Muestra una promo al azar del catálogo en cada apertura.</div>
                 </div>
 
                 <!-- Modo 3: Galería de Imágenes Aleatorias -->
-                <div class="aStartupModeCard" data-mode="random_images">
-                  <div class="aStartupModeCard__icon">🖼️</div>
+                <div class="aStartupModeCard" data-mode="random_images" onclick="window.selectStartupMode && window.selectStartupMode('random_images')">
+                  <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                    <span class="aStartupModeCard__icon">🖼️</span>
+                    <span class="aStartupRadio"></span>
+                  </div>
                   <div class="aStartupModeCard__title">Galería de Fotos Aleatorias</div>
                   <div class="aStartupModeCard__desc">Sube varias imágenes y rotarán aleatoriamente al abrir.</div>
                 </div>
 
                 <!-- Modo 4: Promoción Fija -->
-                <div class="aStartupModeCard" data-mode="promotion">
-                  <div class="aStartupModeCard__icon">🎯</div>
+                <div class="aStartupModeCard" data-mode="promotion" onclick="window.selectStartupMode && window.selectStartupMode('promotion')">
+                  <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                    <span class="aStartupModeCard__icon">🎯</span>
+                    <span class="aStartupRadio"></span>
+                  </div>
                   <div class="aStartupModeCard__title">Promoción Fija</div>
                   <div class="aStartupModeCard__desc">Muestra siempre una promoción específica del catálogo.</div>
                 </div>
 
                 <!-- Modo 5: Imagen Fija -->
-                <div class="aStartupModeCard" data-mode="custom_image">
-                  <div class="aStartupModeCard__icon">📷</div>
+                <div class="aStartupModeCard" data-mode="custom_image" onclick="window.selectStartupMode && window.selectStartupMode('custom_image')">
+                  <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                    <span class="aStartupModeCard__icon">📷</span>
+                    <span class="aStartupRadio"></span>
+                  </div>
                   <div class="aStartupModeCard__title">Imagen Única Fija</div>
                   <div class="aStartupModeCard__desc">Muestra siempre una sola imagen personalizada.</div>
                 </div>
