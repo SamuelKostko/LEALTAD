@@ -1738,10 +1738,37 @@ Esto eliminará también sus transacciones.`
         const status = (p.status || "pending").toLowerCase();
         item.className = `aPurchaseCard aPurchaseCard--${status}`;
 
-        // Format dates
-        const createdDateStr = p.createdAt ? new Date(p.createdAt).toLocaleString("es-VE", { dateStyle: "medium", timeStyle: "short" }) : "N/A";
+        // Calculate purchase timestamp and points delivery date
+        const createdDate = p.createdAt ? new Date(p.createdAt) : null;
+        const createdDateStr = createdDate ? createdDate.toLocaleString("es-VE", { dateStyle: "medium", timeStyle: "short" }) : "N/A";
         const resolvedDateStr = p.resolvedAt ? new Date(p.resolvedAt).toLocaleString("es-VE", { dateStyle: "medium", timeStyle: "short" }) : null;
-        const availableDateStr = p.availableAt ? new Date(p.availableAt).toLocaleDateString("es-VE", { dateStyle: "long" }) : null;
+
+        // Calculate 10-day availability date
+        let availableDate = null;
+        if (p.availableAt) {
+          availableDate = new Date(p.availableAt);
+        } else if (createdDate && status === "approved") {
+          availableDate = new Date(createdDate.getTime() + (10 * 24 * 60 * 60 * 1000));
+        }
+
+        const now = new Date();
+        let availabilityHtml = "";
+
+        if (status === "approved" && availableDate) {
+          const availableDateStr = availableDate.toLocaleString("es-VE", { dateStyle: "medium", timeStyle: "short" });
+          const diffMs = availableDate.getTime() - now.getTime();
+          const daysLeft = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+          if (diffMs <= 0) {
+            availabilityHtml = `<span style="color: #10b981; font-weight: 700;">✅ Ya acreditados y disponibles</span> <span style="font-size: 11.5px; opacity: 0.8;">(desde el ${availableDateStr})</span>`;
+          } else {
+            availabilityHtml = `<span style="color: #a5b4fc; font-weight: 700;">⏳ Le caerán el ${availableDateStr}</span> <span style="background: rgba(99,102,241,0.25); color: #c7d2fe; padding: 2px 7px; border-radius: 6px; font-size: 11px; font-weight: 700; margin-left: 4px;">en ${daysLeft} ${daysLeft === 1 ? 'día' : 'días'}</span>`;
+          }
+        } else if (status === "pending") {
+          availabilityHtml = `<span style="color: #fbbf24; font-weight: 700;">⏳ Le caerán 10 días después de ser aprobado</span>`;
+        } else if (status === "rejected") {
+          availabilityHtml = `<span style="color: #f87171; font-weight: 700;">❌ No se acreditarán (pago rechazado)</span>`;
+        }
 
         // Status badge
         let badgeHtml = "";
@@ -1764,7 +1791,6 @@ Esto eliminará también sus transacciones.`
           <div>
             <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 4px;">
               ${badgeHtml}
-              <span style="font-size: 11.5px; color: rgba(255,255,255,0.4);">${createdDateStr}</span>
             </div>
             <div style="font-size: 14.5px; font-weight: 700; color: #fff;">
               Ref: <span style="color: var(--primary, #6366f1);">${p.reference || "N/A"}</span>
@@ -1782,6 +1808,27 @@ Esto eliminará también sus transacciones.`
           </div>
         `;
 
+        // Timing banner (Exact Purchase Time & Points Availability Date)
+        const timingBanner = document.createElement("div");
+        timingBanner.style.cssText = "background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 10px; padding: 10px 14px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px;";
+        timingBanner.innerHTML = `
+          <div style="display: flex; align-items: center; gap: 6px; font-size: 13px; color: rgba(255,255,255,0.85);">
+            <span style="opacity: 0.5;">🕒</span>
+            <span><strong>Hora de compra:</strong> <span style="color: #fff;">${createdDateStr}</span></span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 6px; font-size: 13px;">
+            <span style="opacity: 0.5;">🎁</span>
+            <span><strong>Disponibilidad:</strong> ${availabilityHtml}</span>
+          </div>
+        `;
+
+        // Resolve best display values
+        const displayCedula = p.clientCedula || p.originId || (p.cardNumber && p.cardNumber.length < 15 ? p.cardNumber : "N/A");
+        const displayPhone = p.clientPhone || p.originPhone || "";
+        const displayBank = p.originBank || (p.isAutoReconciled || p.reference === "Auto-Conciliado" ? "Conciliación Automática" : "N/A");
+        const displayOriginPhone = p.originPhone || p.clientPhone || "N/A";
+        const displayOriginId = p.originId || p.clientCedula || "N/A";
+
         // Details grid
         const details = document.createElement("div");
         details.className = "aPurchaseDetailsGrid";
@@ -1789,15 +1836,15 @@ Esto eliminará también sus transacciones.`
           <div class="aPurchaseDetailItem">
             <strong>Cliente</strong>
             <span class="val-highlight">${p.clientName || "Desconocido"}</span><br>
-            <span>Tarjeta/Cédula: <strong>${p.cardNumber || p.clientCedula || "N/A"}</strong></span>
-            ${p.clientPhone ? `<br><span>Tel: ${p.clientPhone}</span>` : ""}
+            <span>Cédula: <strong>${displayCedula}</strong></span>
+            ${displayPhone ? `<br><span>Tel: ${displayPhone}</span>` : ""}
             ${p.clientEmail ? `<br><span style="font-size: 11px; color: rgba(255,255,255,0.45);">${p.clientEmail}</span>` : ""}
           </div>
           <div class="aPurchaseDetailItem">
             <strong>Pago Móvil Emisor</strong>
-            <span>Banco: <span class="val-highlight">${p.originBank || "N/A"}</span></span><br>
-            <span>Teléfono: ${p.originPhone || "N/A"}</span><br>
-            <span>Cédula: ${p.originId || "N/A"}</span>
+            <span>Banco: <span class="val-highlight">${displayBank}</span></span><br>
+            <span>Teléfono: ${displayOriginPhone}</span><br>
+            <span>Cédula: ${displayOriginId}</span>
           </div>
           <div class="aPurchaseDetailItem">
             <strong>Estado / Resolución</strong>
@@ -1807,17 +1854,6 @@ Esto eliminará también sus transacciones.`
             ${p.matchedTxId ? `<span>ID Match: <code style="font-size:10.5px; opacity:0.7;">${p.matchedTxId}</code></span>` : ""}
           </div>
         `;
-
-        // Availability notice if approved
-        let noticeEl = null;
-        if (status === "approved" && availableDateStr) {
-          noticeEl = document.createElement("div");
-          noticeEl.className = "aPurchaseNotice aPurchaseNotice--scheduled";
-          noticeEl.innerHTML = `
-            <span>⏳</span>
-            <span>Puntos programados: serán utilizables a partir del <strong>${availableDateStr}</strong> (10 días de espera).</span>
-          `;
-        }
 
         // Actions for pending items
         let actionsEl = null;
@@ -1842,8 +1878,8 @@ Esto eliminará también sus transacciones.`
         }
 
         item.appendChild(header);
+        item.appendChild(timingBanner);
         item.appendChild(details);
-        if (noticeEl) item.appendChild(noticeEl);
         if (actionsEl) item.appendChild(actionsEl);
 
         // Copy button event
