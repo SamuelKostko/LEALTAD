@@ -53,10 +53,13 @@ export default async function handler(req, res) {
 
     const batch = firestore.batch();
 
+    const adminIdentifier = String(auth.data?.email || auth.data?.username || auth.data?.name || 'Administrador').trim();
+
     if (action === 'reject') {
       batch.update(purchaseRef, {
         status: 'rejected',
-        resolvedAt: FieldValue.serverTimestamp()
+        resolvedAt: FieldValue.serverTimestamp(),
+        resolvedBy: adminIdentifier
       });
       await batch.commit();
       return sendJson(res, 200, { ok: true, message: 'Pago rechazado exitosamente.' });
@@ -117,7 +120,9 @@ export default async function handler(req, res) {
     // Update purchase status
     batch.update(purchaseRef, {
       status: 'approved',
-      resolvedAt: FieldValue.serverTimestamp()
+      resolvedAt: FieldValue.serverTimestamp(),
+      resolvedBy: adminIdentifier,
+      availableAt: availableAtStr
     });
 
     await batch.commit();

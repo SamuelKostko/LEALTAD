@@ -101,17 +101,35 @@ export default async function handler(req, res) {
     const purchaseRef = db.collection('pending_purchases').doc();
     const finalStatus = isApproved ? 'approved' : 'pending';
 
+    const clientEmail = clientDataSnapshot && clientDataSnapshot.exists ? String(clientDataSnapshot.data()?.email || '').trim() : '';
+    const resolvedClientName = clientName ? String(clientName) : (clientDataSnapshot && clientDataSnapshot.exists ? String(clientDataSnapshot.data()?.nombre || clientDataSnapshot.data()?.name || 'Desconocido') : 'Desconocido');
+
+    let availableAtStr = null;
+    if (isApproved) {
+      const availableAtDate = new Date();
+      availableAtDate.setDate(availableAtDate.getDate() + 10);
+      availableAtStr = availableAtDate.toISOString();
+    }
+
     const newPurchase = {
       cardNumber: String(cardNumber),
-      clientName: clientName ? String(clientName) : 'Desconocido',
+      clientName: resolvedClientName,
+      clientEmail: clientEmail,
+      clientCedula: clientCedula || '',
+      clientPhone: clientPhone || '',
       amount: Number(amount),
       totalBs: String(totalBs),
-      originBank: String(originBank || ''),
-      originPhone: String(originPhone || ''),
-      originId: String(originId || ''),
-      reference: String(reference || ''),
+      originBank: String(originBank || (autoMatchOnly ? 'Conciliación Automática' : '')),
+      originPhone: String(originPhone || clientPhone || ''),
+      originId: String(originId || clientCedula || ''),
+      reference: String(reference || (autoMatchOnly ? 'Auto-Conciliado' : '')),
       rate: Number(rate || 0),
       status: finalStatus,
+      isAutoReconciled: isApproved && !!matchedTx,
+      matchedTxId: matchedTx ? matchedTx.id : null,
+      resolvedAt: isApproved ? new Date().toISOString() : null,
+      resolvedBy: isApproved ? 'Sistema (Auto-Conciliado)' : null,
+      availableAt: availableAtStr,
       createdAt: new Date().toISOString()
     };
 
@@ -126,10 +144,6 @@ export default async function handler(req, res) {
       if (clientDataSnapshot && clientDataSnapshot.exists) {
         const clientData = clientDataSnapshot.data();
         const currentBalance = Number(clientData?.totalPoints || 0);
-
-        const availableAtDate = new Date();
-        availableAtDate.setDate(availableAtDate.getDate() + 10);
-        const availableAtStr = availableAtDate.toISOString();
 
         batch.update(clientDocRef, {
           scheduledPoints: FieldValue.arrayUnion({

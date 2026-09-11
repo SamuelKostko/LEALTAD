@@ -1691,74 +1691,251 @@ Esto eliminará también sus transacciones.`
 
     if (clientsRefresh) clientsRefresh.addEventListener("click", () => loadClients());
 
-    const loadPendingPayments = async () => {
-      if (!pendingPaymentsList) return;
-      pendingPaymentsList.innerHTML = `<div class="aStatLoader">Cargando pagos pendientes...</div>`;
-      if (pendingPaymentsResult) pendingPaymentsResult.textContent = "";
+    let cachedPurchases = [];
+    let purchaseFilterStatus = "all";
+    let purchaseSearchQuery = "";
+    let purchaseTabsBound = false;
 
-      try {
-        const data = await apiGet("/api/admin/pending-purchases");
-        if (!data || !data.pending) throw new Error("Error obteniendo pagos.");
-        
-        pendingPaymentsList.innerHTML = "";
-        
-        if (data.pending.length === 0) {
-          pendingPaymentsList.innerHTML = `<div class="aStatLoader" style="color:var(--text-secondary);">No hay pagos pendientes por revisar.</div>`;
-          return;
+    const filterAndRenderPurchases = () => {
+      if (!pendingPaymentsList) return;
+
+      let list = cachedPurchases;
+
+      // Status filter
+      if (purchaseFilterStatus !== "all") {
+        list = list.filter(p => (p.status || "pending").toLowerCase() === purchaseFilterStatus);
+      }
+
+      // Search filter
+      const q = purchaseSearchQuery.trim().toLowerCase();
+      if (q) {
+        list = list.filter(p => {
+          const ref = String(p.reference || "").toLowerCase();
+          const name = String(p.clientName || "").toLowerCase();
+          const card = String(p.cardNumber || "").toLowerCase();
+          const ci = String(p.originId || "").toLowerCase();
+          const phone = String(p.originPhone || "").toLowerCase();
+          const bank = String(p.originBank || "").toLowerCase();
+          return ref.includes(q) || name.includes(q) || card.includes(q) || ci.includes(q) || phone.includes(q) || bank.includes(q);
+        });
+      }
+
+      pendingPaymentsList.innerHTML = "";
+
+      if (list.length === 0) {
+        let msg = "No se encontraron compras de puntos.";
+        if (purchaseFilterStatus === "pending") msg = "No hay compras en espera por revisar.";
+        else if (purchaseFilterStatus === "approved") msg = "No hay compras conciliadas o aprobadas aún.";
+        else if (purchaseFilterStatus === "rejected") msg = "No hay compras rechazadas.";
+        else if (q) msg = `No se encontraron resultados para "${purchaseSearchQuery}".`;
+
+        pendingPaymentsList.innerHTML = `<div class="aStatLoader" style="color:var(--text-secondary);">${msg}</div>`;
+        return;
+      }
+
+      list.forEach(p => {
+        const item = document.createElement("div");
+        const status = (p.status || "pending").toLowerCase();
+        item.className = `aPurchaseCard aPurchaseCard--${status}`;
+
+        // Format dates
+        const createdDateStr = p.createdAt ? new Date(p.createdAt).toLocaleString("es-VE", { dateStyle: "medium", timeStyle: "short" }) : "N/A";
+        const resolvedDateStr = p.resolvedAt ? new Date(p.resolvedAt).toLocaleString("es-VE", { dateStyle: "medium", timeStyle: "short" }) : null;
+        const availableDateStr = p.availableAt ? new Date(p.availableAt).toLocaleDateString("es-VE", { dateStyle: "long" }) : null;
+
+        // Status badge
+        let badgeHtml = "";
+        if (status === "pending") {
+          badgeHtml = `<span class="aPurchaseBadge aPurchaseBadge--pending"><span class="aPillDot aPillDot--pending"></span> En espera de revisión</span>`;
+        } else if (status === "approved") {
+          if (p.isAutoReconciled || p.reference === "Auto-Conciliado") {
+            badgeHtml = `<span class="aPurchaseBadge aPurchaseBadge--auto">⚡ Conciliado Automático</span>`;
+          } else {
+            badgeHtml = `<span class="aPurchaseBadge aPurchaseBadge--approved"><span class="aPillDot aPillDot--approved"></span> Aprobado por Admin</span>`;
+          }
+        } else if (status === "rejected") {
+          badgeHtml = `<span class="aPurchaseBadge aPurchaseBadge--rejected"><span class="aPillDot aPillDot--rejected"></span> Rechazado</span>`;
         }
 
-        data.pending.forEach(p => {
-          const item = document.createElement("div");
-          item.className = "aTxItem";
-          item.style.cssText = "display: flex; flex-direction: column; gap: 10px; align-items: stretch;";
-          
-          const header = document.createElement("div");
-          header.style.cssText = "display: flex; justify-content: space-between; align-items: flex-start;";
-          header.innerHTML = `
-            <div>
-              <div class="aTxItem__type">Pago Móvil Ref: <strong style="color:var(--primary);">${p.reference || 'N/A'}</strong></div>
-              <div class="aTxItem__date">${new Date(p.createdAt).toLocaleString("es-VE")}</div>
-              <div class="aTxItem__desc" style="margin-top: 4px; font-size: 0.85rem;">
-                <strong>Cliente:</strong> <span style="color:var(--primary);">${p.clientName || 'Desconocido'}</span> (Tarjeta: ${p.cardNumber})<br>
-                <strong>Banco Origen:</strong> ${p.originBank || 'N/A'}<br>
-                <strong>Teléfono Origen:</strong> ${p.originPhone || 'N/A'}<br>
-                <strong>CI Origen:</strong> ${p.originId || 'N/A'}<br>
-                <strong>Monto Bs:</strong> ${p.totalBs || 'N/A'} (Tasa: ${p.rate || 'N/A'})
-              </div>
+        // Header
+        const header = document.createElement("div");
+        header.className = "aPurchaseCard__header";
+        header.innerHTML = `
+          <div>
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 4px;">
+              ${badgeHtml}
+              <span style="font-size: 11.5px; color: rgba(255,255,255,0.4);">${createdDateStr}</span>
             </div>
-            <div class="aTxItem__points" style="color: #10b981;">+${p.amount} pts</div>
-          `;
+            <div style="font-size: 14.5px; font-weight: 700; color: #fff;">
+              Ref: <span style="color: var(--primary, #6366f1);">${p.reference || "N/A"}</span>
+              <button type="button" class="aPurchaseCopyBtn" title="Copiar referencia" data-copy="${p.reference || ""}">
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" style="display:inline-block; vertical-align:middle;">
+                  <rect x="9" y="9" width="13" height="13" rx="2" stroke="currentColor" stroke-width="1.8" />
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" stroke="currentColor" stroke-width="1.8" />
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div class="aPurchaseAmount">
+            <div class="aPurchaseAmount__pts">+${p.amount} pts</div>
+            <div class="aPurchaseAmount__bs">Bs. ${p.totalBs || "0"} ${p.rate ? `<span style="font-size: 11px; opacity: 0.7;">(Tasa: ${p.rate})</span>` : ""}</div>
+          </div>
+        `;
 
-          const actions = document.createElement("div");
-          actions.style.cssText = "display: flex; gap: 10px; margin-top: 5px;";
+        // Details grid
+        const details = document.createElement("div");
+        details.className = "aPurchaseDetailsGrid";
+        details.innerHTML = `
+          <div class="aPurchaseDetailItem">
+            <strong>Cliente</strong>
+            <span class="val-highlight">${p.clientName || "Desconocido"}</span><br>
+            <span>Tarjeta/Cédula: <strong>${p.cardNumber || p.clientCedula || "N/A"}</strong></span>
+            ${p.clientPhone ? `<br><span>Tel: ${p.clientPhone}</span>` : ""}
+            ${p.clientEmail ? `<br><span style="font-size: 11px; color: rgba(255,255,255,0.45);">${p.clientEmail}</span>` : ""}
+          </div>
+          <div class="aPurchaseDetailItem">
+            <strong>Pago Móvil Emisor</strong>
+            <span>Banco: <span class="val-highlight">${p.originBank || "N/A"}</span></span><br>
+            <span>Teléfono: ${p.originPhone || "N/A"}</span><br>
+            <span>Cédula: ${p.originId || "N/A"}</span>
+          </div>
+          <div class="aPurchaseDetailItem">
+            <strong>Estado / Resolución</strong>
+            <span>Registrado: ${createdDateStr}</span><br>
+            ${resolvedDateStr ? `<span>Procesado: ${resolvedDateStr}</span><br>` : ""}
+            ${p.resolvedBy ? `<span>Por: <strong>${p.resolvedBy}</strong></span><br>` : ""}
+            ${p.matchedTxId ? `<span>ID Match: <code style="font-size:10.5px; opacity:0.7;">${p.matchedTxId}</code></span>` : ""}
+          </div>
+        `;
+
+        // Availability notice if approved
+        let noticeEl = null;
+        if (status === "approved" && availableDateStr) {
+          noticeEl = document.createElement("div");
+          noticeEl.className = "aPurchaseNotice aPurchaseNotice--scheduled";
+          noticeEl.innerHTML = `
+            <span>⏳</span>
+            <span>Puntos programados: serán utilizables a partir del <strong>${availableDateStr}</strong> (10 días de espera).</span>
+          `;
+        }
+
+        // Actions for pending items
+        let actionsEl = null;
+        if (status === "pending") {
+          actionsEl = document.createElement("div");
+          actionsEl.className = "aPurchaseActions";
           
           const approveBtn = document.createElement("button");
           approveBtn.className = "aBtn aBtn--primary";
-          approveBtn.style.cssText = "padding: 6px 12px; font-size: 0.85rem; flex: 1;";
-          approveBtn.textContent = "Aprobar";
-          approveBtn.onclick = () => resolvePurchase(p.id, 'approve');
+          approveBtn.style.cssText = "padding: 8px 16px; font-size: 0.85rem; flex: 1; font-weight: 700;";
+          approveBtn.textContent = "✓ Aprobar Pago";
+          approveBtn.onclick = () => resolvePurchase(p.id, "approve");
 
           const rejectBtn = document.createElement("button");
           rejectBtn.className = "aBtn aBtn--danger";
-          rejectBtn.style.cssText = "padding: 6px 12px; font-size: 0.85rem; flex: 1;";
-          rejectBtn.textContent = "Rechazar";
-          rejectBtn.onclick = () => resolvePurchase(p.id, 'reject');
+          rejectBtn.style.cssText = "padding: 8px 16px; font-size: 0.85rem; flex: 1;";
+          rejectBtn.textContent = "✕ Rechazar";
+          rejectBtn.onclick = () => resolvePurchase(p.id, "reject");
 
-          actions.appendChild(approveBtn);
-          actions.appendChild(rejectBtn);
+          actionsEl.appendChild(approveBtn);
+          actionsEl.appendChild(rejectBtn);
+        }
 
-          item.appendChild(header);
-          item.appendChild(actions);
-          pendingPaymentsList.appendChild(item);
+        item.appendChild(header);
+        item.appendChild(details);
+        if (noticeEl) item.appendChild(noticeEl);
+        if (actionsEl) item.appendChild(actionsEl);
+
+        // Copy button event
+        const copyBtn = item.querySelector(".aPurchaseCopyBtn");
+        if (copyBtn) {
+          copyBtn.onclick = (e) => {
+            e.stopPropagation();
+            const text = copyBtn.getAttribute("data-copy");
+            if (text && navigator.clipboard) {
+              navigator.clipboard.writeText(text);
+              const originalColor = copyBtn.style.color;
+              copyBtn.style.color = "#10b981";
+              setTimeout(() => { copyBtn.style.color = originalColor; }, 1500);
+            }
+          };
+        }
+
+        pendingPaymentsList.appendChild(item);
+      });
+    };
+
+    const updatePurchaseCounts = (counts) => {
+      const cAll = document.getElementById("countPurchasesAll");
+      const cPending = document.getElementById("countPurchasesPending");
+      const cApproved = document.getElementById("countPurchasesApproved");
+      const cRejected = document.getElementById("countPurchasesRejected");
+
+      if (cAll) cAll.textContent = counts?.all ?? 0;
+      if (cPending) cPending.textContent = counts?.pending ?? 0;
+      if (cApproved) cApproved.textContent = counts?.approved ?? 0;
+      if (cRejected) cRejected.textContent = counts?.rejected ?? 0;
+    };
+
+    const bindPurchaseControls = () => {
+      if (purchaseTabsBound) return;
+      purchaseTabsBound = true;
+
+      const tabsContainer = document.getElementById("adminPurchasesFilterTabs");
+      if (tabsContainer) {
+        tabsContainer.addEventListener("click", (e) => {
+          const btn = e.target.closest(".aPillBtn");
+          if (!btn) return;
+          const status = btn.getAttribute("data-status") || "all";
+          purchaseFilterStatus = status;
+
+          tabsContainer.querySelectorAll(".aPillBtn").forEach(b => b.classList.remove("is-active"));
+          btn.classList.add("is-active");
+
+          filterAndRenderPurchases();
+        });
+      }
+
+      const searchInput = document.getElementById("adminPurchasesSearch");
+      if (searchInput) {
+        searchInput.addEventListener("input", (e) => {
+          purchaseSearchQuery = e.target.value || "";
+          filterAndRenderPurchases();
+        });
+      }
+    };
+
+    const loadPendingPayments = async () => {
+      if (!pendingPaymentsList) return;
+      pendingPaymentsList.innerHTML = `<div class="aStatLoader">Cargando compras de puntos...</div>`;
+      if (pendingPaymentsResult) pendingPaymentsResult.textContent = "";
+
+      bindPurchaseControls();
+
+      try {
+        const data = await apiGet("/api/admin/pending-purchases?status=all");
+        if (!data || !data.ok) throw new Error(data?.error || "Error obteniendo compras.");
+        
+        cachedPurchases = Array.isArray(data.purchases) ? data.purchases : (data.pending || []);
+        
+        // Update tab counters
+        updatePurchaseCounts(data.counts || {
+          all: cachedPurchases.length,
+          pending: cachedPurchases.filter(p => p.status === "pending").length,
+          approved: cachedPurchases.filter(p => p.status === "approved").length,
+          rejected: cachedPurchases.filter(p => p.status === "rejected").length
         });
 
+        filterAndRenderPurchases();
+
       } catch (err) {
-        pendingPaymentsList.innerHTML = `<div class="aStatLoader" style="color:#ef4444;">Error al cargar.</div>`;
+        pendingPaymentsList.innerHTML = `<div class="aStatLoader" style="color:#ef4444;">Error al cargar compras: ${err.message || err}</div>`;
       }
     };
 
     const resolvePurchase = async (id, action) => {
-      if (!confirm(`¿Estás seguro de que deseas ${action === 'approve' ? 'aprobar' : 'rechazar'} este pago?`)) return;
+      const actionLabel = action === "approve" ? "aprobar y programar los puntos de" : "rechazar";
+      if (!confirm(`¿Estás seguro de que deseas ${actionLabel} este pago?`)) return;
       
       try {
         if (pendingPaymentsResult) {
@@ -1770,11 +1947,11 @@ Esto eliminará también sus transacciones.`
         if (response && response.ok) {
           if (pendingPaymentsResult) {
             pendingPaymentsResult.style.color = "#10b981";
-            pendingPaymentsResult.textContent = response.message || "Pago procesado.";
+            pendingPaymentsResult.textContent = response.message || "Pago procesado exitosamente.";
           }
-          loadPendingPayments();
+          await loadPendingPayments();
         } else {
-          throw new Error(response.error || "Error al procesar el pago");
+          throw new Error(response?.error || "Error al procesar el pago");
         }
       } catch (err) {
         if (pendingPaymentsResult) {

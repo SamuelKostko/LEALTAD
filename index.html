@@ -179,7 +179,7 @@
                   stroke-linejoin="round" />
                 <rect x="3" y="4" width="18" height="16" rx="2" stroke="currentColor" stroke-width="1.6" />
               </svg>
-              Pagos Pendientes
+              Compras de Puntos
             </button>
             <button class="aSidebar__navItem" id="aNavCajeros" type="button" data-panel="cajeros">
               <svg viewBox="0 0 24 24" width="17" height="17" fill="none">
@@ -469,12 +469,12 @@
             <div class="aResult" id="adminTxResult" aria-live="polite"></div>
           </section>
 
-          <!-- Panel Pagos Pendientes -->
-          <section class="aPanel" id="aPanelPendingPayments" aria-label="Pagos Pendientes" hidden>
+          <!-- Panel Pagos y Compras de Puntos -->
+          <section class="aPanel" id="aPanelPendingPayments" aria-label="Compras de Puntos" hidden>
             <div class="aPanel__header">
               <div>
-                <h2 class="aPanel__title">Pagos Pendientes</h2>
-                <p class="aPanel__sub">Revisa y aprueba la compra de puntos por Pago Móvil</p>
+                <h2 class="aPanel__title">Compras de Puntos</h2>
+                <p class="aPanel__sub">Detalle de compras por Pago Móvil (en espera, conciliados y rechazados)</p>
               </div>
               <button class="aIconBtn" id="adminPendingPaymentsRefresh" type="button" aria-label="Recargar">
                 <svg viewBox="0 0 24 24" width="17" height="17" fill="none">
@@ -487,6 +487,34 @@
                 </svg>
               </button>
             </div>
+
+            <!-- Filtros de Estado e Input de Búsqueda -->
+            <div class="aPurchasesControls" style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
+              <div class="aSearch" style="margin-bottom: 0;">
+                <svg class="aSearch__icon" viewBox="0 0 24 24" width="16" height="16" fill="none">
+                  <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.8" />
+                  <path d="M16 16l4.5 4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+                </svg>
+                <input class="aSearch__input" id="adminPurchasesSearch" type="search" placeholder="Buscar por referencia, cliente, cédula o teléfono..." autocomplete="off">
+              </div>
+
+              <!-- Pestañas de Filtro -->
+              <div class="aPillsFilter" id="adminPurchasesFilterTabs" style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <button type="button" class="aPillBtn is-active" data-status="all">
+                  Todos <span class="aPillCount" id="countPurchasesAll">0</span>
+                </button>
+                <button type="button" class="aPillBtn" data-status="pending">
+                  <span class="aPillDot aPillDot--pending"></span> En espera <span class="aPillCount" id="countPurchasesPending">0</span>
+                </button>
+                <button type="button" class="aPillBtn" data-status="approved">
+                  <span class="aPillDot aPillDot--approved"></span> Conciliados <span class="aPillCount" id="countPurchasesApproved">0</span>
+                </button>
+                <button type="button" class="aPillBtn" data-status="rejected">
+                  <span class="aPillDot aPillDot--rejected"></span> Rechazados <span class="aPillCount" id="countPurchasesRejected">0</span>
+                </button>
+              </div>
+            </div>
+
             <div id="adminPendingPaymentsList"></div>
             <div class="aResult" id="adminPendingPaymentsResult" aria-live="polite"></div>
           </section>
