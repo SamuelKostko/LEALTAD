@@ -1740,41 +1740,51 @@ Esto eliminará también sus transacciones.`
 
         // Calculate purchase timestamp and points delivery date
         const createdDate = p.createdAt ? new Date(p.createdAt) : null;
-        const createdDateStr = createdDate ? createdDate.toLocaleString("es-VE", { dateStyle: "medium", timeStyle: "short" }) : "N/A";
-        const resolvedDateStr = p.resolvedAt ? new Date(p.resolvedAt).toLocaleString("es-VE", { dateStyle: "medium", timeStyle: "short" }) : null;
+        const createdDateStr = createdDate && !isNaN(createdDate.getTime()) ? createdDate.toLocaleString("es-VE", { dateStyle: "medium", timeStyle: "short" }) : "N/A";
+        const resolvedDateStr = p.resolvedAt && !isNaN(new Date(p.resolvedAt).getTime()) ? new Date(p.resolvedAt).toLocaleString("es-VE", { dateStyle: "medium", timeStyle: "short" }) : null;
+
+        const isApprovedStatus = status === "approved" || status === "conciliado" || status === "completed" || p.isAutoReconciled === true || p.reference === "Auto-Conciliado";
 
         // Calculate 10-day availability date
         let availableDate = null;
-        if (p.availableAt) {
+        if (p.availableAt && !isNaN(new Date(p.availableAt).getTime())) {
           availableDate = new Date(p.availableAt);
-        } else if (createdDate && status === "approved") {
+        } else if (createdDate && isApprovedStatus) {
           availableDate = new Date(createdDate.getTime() + (10 * 24 * 60 * 60 * 1000));
         }
 
         const now = new Date();
         let availabilityHtml = "";
+        let availabilityShortText = "";
 
-        if (status === "approved" && availableDate) {
+        if (isApprovedStatus && availableDate && !isNaN(availableDate.getTime())) {
           const availableDateStr = availableDate.toLocaleString("es-VE", { dateStyle: "medium", timeStyle: "short" });
           const diffMs = availableDate.getTime() - now.getTime();
           const daysLeft = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
 
           if (diffMs <= 0) {
             availabilityHtml = `<span style="color: #10b981; font-weight: 700;">✅ Ya acreditados y disponibles</span> <span style="font-size: 11.5px; opacity: 0.8;">(desde el ${availableDateStr})</span>`;
+            availabilityShortText = `✅ Ya disponibles (desde ${availableDateStr})`;
           } else {
             availabilityHtml = `<span style="color: #a5b4fc; font-weight: 700;">⏳ Le caerán el ${availableDateStr}</span> <span style="background: rgba(99,102,241,0.25); color: #c7d2fe; padding: 2px 7px; border-radius: 6px; font-size: 11px; font-weight: 700; margin-left: 4px;">en ${daysLeft} ${daysLeft === 1 ? 'día' : 'días'}</span>`;
+            availabilityShortText = `⏳ Le caerán el ${availableDateStr} (en ${daysLeft}d)`;
           }
         } else if (status === "pending") {
           availabilityHtml = `<span style="color: #fbbf24; font-weight: 700;">⏳ Le caerán 10 días después de ser aprobado</span>`;
+          availabilityShortText = `10 días tras aprobación`;
         } else if (status === "rejected") {
           availabilityHtml = `<span style="color: #f87171; font-weight: 700;">❌ No se acreditarán (pago rechazado)</span>`;
+          availabilityShortText = `Rechazado`;
+        } else {
+          availabilityHtml = `<span style="color: rgba(255,255,255,0.6);">En proceso</span>`;
+          availabilityShortText = `En proceso`;
         }
 
         // Status badge
         let badgeHtml = "";
         if (status === "pending") {
           badgeHtml = `<span class="aPurchaseBadge aPurchaseBadge--pending"><span class="aPillDot aPillDot--pending"></span> En espera de revisión</span>`;
-        } else if (status === "approved") {
+        } else if (isApprovedStatus) {
           if (p.isAutoReconciled || p.reference === "Auto-Conciliado") {
             badgeHtml = `<span class="aPurchaseBadge aPurchaseBadge--auto">⚡ Conciliado Automático</span>`;
           } else {
@@ -1848,7 +1858,8 @@ Esto eliminará también sus transacciones.`
           </div>
           <div class="aPurchaseDetailItem">
             <strong>Estado / Resolución</strong>
-            <span>Registrado: ${createdDateStr}</span><br>
+            <span>Hora Compra: <strong>${createdDateStr}</strong></span><br>
+            <span>Disponibilidad: <strong style="color:#a5b4fc;">${availabilityShortText}</strong></span><br>
             ${resolvedDateStr ? `<span>Procesado: ${resolvedDateStr}</span><br>` : ""}
             ${p.resolvedBy ? `<span>Por: <strong>${p.resolvedBy}</strong></span><br>` : ""}
             ${p.matchedTxId ? `<span>ID Match: <code style="font-size:10.5px; opacity:0.7;">${p.matchedTxId}</code></span>` : ""}
