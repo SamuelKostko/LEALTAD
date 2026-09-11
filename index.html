@@ -1047,39 +1047,120 @@
           <section class="aPanel" id="aPanelStartup" aria-label="Inicio de App" hidden>
             <div class="aPanel__header">
               <div>
-                <h2 class="aPanel__title">Inicio de App</h2>
-                <p class="aPanel__sub">Configura lo que verán los usuarios al abrir la aplicación.</p>
+                <h2 class="aPanel__title">Inicio de App & Popups</h2>
+                <p class="aPanel__sub">Configura las promociones o imágenes que verán tus clientes al abrir la Wallet.</p>
               </div>
             </div>
             
-            <div class="aCard" style="margin-top: 20px;">
-              <h3 style="font-size: 16px; font-weight: 600; color: #fff; margin-top: 0; margin-bottom: 8px;">Popup Inicial</h3>
-              <p style="font-size: 13px; color: rgba(255,255,255,0.6); margin-bottom: 20px;">Selecciona la promoción o imagen que saltará como ventana emergente al iniciar Wallet.</p>
+            <div class="aCard" style="margin-top: 10px; padding: 24px;">
+              <h3 style="font-size: 16px; font-weight: 700; color: #fff; margin-top: 0; margin-bottom: 6px;">Modo de Visualización Inicial</h3>
+              <p style="font-size: 13px; color: rgba(255,255,255,0.5); margin-bottom: 20px;">Elige cómo se presentarán las imágenes o promociones emergentes cuando un usuario inicie sesión en la app.</p>
 
-              <div class="aInputGroup" style="margin-bottom: 15px;">
-                <label for="popupType" class="aLabel">Tipo de Popup</label>
-                <select id="popupType" class="aInput" style="cursor: pointer;">
-                  <option value="none">Ninguno (Desactivado)</option>
-                  <option value="promotion">Promoción del Catálogo</option>
-                  <option value="custom_image">Imagen Personalizada</option>
-                </select>
+              <!-- Grid de Modos de Popup -->
+              <div class="aStartupModesGrid" id="popupModeSelector">
+                <!-- Modo 1: Desactivado -->
+                <div class="aStartupModeCard is-active" data-mode="none">
+                  <div class="aStartupModeCard__icon">📴</div>
+                  <div class="aStartupModeCard__title">Desactivado</div>
+                  <div class="aStartupModeCard__desc">No mostrar ningún popup emergente al abrir la app.</div>
+                </div>
+
+                <!-- Modo 2: Promociones Aleatorias -->
+                <div class="aStartupModeCard" data-mode="random_promotion">
+                  <div class="aStartupModeCard__icon">🎲</div>
+                  <div class="aStartupModeCard__title">Promociones Aleatorias</div>
+                  <div class="aStartupModeCard__desc">Muestra una promo al azar del catálogo en cada apertura.</div>
+                </div>
+
+                <!-- Modo 3: Galería de Imágenes Aleatorias -->
+                <div class="aStartupModeCard" data-mode="random_images">
+                  <div class="aStartupModeCard__icon">🖼️</div>
+                  <div class="aStartupModeCard__title">Galería de Fotos Aleatorias</div>
+                  <div class="aStartupModeCard__desc">Sube varias imágenes y rotarán aleatoriamente al abrir.</div>
+                </div>
+
+                <!-- Modo 4: Promoción Fija -->
+                <div class="aStartupModeCard" data-mode="promotion">
+                  <div class="aStartupModeCard__icon">🎯</div>
+                  <div class="aStartupModeCard__title">Promoción Fija</div>
+                  <div class="aStartupModeCard__desc">Muestra siempre una promoción específica del catálogo.</div>
+                </div>
+
+                <!-- Modo 5: Imagen Fija -->
+                <div class="aStartupModeCard" data-mode="custom_image">
+                  <div class="aStartupModeCard__icon">📷</div>
+                  <div class="aStartupModeCard__title">Imagen Única Fija</div>
+                  <div class="aStartupModeCard__desc">Muestra siempre una sola imagen personalizada.</div>
+                </div>
               </div>
 
-              <div id="popupPromotionSection" class="aInputGroup" style="display: none; margin-bottom: 15px;">
-                <label for="popupPromotionSelect" class="aLabel">Selecciona la Promoción</label>
-                <select id="popupPromotionSelect" class="aInput" style="cursor: pointer;">
+              <!-- Input Oculto de Tipo para compatibilidad -->
+              <input type="hidden" id="popupType" value="none" />
+
+              <!-- Sección 1: Selección de Promoción Fija -->
+              <div id="popupPromotionSection" class="aStartupSection" style="display: none;">
+                <label for="popupPromotionSelect" class="aLabel" style="font-weight: 700; color: #fff;">Selecciona la Promoción del Catálogo</label>
+                <select id="popupPromotionSelect" class="aInput" style="cursor: pointer; margin-top: 6px;">
                   <!-- Options populated dynamically -->
                 </select>
+                <div id="popupSelectedPromoPreview" style="margin-top: 14px; display: none;">
+                  <img id="popupSelectedPromoImg" src="" alt="Vista previa promoción" style="max-height: 220px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); object-fit: contain; background: #000;" />
+                </div>
               </div>
 
-              <div id="popupCustomImageSection" class="aInputGroup" style="display: none; margin-bottom: 15px;">
-                <label for="popupCustomImage" class="aLabel">Sube una Imagen (Max 15 MB)</label>
-                <input id="popupCustomImage" type="file" class="aInput" accept="image/*" />
-                <img id="popupImagePreview" alt="Vista previa" style="margin-top: 10px; max-width: 100%; border-radius: 8px; display: none;" />
+              <!-- Sección 2: Galería de Varias Imágenes Aleatorias -->
+              <div id="popupRandomImagesSection" class="aStartupSection" style="display: none;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
+                  <div>
+                    <label class="aLabel" style="font-weight: 700; color: #fff; margin-bottom: 2px;">Fotos en Rotación Aleatoria</label>
+                    <p style="margin: 0; font-size: 12px; color: rgba(255,255,255,0.5);">Sube todas las fotos que quieras; saldrá una diferente al azar cada vez que abran la app.</p>
+                  </div>
+                  <span class="aPillCount" id="popupGalleryCount" style="padding: 4px 10px; font-size: 12px; background: rgba(99,102,241,0.2); color: #a5b4fc; border: 1px solid rgba(99,102,241,0.3);">0 fotos</span>
+                </div>
+
+                <div class="aUploadBox" id="popupGalleryDropzone">
+                  <input id="popupGalleryInput" type="file" accept="image/*" multiple style="display: none;" />
+                  <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.6" style="color: #6366f1; margin-bottom: 8px;">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  <div style="font-size: 14px; font-weight: 600; color: #fff;">Haz clic o arrastra para subir una o varias imágenes</div>
+                  <div style="font-size: 12px; color: rgba(255,255,255,0.4); margin-top: 4px;">PNG, JPG, WEBP (Se optimizan automáticamente)</div>
+                </div>
+
+                <!-- Galería de Miniaturas con botón de eliminar -->
+                <div id="popupGalleryGrid" class="aGalleryGrid" style="margin-top: 16px;"></div>
               </div>
 
-              <button class="aBtn" id="savePopupConfigBtn" type="button" style="background: #06b6d4; color: #fff; padding: 10px 20px; font-weight: 600; border-radius: 8px; border: none; cursor: pointer;">Guardar Configuración</button>
-              <div id="popupResult" style="margin-top: 10px; font-size: 13px; font-weight: 500;"></div>
+              <!-- Sección 3: Imagen Única Fija -->
+              <div id="popupCustomImageSection" class="aStartupSection" style="display: none;">
+                <label class="aLabel" style="font-weight: 700; color: #fff; margin-bottom: 6px;">Sube la Imagen Fija</label>
+                <div class="aUploadBox" id="popupSingleDropzone">
+                  <input id="popupCustomImage" type="file" accept="image/*" style="display: none;" />
+                  <div style="font-size: 14px; font-weight: 600; color: #fff;">Haz clic para subir una imagen</div>
+                  <div style="font-size: 12px; color: rgba(255,255,255,0.4); margin-top: 4px;">Reemplazará la imagen actual</div>
+                </div>
+                <div id="popupSinglePreviewContainer" style="margin-top: 14px; display: none;">
+                  <img id="popupImagePreview" alt="Vista previa" style="max-height: 240px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); object-fit: contain; background: #000;" />
+                </div>
+              </div>
+
+              <!-- Sección 4: Promociones Aleatorias Info -->
+              <div id="popupRandomPromoInfoSection" class="aStartupSection" style="display: none;">
+                <div style="background: rgba(99,102,241,0.1); border: 1px solid rgba(99,102,241,0.25); border-radius: 12px; padding: 16px; color: #c7d2fe; font-size: 13.5px; line-height: 1.5;">
+                  <div style="font-weight: 700; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
+                    <span>🎲 Modo Aleatorio de Promociones Activado</span>
+                  </div>
+                  El sistema elegirá automáticamente al azar una de las promociones activas registradas en tu catálogo de promociones cada vez que un cliente abra la Wallet. Si tocan la imagen en el popup, se abrirá el detalle de esa promoción para que puedan canjearla.
+                </div>
+              </div>
+
+              <!-- Botón de Guardar y Resultados -->
+              <div style="margin-top: 24px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
+                <button class="aBtn aBtn--primary" id="savePopupConfigBtn" type="button" style="padding: 12px 28px; font-weight: 700; border-radius: 10px;">
+                  Guardar Configuración
+                </button>
+                <div id="popupResult" style="font-size: 13.5px; font-weight: 600;" aria-live="polite"></div>
+              </div>
             </div>
           </section>
 

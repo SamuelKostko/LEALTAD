@@ -2934,148 +2934,314 @@ Esto eliminará también sus transacciones.`
       });
     });
 
-    // ── Popup Config Logic ──────────────────────────────────────────────
-    const loadAdminPopupConfig = async () => {
-      const typeSelect = document.getElementById("popupType");
-      const promoSelect = document.getElementById("popupPromotionSelect");
-      const imgPreview = document.getElementById("popupImagePreview");
-      
-      if (!typeSelect || !promoSelect) return;
-      
-      try {
-        const pRes = await fetch('/api/admin/promotions', { credentials: 'include' });
-        if (pRes.ok) {
-          const data = await pRes.json();
-          promoSelect.innerHTML = (data.promotions || []).map(p => `<option value="${p.id}">${p.title}</option>`).join('');
-        }
-      } catch (e) { console.error('Error fetching promos for popup config', e); }
+    // ── Popup Config Logic (Inicio de App & Popups) ────────────────────
+    let popupGalleryImages = [];
+    let popupPromotionsList = [];
+    let popupControlsBound = false;
 
-      try {
-        const res = await fetch('/api/admin/popup-config', { credentials: 'include' });
-        const config = await res.json();
-        typeSelect.value = config.type || 'none';
-        if (config.type === 'promotion' && config.promotionId) {
-          promoSelect.value = config.promotionId;
-        } else if (config.type === 'custom_image' && config.imageUrl) {
-          imgPreview.src = config.imageUrl;
-          imgPreview.style.display = 'block';
+    const renderPopupGallery = () => {
+      const grid = document.getElementById("popupGalleryGrid");
+      const countEl = document.getElementById("popupGalleryCount");
+      if (!grid) return;
+
+      if (countEl) countEl.textContent = `${popupGalleryImages.length} ${popupGalleryImages.length === 1 ? 'foto' : 'fotos'}`;
+
+      grid.innerHTML = "";
+      if (popupGalleryImages.length === 0) {
+        grid.innerHTML = `<div style="grid-column: 1 / -1; text-align: center; padding: 18px; color: rgba(255,255,255,0.4); font-size: 13px;">No hay fotos añadidas aún. Sube al menos una imagen arriba.</div>`;
+        return;
+      }
+
+      popupGalleryImages.forEach((imgSrc, idx) => {
+        const item = document.createElement("div");
+        item.className = "aGalleryItem";
+        item.innerHTML = `
+          <img src="${imgSrc}" alt="Foto ${idx + 1}" />
+          <button type="button" class="aGalleryItem__delete" title="Eliminar foto" data-idx="${idx}">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </button>
+        `;
+
+        const delBtn = item.querySelector(".aGalleryItem__delete");
+        if (delBtn) {
+          delBtn.onclick = (e) => {
+            e.stopPropagation();
+            popupGalleryImages.splice(idx, 1);
+            renderPopupGallery();
+          };
         }
-        typeSelect.dispatchEvent(new Event('change'));
-      } catch (err) {
-        console.error('Error loading popup config', err);
+
+        grid.appendChild(item);
+      });
+    };
+
+    const setPopupActiveMode = (mode) => {
+      const typeInput = document.getElementById("popupType");
+      if (typeInput) typeInput.value = mode;
+
+      // Update card active classes
+      const selector = document.getElementById("popupModeSelector");
+      if (selector) {
+        selector.querySelectorAll(".aStartupModeCard").forEach(card => {
+          card.classList.toggle("is-active", card.getAttribute("data-mode") === mode);
+        });
+      }
+
+      // Show/hide respective sections
+      const promoSec = document.getElementById("popupPromotionSection");
+      const randomImagesSec = document.getElementById("popupRandomImagesSection");
+      const singleImageSec = document.getElementById("popupCustomImageSection");
+      const randomPromoSec = document.getElementById("popupRandomPromoInfoSection");
+
+      if (promoSec) promoSec.style.display = mode === "promotion" ? "block" : "none";
+      if (randomImagesSec) randomImagesSec.style.display = mode === "random_images" ? "block" : "none";
+      if (singleImageSec) singleImageSec.style.display = mode === "custom_image" ? "block" : "none";
+      if (randomPromoSec) randomPromoSec.style.display = mode === "random_promotion" ? "block" : "none";
+
+      if (mode === "random_images") {
+        renderPopupGallery();
       }
     };
 
-    const popupType = document.getElementById("popupType");
-    if (popupType) {
-      popupType.addEventListener('change', (e) => {
-        const val = e.target.value;
-        document.getElementById('popupPromotionSection').style.display = val === 'promotion' ? 'block' : 'none';
-        document.getElementById('popupCustomImageSection').style.display = val === 'custom_image' ? 'block' : 'none';
-      });
-    }
-
-    const popupCustomImg = document.getElementById("popupCustomImage");
-    if (popupCustomImg) {
-      popupCustomImg.addEventListener('change', async (e) => {
-        const file = e.target.files[0];
-        const imgPreview = document.getElementById('popupImagePreview');
-        if (!file) {
-          imgPreview.style.display = 'none';
-          return;
-        }
-        if (file.size > 15 * 1024 * 1024) {
-          alert('La imagen excede el límite de 15 MB.');
-          e.target.value = '';
-          imgPreview.style.display = 'none';
-          return;
-        }
-        
-        document.getElementById('popupResult').textContent = 'Procesando imagen...';
-        document.getElementById('popupResult').style.color = '#fff';
-        
-        try {
-          const reader = new FileReader();
-          reader.readAsDataURL(file);
-          reader.onload = (event) => {
-            const img = new Image();
-            img.src = event.target.result;
-            img.onload = () => {
-              const canvas = document.createElement('canvas');
-              const MAX_WIDTH = 800;
-              let width = img.width;
-              let height = img.height;
-              if (width > MAX_WIDTH) {
-                height *= MAX_WIDTH / width;
-                width = MAX_WIDTH;
-              }
-              canvas.width = width;
-              canvas.height = height;
-              const ctx = canvas.getContext('2d');
-              ctx.drawImage(img, 0, 0, width, height);
-              const base64 = canvas.toDataURL('image/jpeg', 0.6);
-              imgPreview.src = base64;
-              imgPreview.style.display = 'block';
-              document.getElementById('popupResult').textContent = '';
-            };
+    const optimizeImage = (file, maxWidth = 800, quality = 0.65) => {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (e) => {
+          const img = new Image();
+          img.src = e.target.result;
+          img.onload = () => {
+            const canvas = document.createElement("canvas");
+            let width = img.width;
+            let height = img.height;
+            if (width > maxWidth) {
+              height *= maxWidth / width;
+              width = maxWidth;
+            }
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(img, 0, 0, width, height);
+            resolve(canvas.toDataURL("image/jpeg", quality));
           };
-        } catch (err) {
-          document.getElementById('popupResult').textContent = 'Error procesando imagen';
-          document.getElementById('popupResult').style.color = '#ef4444';
-        }
+          img.onerror = reject;
+        };
+        reader.onerror = reject;
       });
-    }
+    };
 
-    const savePopupBtn = document.getElementById("savePopupConfigBtn");
-    if (savePopupBtn) {
-      savePopupBtn.addEventListener('click', async () => {
-        const resultEl = document.getElementById('popupResult');
-        const type = document.getElementById('popupType').value;
-        let payload = { type };
+    const bindStartupControls = () => {
+      if (popupControlsBound) return;
+      popupControlsBound = true;
 
-        if (type === 'promotion') {
-          const pId = document.getElementById('popupPromotionSelect').value;
-          if (!pId) {
-            resultEl.textContent = 'Selecciona una promoción';
-            resultEl.style.color = '#ef4444';
-            return;
+      // Mode Card click listener
+      const selector = document.getElementById("popupModeSelector");
+      if (selector) {
+        selector.addEventListener("click", (e) => {
+          const card = e.target.closest(".aStartupModeCard");
+          if (!card) return;
+          const mode = card.getAttribute("data-mode") || "none";
+          setPopupActiveMode(mode);
+        });
+      }
+
+      // Promotion Select change preview
+      const promoSelect = document.getElementById("popupPromotionSelect");
+      if (promoSelect) {
+        promoSelect.addEventListener("change", (e) => {
+          const pId = e.target.value;
+          const promo = popupPromotionsList.find(p => p.id === pId);
+          const previewWrap = document.getElementById("popupSelectedPromoPreview");
+          const previewImg = document.getElementById("popupSelectedPromoImg");
+          if (promo && promo.image && previewWrap && previewImg) {
+            previewImg.src = promo.image;
+            previewWrap.style.display = "block";
+          } else if (previewWrap) {
+            previewWrap.style.display = "none";
           }
-          payload.promotionId = pId;
-        } else if (type === 'custom_image') {
-          const imgPreview = document.getElementById('popupImagePreview');
-          if (!imgPreview.src || imgPreview.style.display === 'none') {
-            resultEl.textContent = 'Sube una imagen';
-            resultEl.style.color = '#ef4444';
-            return;
+        });
+      }
+
+      // Gallery Dropzone & File Input
+      const galleryDropzone = document.getElementById("popupGalleryDropzone");
+      const galleryInput = document.getElementById("popupGalleryInput");
+      if (galleryDropzone && galleryInput) {
+        galleryDropzone.onclick = () => galleryInput.click();
+
+        galleryDropzone.ondragover = (e) => { e.preventDefault(); galleryDropzone.style.borderColor = "#6366f1"; };
+        galleryDropzone.ondragleave = () => { galleryDropzone.style.borderColor = ""; };
+        galleryDropzone.ondrop = async (e) => {
+          e.preventDefault();
+          galleryDropzone.style.borderColor = "";
+          if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+            await handleGalleryFiles(e.dataTransfer.files);
           }
-          payload.imageUrl = imgPreview.src;
+        };
+
+        galleryInput.onchange = async (e) => {
+          if (e.target.files && e.target.files.length > 0) {
+            await handleGalleryFiles(e.target.files);
+            e.target.value = "";
+          }
+        };
+      }
+
+      const handleGalleryFiles = async (files) => {
+        const resultEl = document.getElementById("popupResult");
+        if (resultEl) {
+          resultEl.textContent = `Procesando ${files.length} imagen(es)...`;
+          resultEl.style.color = "#fff";
         }
 
-        savePopupBtn.disabled = true;
-        resultEl.textContent = 'Guardando...';
-        resultEl.style.color = '#fff';
-
-        try {
-          const res = await fetch('/api/admin/popup-config', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload),
-            credentials: 'include'
-          });
-          const data = await res.json();
-          if (!res.ok) throw new Error(data.error || 'Error al guardar');
-
-          resultEl.textContent = 'Configuración guardada exitosamente';
-          resultEl.style.color = '#10b981';
-          setTimeout(() => { resultEl.textContent = ''; }, 3000);
-        } catch (err) {
-          resultEl.textContent = err.message;
-          resultEl.style.color = '#ef4444';
-        } finally {
-          savePopupBtn.disabled = false;
+        for (const file of Array.from(files)) {
+          if (!file.type.startsWith("image/")) continue;
+          try {
+            const base64 = await optimizeImage(file, 800, 0.65);
+            popupGalleryImages.push(base64);
+          } catch (err) {
+            console.error("Error optimizando imagen de galería:", err);
+          }
         }
-      });
-    }
+
+        renderPopupGallery();
+        if (resultEl) {
+          resultEl.textContent = "Imágenes añadidas a la galería.";
+          resultEl.style.color = "#10b981";
+          setTimeout(() => { resultEl.textContent = ""; }, 2500);
+        }
+      };
+
+      // Single Image Dropzone & File Input
+      const singleDropzone = document.getElementById("popupSingleDropzone");
+      const singleInput = document.getElementById("popupCustomImage");
+      if (singleDropzone && singleInput) {
+        singleDropzone.onclick = () => singleInput.click();
+
+        singleInput.onchange = async (e) => {
+          const file = e.target.files[0];
+          const imgPreview = document.getElementById("popupImagePreview");
+          const container = document.getElementById("popupSinglePreviewContainer");
+          if (!file) return;
+
+          try {
+            const base64 = await optimizeImage(file, 800, 0.65);
+            if (imgPreview && container) {
+              imgPreview.src = base64;
+              container.style.display = "block";
+            }
+          } catch (err) {
+            console.error("Error procesando imagen única:", err);
+          }
+        };
+      }
+
+      // Save Button
+      const savePopupBtn = document.getElementById("savePopupConfigBtn");
+      if (savePopupBtn) {
+        savePopupBtn.addEventListener("click", async () => {
+          const resultEl = document.getElementById("popupResult");
+          const type = document.getElementById("popupType").value || "none";
+          let payload = { type };
+
+          if (type === "promotion") {
+            const pId = document.getElementById("popupPromotionSelect").value;
+            if (!pId) {
+              resultEl.textContent = "Por favor selecciona una promoción del catálogo.";
+              resultEl.style.color = "#ef4444";
+              return;
+            }
+            payload.promotionId = pId;
+          } else if (type === "random_images") {
+            if (popupGalleryImages.length === 0) {
+              resultEl.textContent = "Debes subir al menos una imagen para la galería aleatoria.";
+              resultEl.style.color = "#ef4444";
+              return;
+            }
+            payload.images = popupGalleryImages;
+          } else if (type === "custom_image") {
+            const imgPreview = document.getElementById("popupImagePreview");
+            if (!imgPreview || !imgPreview.src || imgPreview.src.includes("data:,") || document.getElementById("popupSinglePreviewContainer")?.style.display === "none") {
+              resultEl.textContent = "Por favor sube una imagen.";
+              resultEl.style.color = "#ef4444";
+              return;
+            }
+            payload.imageUrl = imgPreview.src;
+          }
+
+          savePopupBtn.disabled = true;
+          resultEl.textContent = "Guardando configuración...";
+          resultEl.style.color = "#fff";
+
+          try {
+            const res = await fetch("/api/admin/popup-config", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload),
+              credentials: "include"
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || "Error al guardar");
+
+            resultEl.textContent = "¡Configuración guardada exitosamente!";
+            resultEl.style.color = "#10b981";
+            setTimeout(() => { resultEl.textContent = ""; }, 3500);
+          } catch (err) {
+            resultEl.textContent = err.message || "Error al guardar";
+            resultEl.style.color = "#ef4444";
+          } finally {
+            savePopupBtn.disabled = false;
+          }
+        });
+      }
+    };
+
+    const loadAdminPopupConfig = async () => {
+      bindStartupControls();
+
+      const promoSelect = document.getElementById("popupPromotionSelect");
+      const imgPreview = document.getElementById("popupImagePreview");
+      const singleContainer = document.getElementById("popupSinglePreviewContainer");
+
+      // 1. Fetch Promotions for the dropdown
+      try {
+        const pRes = await fetch("/api/admin/promotions", { credentials: "include" });
+        if (pRes.ok) {
+          const data = await pRes.json();
+          popupPromotionsList = data.promotions || [];
+          if (promoSelect) {
+            promoSelect.innerHTML = popupPromotionsList.map(p => `<option value="${p.id}">${p.title}</option>`).join("");
+          }
+        }
+      } catch (e) {
+        console.error("Error fetching promos for popup config:", e);
+      }
+
+      // 2. Fetch current Popup Configuration
+      try {
+        const res = await fetch("/api/admin/popup-config", { credentials: "include" });
+        const config = await res.json().catch(() => ({ type: "none" }));
+        const activeType = config.type || "none";
+
+        if (config.type === "random_images") {
+          popupGalleryImages = Array.isArray(config.images) ? config.images : (config.imageUrl ? [config.imageUrl] : []);
+        } else if (config.type === "custom_image" && config.imageUrl) {
+          if (imgPreview && singleContainer) {
+            imgPreview.src = config.imageUrl;
+            singleContainer.style.display = "block";
+          }
+        } else if (config.type === "promotion" && config.promotionId) {
+          if (promoSelect) {
+            promoSelect.value = config.promotionId;
+            promoSelect.dispatchEvent(new Event("change"));
+          }
+        }
+
+        setPopupActiveMode(activeType);
+
+      } catch (err) {
+        console.error("Error loading popup config:", err);
+      }
+    };
 
     // Expose loadAdminPopupConfig globally so it can be called from the sidebar
     window.loadAdminPopupConfig = loadAdminPopupConfig;
