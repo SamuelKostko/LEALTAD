@@ -97,6 +97,13 @@ function buildPhysicalPurchaseEmail({ customerName, points, branchName, cedula, 
  */
 export function initPurchaseListener() {
   if (isListening) return;
+
+  // Option to disable listener in develop/testing branches via environment variable
+  if (process.env.DISABLE_PURCHASE_LISTENER === 'true') {
+    console.log('[PurchaseListener] Listener desactivado por configuración (DISABLE_PURCHASE_LISTENER=true).');
+    return;
+  }
+
   isListening = true;
 
   try {
@@ -121,13 +128,40 @@ export function initPurchaseListener() {
           const data = doc.data();
 
           if (processedTxIds.has(txId)) continue;
-          if (data.surveyEmailSent === true) {
+          if (data.surveyEmailSent === true || data.emailClaimed === true) {
             processedTxIds.add(txId);
             continue;
           }
 
           const points = Number(data.points || 0);
           if (points <= 0) continue;
+
+          // 🛡️ BLOQUEO ATÓMICO: Evita duplicados entre entornos de Railway (develop y main)
+          let claimed = false;
+          try {
+            claimed = await firestore.runTransaction(async (transaction) => {
+              const txDoc = await transaction.get(doc.ref);
+              if (!txDoc.exists) return false;
+              const currentData = txDoc.data() || {};
+              if (currentData.surveyEmailSent === true || currentData.emailClaimed === true) {
+                return false;
+              }
+              transaction.update(doc.ref, {
+                emailClaimed: true,
+                emailClaimedAt: new Date().toISOString()
+              });
+              return true;
+            });
+          } catch (txErr) {
+            console.warn(`[PurchaseListener] Error intentando bloqueo atómico para tx ${txId}:`, txErr?.message || txErr);
+            claimed = false;
+          }
+
+          if (!claimed) {
+            processedTxIds.add(txId);
+            console.log(`[PurchaseListener] Transacción ${txId} ya fue procesada o tomada por otra instancia de Railway.`);
+            continue;
+          }
 
           processedTxIds.add(txId);
 
