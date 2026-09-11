@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
 
   <title>Wallet V+ Puntos</title>
 
@@ -377,8 +377,18 @@
             <div class="aPanel__header">
               <div>
                 <h2 class="aPanel__title">Clientes</h2>
-                <p class="aPanel__sub">Busca un cliente por nombre o cédula</p>
+                <p class="aPanel__sub">Busca un cliente o revisa los 50 con más puntos</p>
               </div>
+              <button class="aIconBtn" id="adminClientsRefresh" type="button" aria-label="Recargar clientes">
+                <svg viewBox="0 0 24 24" width="17" height="17" fill="none">
+                  <path d="M20 12a8 8 0 0 1-14.3 4.9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+                  <path d="M4 12a8 8 0 0 1 14.3-4.9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+                    opacity=".55" />
+                  <path d="M17.8 3.8V7.6h-3.8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+                    opacity=".55" />
+                  <path d="M6.2 20.2V16.4H10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+                </svg>
+              </button>
             </div>
             <div class="aSearch">
               <svg class="aSearch__icon" viewBox="0 0 24 24" width="16" height="16" fill="none">
@@ -422,6 +432,16 @@
               <button class="aBtn aBtn--ghost" id="adminCardTxLoadMore" style="margin-top: 16px; width: 100%;"
                 hidden>Cargar más</button>
               <div class="aResult" id="adminCardTxResult" aria-live="polite"></div>
+            </div>
+
+            <!-- Top 50 Clientes con más Puntos Section -->
+            <div id="adminTopClientsSection" style="margin-top: 24px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <div class="aSection__label" style="margin: 0; display: flex; align-items: center; gap: 6px;">
+                  <span>🏆 Top 50 Clientes con más Puntos</span>
+                </div>
+              </div>
+              <div id="adminTopClientsList"></div>
             </div>
           </section>
 
@@ -1781,6 +1801,52 @@
           </div>
 
           <div id="pdResult" style="text-align: center; font-size: 14px; margin-top: 12px; min-height: 20px;"></div>
+        </div>
+
+        <!-- Sección de Comentarios y Feedback -->
+        <div class="pdComments" id="pdCommentsSection" style="margin-top: 10px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; flex-direction: column; gap: 16px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <h4 style="margin: 0; font-size: 18px; font-weight: 700; color: #fff;">Opiniones y Feedback</h4>
+              <span id="pdCommentsAvg" style="font-size: 13px; font-weight: 700; color: #fbbf24; background: rgba(251,191,36,0.15); padding: 3px 8px; border-radius: 8px;">★ 5.0</span>
+            </div>
+            <span id="pdCommentsCount" style="font-size: 13px; color: rgba(255,255,255,0.5);">0 opiniones</span>
+          </div>
+
+          <!-- Formulario para dejar comentario -->
+          <div class="pdCommentForm" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 12px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+              <span style="font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.8);">Califica esta promoción:</span>
+              <div class="pdRatingStars" id="pdRatingStars" style="display: flex; gap: 4px; cursor: pointer;">
+                <span class="pdStar is-active" data-val="1">★</span>
+                <span class="pdStar is-active" data-val="2">★</span>
+                <span class="pdStar is-active" data-val="3">★</span>
+                <span class="pdStar is-active" data-val="4">★</span>
+                <span class="pdStar is-active" data-val="5">★</span>
+              </div>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              <input type="text" id="pdCommentUserName" placeholder="Tu nombre o apodo (opcional)" maxlength="50"
+                style="width: 100%; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; color: #fff; padding: 10px 12px; font-size: 16px; outline: none;" />
+              
+              <textarea id="pdCommentText" placeholder="Escribe tu opinión o feedback sobre esta promoción..." maxlength="500" rows="3"
+                style="width: 100%; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; color: #fff; padding: 10px 12px; font-size: 16px; outline: none; resize: none; font-family: inherit;"></textarea>
+            </div>
+
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+              <div id="pdCommentResult" style="font-size: 12px; min-height: 18px; flex: 1;"></div>
+              <button type="button" id="pdCommentSubmitBtn" class="aBtn"
+                style="background: linear-gradient(135deg, #0891b2, #7c3aed); color: #fff; font-size: 13px; font-weight: 600; padding: 8px 16px; border-radius: 10px; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;">
+                Publicar opinión
+              </button>
+            </div>
+          </div>
+
+          <!-- Lista de comentarios -->
+          <div id="pdCommentsList" style="display: flex; flex-direction: column; gap: 10px;">
+            <!-- Comentarios inyectados dinámicamente -->
+          </div>
         </div>
       </div>
     </div>

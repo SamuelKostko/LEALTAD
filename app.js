@@ -639,6 +639,8 @@ if (qrButton) {
     const clientResendBtn = document.getElementById("adminClientResendBtn");
     const clientDeleteBtn = document.getElementById("adminClientDeleteBtn");
     const clientsResult = document.getElementById("adminClientsResult");
+    const clientsRefresh = document.getElementById("adminClientsRefresh");
+    const topClientsList = document.getElementById("adminTopClientsList");
     const cardTxSection = document.getElementById("adminRootCardTx");
     const cardTxHint = document.getElementById("adminCardTxHint");
     const cardTxList = document.getElementById("adminCardTxList");
@@ -934,7 +936,10 @@ if (qrButton) {
       const main = document.querySelector(".aDash__main");
       if (main) main.scrollTop = 0;
     };
-    if (navClientes) navClientes.addEventListener("click", () => switchPanel("clientes"));
+    if (navClientes) navClientes.addEventListener("click", () => {
+      switchPanel("clientes");
+      loadClients();
+    });
     if (navTx) navTx.addEventListener("click", () => {
       switchPanel("transacciones");
       currentTxLimit = 10;
@@ -983,7 +988,10 @@ if (qrButton) {
     const mobNavStats = document.getElementById("aMobNavStats");
     const mobNavCajerosLocal = document.getElementById("aMobNavCajeros");
     const mobNavLogout = document.getElementById("aMobNavLogout");
-    if (mobNavClientes) mobNavClientes.addEventListener("click", () => switchPanel("clientes"));
+    if (mobNavClientes) mobNavClientes.addEventListener("click", () => {
+      switchPanel("clientes");
+      loadClients();
+    });
     if (mobNavTx) mobNavTx.addEventListener("click", () => {
       switchPanel("transacciones");
       currentTxLimit = 10;
@@ -1535,11 +1543,126 @@ Esto eliminará también sus transacciones.`
         }
       });
     }
+    const renderTopClients = (container, list) => {
+      if (!container) return;
+      container.innerHTML = "";
+      if (!list || !list.length) {
+        const empty = document.createElement("div");
+        empty.className = "aTxEmpty";
+        empty.textContent = "No hay clientes registrados.";
+        container.appendChild(empty);
+        return;
+      }
+
+      const wrap = document.createElement("div");
+      wrap.className = "aTxTable";
+
+      const head = document.createElement("div");
+      head.className = "aTxRow aTxRow--topClients aTxRow--head";
+      ["#", "Cliente", "Cédula", "Sede", "Puntos", "Acción"].forEach(lbl => {
+        const c = document.createElement("div");
+        c.className = "aTxCell" + (lbl === "Acción" ? " aTxCell--actions" : "") + (lbl === "Puntos" ? " aTxCell--ptsHead" : "");
+        c.textContent = lbl;
+        head.appendChild(c);
+      });
+      wrap.appendChild(head);
+
+      list.forEach((c, index) => {
+        const rank = index + 1;
+        const row = document.createElement("div");
+        row.className = "aTxRow aTxRow--topClients";
+        row.style.cursor = "pointer";
+
+        // Rank cell
+        const rankCell = document.createElement("div");
+        rankCell.className = "aTxCell";
+        rankCell.setAttribute("data-label", "Puesto");
+        let badgeStyle = "display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 50%; font-size: 11px; font-weight: 700;";
+        if (rank === 1) {
+          badgeStyle += " background: linear-gradient(135deg, #fbbf24, #d97706); color: #000; box-shadow: 0 0 10px rgba(251, 191, 36, 0.4);";
+        } else if (rank === 2) {
+          badgeStyle += " background: linear-gradient(135deg, #e2e8f0, #94a3b8); color: #000;";
+        } else if (rank === 3) {
+          badgeStyle += " background: linear-gradient(135deg, #f97316, #b45309); color: #fff;";
+        } else {
+          badgeStyle += " background: rgba(255, 255, 255, 0.08); color: rgba(255, 255, 255, 0.7);";
+        }
+        rankCell.innerHTML = `<span style="${badgeStyle}">${rank}</span>`;
+        row.appendChild(rankCell);
+
+        // Cliente cell
+        const nameCell = document.createElement("div");
+        nameCell.className = "aTxCell aTxCell--strong";
+        nameCell.setAttribute("data-label", "Cliente");
+        nameCell.innerHTML = `
+          <div style="font-weight: 600; color: #fff;">${c.name || "Sin nombre"}</div>
+          ${c.email ? `<div style="font-size: 11px; color: rgba(255, 255, 255, 0.4); margin-top: 1px;">${c.email}</div>` : ""}
+        `;
+        row.appendChild(nameCell);
+
+        // Cédula cell
+        const ciCell = document.createElement("div");
+        ciCell.className = "aTxCell";
+        ciCell.setAttribute("data-label", "Cédula");
+        ciCell.textContent = c.cedula || "—";
+        row.appendChild(ciCell);
+
+        // Sede cell
+        const sedeCell = document.createElement("div");
+        sedeCell.className = "aTxCell";
+        sedeCell.setAttribute("data-label", "Sede");
+        sedeCell.textContent = c.sedes || "Sin sede";
+        row.appendChild(sedeCell);
+
+        // Puntos cell
+        const ptsCell = document.createElement("div");
+        ptsCell.className = "aTxCell aTxCell--pts";
+        ptsCell.setAttribute("data-label", "Puntos");
+        const approxCash = (Number(c.balance || 0) / 100).toFixed(2);
+        ptsCell.innerHTML = `
+          <div style="font-weight: 700; color: #a5b4fc;">${formatPts(c.balance)} pts</div>
+          <div style="font-size: 10px; font-weight: normal; color: rgba(165, 180, 252, 0.7); margin-top: 1px;">≈ ${approxCash} $</div>
+        `;
+        row.appendChild(ptsCell);
+
+        // Acciones cell
+        const actionCell = document.createElement("div");
+        actionCell.className = "aTxCell aTxCell--actions";
+        const viewBtn = document.createElement("button");
+        viewBtn.type = "button";
+        viewBtn.className = "aBtn aBtn--ghost";
+        viewBtn.style.padding = "5px 10px";
+        viewBtn.style.fontSize = "11px";
+        viewBtn.style.height = "auto";
+        viewBtn.textContent = "Ver detalle";
+        viewBtn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          selectClient(c);
+          if (clientCard) clientCard.scrollIntoView({ behavior: "smooth", block: "start" });
+        });
+        actionCell.appendChild(viewBtn);
+        row.appendChild(actionCell);
+
+        row.addEventListener("click", () => {
+          selectClient(c);
+          if (clientCard) clientCard.scrollIntoView({ behavior: "smooth", block: "start" });
+        });
+
+        wrap.appendChild(row);
+      });
+
+      container.appendChild(wrap);
+    };
+
     const loadClients = async () => {
       var _a;
-      setResult(clientsResult, "info", "Cargando clientes\u2026");
+      setResult(clientsResult, "info", "Cargando clientes…");
+      const topListEl = document.getElementById("adminTopClientsList");
+      if (topListEl && topListEl.children.length === 0) {
+        topListEl.innerHTML = `<div class="aStatLoader">Cargando los 50 clientes con más puntos…</div>`;
+      }
       try {
-        const data = await apiGet("/api/admin/cards?limit=500");
+        const data = await apiGet("/api/admin/cards?limit=50");
         allCards = (Array.isArray(data == null ? void 0 : data.cards) ? data.cards : []).map((c) => {
           var _a2, _b, _c;
           return {
@@ -1551,6 +1674,8 @@ Esto eliminará también sus transacciones.`
             balance: Number.isFinite(Number(c == null ? void 0 : c.balance)) ? Number(c.balance) : 0
           };
         }).filter((c) => c.token);
+        
+        renderTopClients(topListEl, allCards);
         setResult(clientsResult, "", "");
       } catch (err) {
         if ((err == null ? void 0 : err.status) === 401) {
@@ -1558,8 +1683,13 @@ Esto eliminará también sus transacciones.`
           return;
         }
         setResult(clientsResult, "err", (_a = err == null ? void 0 : err.message) != null ? _a : "Error al cargar clientes");
+        if (topListEl) {
+          topListEl.innerHTML = `<div class="aTxEmpty">Error al cargar clientes.</div>`;
+        }
       }
     };
+
+    if (clientsRefresh) clientsRefresh.addEventListener("click", () => loadClients());
 
     const loadPendingPayments = async () => {
       if (!pendingPaymentsList) return;
@@ -4119,12 +4249,212 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       }
 
+      // Cargar comentarios de la promoción
+      if (typeof loadPromoComments === "function") {
+        loadPromoComments(p.id);
+      }
+      
+      // Auto-completar nombre si existe en la tarjeta del cliente
+      const nameField = document.getElementById("pdCommentUserName");
+      if (nameField) {
+        let clientName = "";
+        const cNameEl = document.getElementById("clientName");
+        if (cNameEl && cNameEl.textContent && cNameEl.textContent !== "Cargando...") {
+          clientName = cNameEl.textContent.trim();
+        } else if (typeof clientDataCache !== 'undefined' && clientDataCache?.nombre) {
+          clientName = clientDataCache.nombre;
+        }
+        nameField.value = clientName || "";
+      }
+
+      const commentInput = document.getElementById("pdCommentText");
+      if (commentInput) commentInput.value = "";
+      const commentResEl = document.getElementById("pdCommentResult");
+      if (commentResEl) commentResEl.textContent = "";
+      
+      selectedRating = 5;
+      const starsContainer = document.getElementById("pdRatingStars");
+      if (starsContainer) {
+        starsContainer.querySelectorAll(".pdStar").forEach(s => {
+          s.classList.add("is-active");
+          s.classList.remove("is-hover");
+        });
+      }
+
       view.style.display = "flex";
       view.setAttribute("aria-hidden", "false");
     } catch (err) {
       alert("Error al abrir detalles: " + err.message);
     }
   };
+
+  // ── Promotion Comments & Feedback Logic ──
+  let selectedRating = 5;
+  const initPromoRatingStars = () => {
+    const starsContainer = document.getElementById("pdRatingStars");
+    if (!starsContainer) return;
+    const stars = starsContainer.querySelectorAll(".pdStar");
+
+    const updateStarsVisual = (val, isHover = false) => {
+      stars.forEach(s => {
+        const starVal = parseInt(s.getAttribute("data-val"), 10);
+        if (isHover) {
+          s.classList.toggle("is-hover", starVal <= val);
+        } else {
+          s.classList.toggle("is-active", starVal <= val);
+          s.classList.remove("is-hover");
+        }
+      });
+    };
+
+    stars.forEach(s => {
+      s.addEventListener("mouseenter", () => {
+        const val = parseInt(s.getAttribute("data-val"), 10);
+        updateStarsVisual(val, true);
+      });
+      s.addEventListener("click", () => {
+        selectedRating = parseInt(s.getAttribute("data-val"), 10);
+        updateStarsVisual(selectedRating, false);
+      });
+    });
+
+    starsContainer.addEventListener("mouseleave", () => {
+      updateStarsVisual(selectedRating, false);
+    });
+  };
+
+  const loadPromoComments = async (promoId) => {
+    const listEl = document.getElementById("pdCommentsList");
+    const countEl = document.getElementById("pdCommentsCount");
+    const avgEl = document.getElementById("pdCommentsAvg");
+    if (!listEl) return;
+
+    listEl.innerHTML = `<div style="text-align:center; padding:16px; font-size:13px; color:rgba(255,255,255,0.4);">Cargando opiniones...</div>`;
+
+    try {
+      const res = await fetch(`/api/client/promotion-comments?promotionId=${encodeURIComponent(promoId)}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Error al cargar comentarios");
+
+      const comments = data.comments || [];
+      const stats = data.stats || { total: 0, averageRating: 5.0 };
+
+      if (countEl) countEl.textContent = `${stats.total} ${stats.total === 1 ? 'opinión' : 'opiniones'}`;
+      if (avgEl) avgEl.textContent = `★ ${stats.averageRating.toFixed(1)}`;
+
+      if (comments.length === 0) {
+        listEl.innerHTML = `
+          <div style="text-align: center; padding: 24px 16px; background: rgba(255,255,255,0.02); border-radius: 14px; border: 1px dashed rgba(255,255,255,0.08);">
+            <div style="font-size: 24px; margin-bottom: 6px;">💬</div>
+            <div style="font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.7);">Aún no hay opiniones</div>
+            <div style="font-size: 12px; color: rgba(255,255,255,0.4); margin-top: 2px;">¡Sé el primero en compartir tu experiencia!</div>
+          </div>
+        `;
+        return;
+      }
+
+      listEl.innerHTML = comments.map(c => {
+        const initials = (c.userName || "C").slice(0, 2).toUpperCase();
+        const dateStr = c.createdAt ? new Date(c.createdAt).toLocaleDateString("es-VE", { day: "2-digit", month: "short", year: "numeric" }) : "";
+        const starsStr = "★".repeat(c.rating || 5) + "☆".repeat(Math.max(0, 5 - (c.rating || 5)));
+        
+        return `
+          <div class="pdCommentCard">
+            <div class="pdCommentHeader">
+              <div class="pdCommentUser">
+                <div class="pdCommentAvatar">${initials}</div>
+                <div>
+                  <div class="pdCommentName">${c.userName || "Cliente"}</div>
+                  <div class="pdCommentStars">${starsStr}</div>
+                </div>
+              </div>
+              <div class="pdCommentDate">${dateStr}</div>
+            </div>
+            <div class="pdCommentText">${c.comment || ""}</div>
+          </div>
+        `;
+      }).join("");
+
+    } catch (err) {
+      listEl.innerHTML = `<div style="text-align:center; padding:12px; font-size:12px; color:#ef4444;">Error al cargar opiniones.</div>`;
+    }
+  };
+
+  const setupPromoCommentSubmission = () => {
+    const submitBtn = document.getElementById("pdCommentSubmitBtn");
+    const commentInput = document.getElementById("pdCommentText");
+    const nameInput = document.getElementById("pdCommentUserName");
+    const resultEl = document.getElementById("pdCommentResult");
+
+    if (!submitBtn || !commentInput) return;
+
+    submitBtn.addEventListener("click", async () => {
+      if (!currentSelectedPromo) return;
+      const text = commentInput.value.trim();
+      const userName = nameInput ? nameInput.value.trim() : "";
+
+      if (!text || text.length < 2) {
+        if (resultEl) {
+          resultEl.style.color = "#ef4444";
+          resultEl.textContent = "Por favor escribe un comentario.";
+        }
+        commentInput.focus();
+        return;
+      }
+
+      submitBtn.disabled = true;
+      if (resultEl) {
+        resultEl.style.color = "#06b6d4";
+        resultEl.textContent = "Publicando opinión...";
+      }
+
+      try {
+        let tk = new URLSearchParams(window.location.search).get("token") || new URLSearchParams(window.location.search).get("t");
+        if (!tk && window.location.pathname.startsWith("/card/")) {
+          tk = decodeURIComponent(window.location.pathname.slice(6));
+        }
+
+        const res = await fetch("/api/client/promotion-comments", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            promotionId: currentSelectedPromo.id,
+            comment: text,
+            rating: selectedRating,
+            userName,
+            token: tk || ""
+          })
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Error al publicar");
+
+        if (resultEl) {
+          resultEl.style.color = "#10b981";
+          resultEl.textContent = "¡Gracias por tu opinión!";
+        }
+        commentInput.value = "";
+        
+        // Reload comments
+        await loadPromoComments(currentSelectedPromo.id);
+
+        setTimeout(() => {
+          if (resultEl) resultEl.textContent = "";
+        }, 3000);
+
+      } catch (err) {
+        if (resultEl) {
+          resultEl.style.color = "#ef4444";
+          resultEl.textContent = err.message || "Error al publicar comentario";
+        }
+      } finally {
+        submitBtn.disabled = false;
+      }
+    });
+  };
+
+  initPromoRatingStars();
+  setupPromoCommentSubmission();
 
   if (document.getElementById("pdQtyMinus")) {
     document.getElementById("pdQtyMinus").addEventListener("click", () => {
