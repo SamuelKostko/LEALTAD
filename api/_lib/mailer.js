@@ -30,7 +30,7 @@ function getSESTransporter() {
 /**
  * Send email using Amazon SES via SMTP.
  */
-export async function sendEmailSES({ to, subject, html, text, fromName = 'V+ Puntos' }) {
+export async function sendEmailSES({ to, subject, html, text, fromName = 'V+ Puntos', headers = {} }) {
   const senderEmail = process.env.AWS_SES_SENDER_EMAIL;
   if (!senderEmail) {
     throw new Error('Variable AWS_SES_SENDER_EMAIL no configurada.');
@@ -48,7 +48,12 @@ export async function sendEmailSES({ to, subject, html, text, fromName = 'V+ Pun
     to: recipients,
     subject,
     html,
-    text
+    text,
+    headers: {
+      'X-Auto-Response-Suppress': 'All',
+      'Auto-Submitted': 'auto-generated',
+      ...headers
+    }
   });
 
   return info;
@@ -95,25 +100,16 @@ export async function sendEmailMailerSend({ to, subject, html, fromName = 'V+ Pu
 }
 
 /**
- * Main email sender for new flows: Tries Amazon SES first, falls back to MailerSend.
+ * Main email sender: Exclusively uses Amazon SES via SMTP.
+ * Never touches MailerSend.
  */
-export async function sendEmail({ to, subject, html, text, fromName = 'V+ Puntos' }) {
-  // 1. Try Amazon SES
+export async function sendEmail({ to, subject, html, text, fromName = 'V+ Puntos', headers = {} }) {
   try {
-    const sesResult = await sendEmailSES({ to, subject, html, text, fromName });
+    const sesResult = await sendEmailSES({ to, subject, html, text, fromName, headers });
     console.log(`[Email] Enviado exitosamente vía Amazon SES a ${Array.isArray(to) ? to.join(', ') : to}`);
     return { ok: true, provider: 'amazon-ses', details: sesResult };
   } catch (sesErr) {
-    console.warn(`[Email] Amazon SES falló o no está listo (${sesErr.message}). Intentando MailerSend fallback...`);
-  }
-
-  // 2. Fallback to MailerSend
-  try {
-    const msResult = await sendEmailMailerSend({ to, subject, html, fromName });
-    console.log(`[Email] Enviado exitosamente vía MailerSend a ${Array.isArray(to) ? to.join(', ') : to}`);
-    return { ok: true, provider: 'mailersend', details: msResult };
-  } catch (msErr) {
-    console.error(`[Email] MailerSend también falló: ${msErr.message}`);
-    throw new Error(`Fallo en envío de correo (SES y MailerSend): ${msErr.message}`);
+    console.error(`[Email] Error enviando correo por Amazon SES a ${Array.isArray(to) ? to.join(', ') : to}:`, sesErr.message);
+    throw sesErr;
   }
 }

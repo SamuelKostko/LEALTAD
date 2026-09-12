@@ -30,7 +30,7 @@ function buildPhysicalPurchaseEmail({ customerName, points, branchName, cedula, 
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>¡Puntos Acreditados! - V+ Puntos</title>
+    <title>Notificación de Puntos - V+ Puntos</title>
   </head>
   <body style="margin: 0; padding: 20px 10px; background-color: #f8fafc; font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif; -webkit-font-smoothing: antialiased;">
     <div style="max-width: 520px; margin: 0 auto; background-color: #ffffff; border-radius: 16px; overflow: hidden; border: 1px solid #e2e8f0; color: #1e293b; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);">
@@ -40,7 +40,7 @@ function buildPhysicalPurchaseEmail({ customerName, points, branchName, cedula, 
         <h1 style="margin: 0; font-size: 26px; font-weight: 900; letter-spacing: 1px; color: #0f172a;">
           V<span style="color: #f97316;">+</span> PUNTOS
         </h1>
-        <p style="margin: 6px 0 0; font-size: 13px; color: #64748b; font-weight: 500;">¡Puntos acreditados por tu compra!</p>
+        <p style="margin: 6px 0 0; font-size: 13px; color: #64748b; font-weight: 500;">Resumen de acreditación de puntos</p>
       </div>
 
       <div style="padding: 28px 24px;">
@@ -49,33 +49,33 @@ function buildPhysicalPurchaseEmail({ customerName, points, branchName, cedula, 
           Gracias por tu compra en <strong>${branchDisplay}</strong>. Hemos sumado los puntos correspondientes a tu cuenta:
         </p>
 
-        <!-- Tarjeta de Puntos Ganados -->
+        <!-- Tarjeta de Puntos Acreditados -->
         <div style="background-color: #f0fdf4; border: 1.5px solid #86efac; border-radius: 12px; padding: 20px; text-align: center; margin-bottom: 26px;">
-          <span style="font-size: 12px; font-weight: 800; color: #15803d; letter-spacing: 1px; text-transform: uppercase;">Puntos Ganados en esta Compra</span>
+          <span style="font-size: 12px; font-weight: 800; color: #15803d; letter-spacing: 1px; text-transform: uppercase;">Puntos Acreditados</span>
           <h2 style="margin: 8px 0 0; font-size: 38px; color: #16a34a; font-weight: 900;">+${ptsDisplay} Pts</h2>
         </div>
 
-        <!-- SECCIÓN ENCUESTA CON RECOMPENSA (Colores Logo V+) -->
+        <!-- SECCIÓN ENCUESTA Y CALIFICACIÓN -->
         <div style="background-color: #fffaf5; border: 2px dashed #fdba74; border-radius: 14px; padding: 24px 20px; text-align: center;">
           <div style="display: inline-block; background-color: #ffedd5; color: #c2410c; padding: 4px 14px; border-radius: 99px; font-size: 11px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 12px;">
-            🎁 ¡Gana Puntos Extra!
+            ⭐ Calificación de Servicio
           </div>
-          <h3 style="margin: 0 0 10px; color: #0f172a; font-size: 18px; font-weight: 800;">¿Cómo fue tu experiencia hoy?</h3>
+          <h3 style="margin: 0 0 10px; color: #0f172a; font-size: 18px; font-weight: 800;">¿Cómo fue tu atención hoy?</h3>
           <p style="margin: 0 0 18px; font-size: 14px; color: #475569; line-height: 1.5;">
-            Queremos brindarte siempre la mejor atención. Responde nuestra breve encuesta de 1 minuto y <strong>gana puntos adicionales</strong> en tu cuenta.
+            Queremos brindarte siempre el mejor servicio. Completa una breve valoración de 1 minuto y recibe una bonificación en tu cuenta.
           </p>
           
           <!-- Botón Naranja V+ -->
           <div style="margin-bottom: 14px;">
             <a href="${surveyUrl}" 
                style="display: inline-block; background: linear-gradient(135deg, #f97316 0%, #ea580c 100%); color: #ffffff; text-decoration: none; font-weight: 800; font-size: 15px; padding: 14px 30px; border-radius: 10px; box-shadow: 0 4px 14px rgba(249, 115, 22, 0.35);">
-              📝 Responder Encuesta y Ganar Puntos
+              📝 Valorar Atención en Tienda
             </a>
           </div>
 
           <!-- Aviso de vigencia de 24 horas y un solo uso -->
           <p style="margin: 0; font-size: 12px; color: #ea580c; font-weight: 600;">
-            ⏳ Tienes 24 horas para responder la encuesta y reclamar tus puntos (enlace de un solo uso).
+            ⏳ Enlace disponible por 24 horas para registrar tu opinión (un solo uso).
           </p>
         </div>
 
@@ -83,7 +83,7 @@ function buildPhysicalPurchaseEmail({ customerName, points, branchName, cedula, 
 
       <!-- Footer -->
       <div style="background-color: #f8fafc; padding: 16px; text-align: center; font-size: 12px; color: #94a3b8; border-top: 1px solid #f1f5f9;">
-        ${branchDisplay} • Mensaje automático de <strong style="color: #64748b;">V+ Puntos</strong>
+        ${branchDisplay} • Notificación automática de <strong style="color: #64748b;">V+ Puntos</strong>
       </div>
 
     </div>
@@ -243,13 +243,14 @@ export function initPurchaseListener() {
             surveyToken
           });
 
-          console.log(`[PurchaseListener] Enviando correo de compra física (+${formattedPts} pts) a ${customerEmail}...`);
+          const emailText = `Hola ${customerName || 'Cliente'},\n\nGracias por tu compra en ${branchName || 'nuestra tienda'}. Hemos acreditado +${formattedPts} Pts a tu cuenta de V+ Puntos.\n\nQueremos conocer tu experiencia: responde nuestra encuesta de 1 minuto aquí:\nhttps://encuestas.vmaspuntos.com/?token=${encodeURIComponent(surveyToken)}&sede=${encodeURIComponent(branchName || 'Principal')}&cedula=${encodeURIComponent(cedula || '')}\n\nSaludos,\nEquipo V+ Puntos`;
 
           try {
             await sendEmail({
               to: customerEmail,
-              subject: `¡Ganaste ${formattedPts} puntos en tu compra! 🎉 + Gana más con tu opinión`,
+              subject: 'Notificacion V+ Puntos',
               html: emailHtml,
+              text: emailText,
               fromName: 'V+ Puntos'
             });
 
