@@ -84,19 +84,45 @@ function buildPhysicalPurchaseEmail({ customerName, points, branchName, cedula, 
   `;
 }
 
+import crypto from 'node:crypto';
+import { getFirestoreDb } from '../api/_lib/firestore.js';
+
 async function run() {
   const targetEmail = 'kostkosamuel43@gmail.com';
-  console.log(`Enviando correo de prueba a ${targetEmail}...`);
+  const cedula = '30547862';
+  const customerName = 'Samuel Kostko';
+  const branchName = 'Sede Principal';
 
-  const html = buildPhysicalPurchaseEmail({
-    customerName: 'Samuel Kostko',
-    points: 25.50,
-    branchName: 'Sede Principal',
-    cedula: '28123456',
-    surveyToken: 'demo_test_token_24h'
+  console.log(`Enviando correo de prueba a ${targetEmail} (Cédula: ${cedula})...`);
+
+  const firestore = getFirestoreDb();
+  const surveyToken = crypto.randomBytes(16).toString('hex');
+  const expiresAt = Date.now() + (24 * 60 * 60 * 1000);
+
+  // Crear invitación real de encuesta en Firestore
+  await firestore.collection('survey_invites').doc(surveyToken).set({
+    token: surveyToken,
+    cedula: cedula,
+    sede: branchName,
+    txId: 'test_tx_' + Date.now(),
+    customerEmail: targetEmail,
+    customerName: customerName,
+    used: false,
+    createdAt: new Date().toISOString(),
+    expiresAt: expiresAt
   });
 
-  const textContent = `Hola ${'Samuel Kostko'},\n\nGracias por tu compra en Sede Principal. Hemos acreditado +25.50 Pts a tu cuenta de V+ Puntos.\n\nQueremos conocer tu experiencia: responde nuestra breve encuesta de 1 minuto aquí: https://encuestas.vmaspuntos.com/?token=demo_test_token_24h&sede=Sede+Principal&cedula=28123456\n\nSaludos,\nEquipo V+ Puntos`;
+  console.log(`Invitación de encuesta creada con token: ${surveyToken}`);
+
+  const html = buildPhysicalPurchaseEmail({
+    customerName: customerName,
+    points: 25.50,
+    branchName: branchName,
+    cedula: cedula,
+    surveyToken: surveyToken
+  });
+
+  const textContent = `Hola ${customerName},\n\nGracias por tu compra en ${branchName}. Hemos acreditado +25.50 Pts a tu cuenta de V+ Puntos.\n\nQueremos conocer tu experiencia: responde nuestra breve encuesta de 1 minuto aquí: https://encuestas.vmaspuntos.com/?token=${encodeURIComponent(surveyToken)}&sede=${encodeURIComponent(branchName)}&cedula=${encodeURIComponent(cedula)}\n\nSaludos,\nEquipo V+ Puntos`;
 
   const res = await sendEmail({
     to: targetEmail,
@@ -107,6 +133,7 @@ async function run() {
   });
 
   console.log('Resultado del envío:', res);
+  process.exit(0);
 }
 
 run().catch(err => {

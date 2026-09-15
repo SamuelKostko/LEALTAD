@@ -109,14 +109,13 @@ export function initPurchaseListener() {
   try {
     const firestore = getFirestoreDb();
     
-    // Listen to credit transactions created from now onwards (with 1 minute grace buffer)
-    const listenStartTime = new Date(Date.now() - 60000);
+    // Listen to credit transactions created recently (with 5 minute buffer)
+    const listenStartTime = new Date(Date.now() - 5 * 60000);
 
     console.log('[PurchaseListener] Iniciando listener en tiempo real de transacciones físicas...');
 
     const unsubscribe = firestore
       .collection('transactions')
-      .where('type', '==', 'credit')
       .where('createdAt', '>=', listenStartTime)
       .onSnapshot(async (snapshot) => {
         for (const change of snapshot.docChanges()) {
@@ -125,7 +124,10 @@ export function initPurchaseListener() {
 
           const doc = change.doc;
           const txId = doc.id;
-          const data = doc.data();
+          const data = doc.data() || {};
+
+          // Only process credit transactions
+          if (data.type !== 'credit') continue;
 
           if (processedTxIds.has(txId)) continue;
           if (data.surveyEmailSent === true || data.emailClaimed === true) {
