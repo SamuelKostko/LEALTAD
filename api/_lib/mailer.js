@@ -5,12 +5,19 @@ let sesTransporter = null;
 function getSESTransporter() {
   if (sesTransporter) return sesTransporter;
 
-  const host = process.env.AWS_SES_SMTP_HOST;
-  const port = parseInt(process.env.AWS_SES_SMTP_PORT || '465', 10);
-  const user = process.env.AWS_SES_SMTP_USER;
-  const pass = process.env.AWS_SES_SMTP_PASS;
+  const host = (process.env.AWS_SES_SMTP_HOST || '').trim();
+  const port = parseInt((process.env.AWS_SES_SMTP_PORT || '465').trim(), 10);
+  const user = (process.env.AWS_SES_SMTP_USER || '').trim();
+  const pass = (process.env.AWS_SES_SMTP_PASS || '').trim();
 
   if (!host || !user || !pass) {
+    console.error('[Mailer] Faltan variables de entorno para AWS SES:', {
+      host: !!host,
+      port: !!port,
+      user: !!user,
+      pass: !!pass,
+      sender: !!(process.env.AWS_SES_SENDER_EMAIL || '').trim()
+    });
     return null;
   }
 
@@ -21,7 +28,10 @@ function getSESTransporter() {
     auth: {
       user,
       pass
-    }
+    },
+    connectionTimeout: 10000,
+    greetingTimeout: 10000,
+    socketTimeout: 15000
   });
 
   return sesTransporter;

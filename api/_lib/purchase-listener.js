@@ -263,9 +263,13 @@ export function initPurchaseListener() {
               surveyToken: surveyToken
             }).catch(() => null);
 
-            console.log(`[PurchaseListener] Correo enviado y registrado exitosamente para tx ${txId}.`);
           } catch (mailErr) {
-            console.error(`[PurchaseListener] Error enviando correo para tx ${txId}:`, mailErr);
+            console.error(`[PurchaseListener] Error enviando correo para tx ${txId} a ${customerEmail}:`, mailErr);
+            await doc.ref.update({
+              surveyEmailSent: false,
+              emailError: String(mailErr?.message || mailErr),
+              emailFailedAt: new Date().toISOString()
+            }).catch(() => null);
           }
         }
       }, (err) => {
