@@ -129,6 +129,25 @@ export function initPurchaseListener() {
           // Only process credit transactions
           if (data.type !== 'credit') continue;
 
+          // 🚫 Omitir transacciones provenientes de encuestas / valoraciones (evita bucles)
+          const desc = String(data.description || '').toLowerCase();
+          if (
+            desc.includes('encuesta') ||
+            desc.includes('survey') ||
+            desc.includes('valoración') ||
+            desc.includes('valoracion') ||
+            desc.includes('opinión') ||
+            desc.includes('opinion') ||
+            data.surveyId ||
+            data.source === 'survey' ||
+            data.origin === 'survey' ||
+            data.isSurveyReward === true ||
+            data.isSurvey === true
+          ) {
+            processedTxIds.add(txId);
+            continue;
+          }
+
           if (processedTxIds.has(txId)) continue;
           if (data.surveyEmailSent === true || data.emailClaimed === true) {
             processedTxIds.add(txId);
