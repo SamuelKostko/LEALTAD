@@ -5093,15 +5093,11 @@ document.addEventListener("DOMContentLoaded", () => {
     if (buyPointsInputUsd) buyPointsInputUsd.value = "";
     if (buyPointsInputBs) buyPointsInputBs.value = "";
     
-    if (buyPointsOriginBank) buyPointsOriginBank.value = "";
-    if (buyPointsOriginPhoneNum) buyPointsOriginPhoneNum.value = "";
-    if (buyPointsOriginId) buyPointsOriginId.value = "";
     if (buyPointsRef) buyPointsRef.value = "";
-    if (buyPointsDate) buyPointsDate.value = "";
     
     buyPointsBtnNext1.disabled = true;
     buyPointsSubmitBtn.disabled = true;
-    buyPointsSubmitBtn.textContent = "Notificar Pago";
+    buyPointsSubmitBtn.textContent = "Verificar y Procesar";
   }
 
   window.showBuyPointsView = function showBuyPointsView() {
@@ -5298,9 +5294,6 @@ document.addEventListener("DOMContentLoaded", () => {
       if (bpvDot3) bpvDot3.classList.add("bpv__step-dot--active");
     });
 
-    if (buyPointsOriginBank) buyPointsOriginBank.addEventListener("change", validateBuyPointsStep3);
-    if (buyPointsOriginPhoneNum) buyPointsOriginPhoneNum.addEventListener("input", validateBuyPointsStep3);
-    if (buyPointsOriginId) buyPointsOriginId.addEventListener("input", validateBuyPointsStep3);
     if (buyPointsRef) buyPointsRef.addEventListener("input", validateBuyPointsStep3);
 
     const term1 = document.getElementById("bpvTerm1");
@@ -5310,11 +5303,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     buyPointsSubmitBtn.addEventListener("click", async () => {
       const amount = currentTotalPts;
-      const bank = buyPointsOriginBank ? buyPointsOriginBank.value.trim() : "";
-      const phoneNum = buyPointsOriginPhoneNum ? buyPointsOriginPhoneNum.value.trim() : "";
-      const phoneCode = buyPointsOriginPhoneCode ? buyPointsOriginPhoneCode.value : "";
-      const phone = phoneNum ? (phoneCode + phoneNum) : "";
-      const idNum = buyPointsOriginId ? buyPointsOriginId.value.trim() : "";
       const ref = buyPointsRef ? buyPointsRef.value.trim() : "";
       const totalBsText = currentTotalBs.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
       
@@ -5344,9 +5332,6 @@ document.addEventListener("DOMContentLoaded", () => {
             clientName: clientName,
             amount,
             totalBs: totalBsText,
-            originBank: bank,
-            originPhone: phone,
-            originId: idNum,
             reference: ref,
             rate: currentBcvRate
           })
@@ -5376,7 +5361,7 @@ document.addEventListener("DOMContentLoaded", () => {
         console.error(err);
         alert(err.message || "Ocurrió un error al notificar el pago. Por favor, intenta de nuevo.");
         buyPointsSubmitBtn.disabled = false;
-        buyPointsSubmitBtn.textContent = "Notificar Pago";
+        buyPointsSubmitBtn.textContent = "Verificar y Procesar";
       }
     });
 

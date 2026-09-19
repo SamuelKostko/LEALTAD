@@ -91,8 +91,6 @@ export default async function handler(req, res) {
           : {
               amount: parseFloat(amountClient.toFixed(2)),
               reference: refClient,
-              phone: extractDigits(originPhone) || clientPhone,
-              cedula: extractDigits(originId) || clientCedula,
               sede: defaultSede
             };
 
