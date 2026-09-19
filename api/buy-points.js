@@ -134,9 +134,10 @@ export default async function handler(req, res) {
     const clientEmail = clientDataSnapshot && clientDataSnapshot.exists ? String(clientDataSnapshot.data()?.email || '').trim() : '';
     const resolvedClientName = clientName ? String(clientName) : (clientDataSnapshot && clientDataSnapshot.exists ? String(clientDataSnapshot.data()?.nombre || clientDataSnapshot.data()?.name || 'Desconocido') : 'Desconocido');
 
+    let availableAtDate = null;
     let availableAtStr = null;
     if (isApproved) {
-      const availableAtDate = new Date();
+      availableAtDate = new Date();
       availableAtDate.setDate(availableAtDate.getDate() + 10);
       availableAtStr = availableAtDate.toISOString();
     }
@@ -195,7 +196,7 @@ export default async function handler(req, res) {
           points: points,
           balanceBefore: currentBalance,
           balanceAfter: currentBalance,
-          description: `Compra de ${points} puntos (Disponibles el ${availableAtDate.toLocaleDateString()})`,
+          description: `Compra de ${points} puntos (Disponibles el ${availableAtDate ? availableAtDate.toLocaleDateString() : 'en 10 días'})`,
           createdAt: FieldValue.serverTimestamp(),
           processedAt: FieldValue.serverTimestamp(),
           availableAt: availableAtStr
@@ -207,9 +208,7 @@ export default async function handler(req, res) {
       // Send Success Email to Client via Amazon SES / fallback
       const email = clientDataSnapshot && clientDataSnapshot.exists ? String(clientDataSnapshot.data().email || '').trim() : '';
       if (email && email.includes('@')) {
-        const availableAtDate = new Date();
-        availableAtDate.setDate(availableAtDate.getDate() + 10);
-
+        const dateStr = availableAtDate ? availableAtDate.toLocaleDateString() : '10 días';
         sendEmail({
           to: email,
           subject: "Confirmación de Compra de Puntos - V+ Puntos",
@@ -221,7 +220,7 @@ export default async function handler(req, res) {
               <div style="background: #f3f4f6; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #6366f1;">
                 <p style="margin: 0; font-size: 15px; font-weight: bold; color: #4b5563;">Aviso importante:</p>
                 <p style="margin: 5px 0 0; font-size: 15px; color: #4b5563;">
-                  Tus puntos serán acreditados a tu saldo y utilizables en 10 días a partir de esta confirmación (aprox. el ${availableAtDate.toLocaleDateString()}).
+                  Tus puntos serán acreditados a tu saldo y utilizables en 10 días a partir de esta confirmación (aprox. el ${dateStr}).
                 </p>
               </div>
             </div>
@@ -263,6 +262,6 @@ export default async function handler(req, res) {
 
   } catch (err) {
     console.error('Error in buy-points handler:', err);
-    return sendJson(res, 500, { error: 'Internal Server Error' });
+    return sendJson(res, 500, { error: err?.message || 'Error al procesar la compra' });
   }
 }
