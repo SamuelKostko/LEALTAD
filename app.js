@@ -5212,13 +5212,8 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function validateBuyPointsStep3() {
-    const bank = buyPointsOriginBank.value.trim();
-    const phoneNum = buyPointsOriginPhoneNum.value.trim();
-    const idNum = buyPointsOriginId.value.trim();
-    const ref = buyPointsRef.value.trim();
-    const dateVal = buyPointsDate ? buyPointsDate.value : "";
-    
-    if (bank.length > 2 && phoneNum.length === 7 && idNum.length > 5 && ref.length >= 4 && dateVal !== "") {
+    const ref = buyPointsRef ? buyPointsRef.value.trim() : "";
+    if (ref.length >= 4) {
       buyPointsSubmitBtn.disabled = false;
     } else {
       buyPointsSubmitBtn.disabled = true;
@@ -5307,7 +5302,6 @@ document.addEventListener("DOMContentLoaded", () => {
     if (buyPointsOriginPhoneNum) buyPointsOriginPhoneNum.addEventListener("input", validateBuyPointsStep3);
     if (buyPointsOriginId) buyPointsOriginId.addEventListener("input", validateBuyPointsStep3);
     if (buyPointsRef) buyPointsRef.addEventListener("input", validateBuyPointsStep3);
-    if (buyPointsDate) buyPointsDate.addEventListener("change", validateBuyPointsStep3);
 
     const term1 = document.getElementById("bpvTerm1");
     const term2 = document.getElementById("bpvTerm2");
@@ -5316,16 +5310,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
     buyPointsSubmitBtn.addEventListener("click", async () => {
       const amount = currentTotalPts;
-      const bank = buyPointsOriginBank.value.trim();
-      const phoneNum = buyPointsOriginPhoneNum.value.trim();
-      const phoneCode = buyPointsOriginPhoneCode.value;
-      const phone = phoneCode + phoneNum;
-      const idNum = buyPointsOriginId.value.trim();
-      const ref = buyPointsRef.value.trim();
-      const dateVal = buyPointsDate ? buyPointsDate.value : "";
+      const bank = buyPointsOriginBank ? buyPointsOriginBank.value.trim() : "";
+      const phoneNum = buyPointsOriginPhoneNum ? buyPointsOriginPhoneNum.value.trim() : "";
+      const phoneCode = buyPointsOriginPhoneCode ? buyPointsOriginPhoneCode.value : "";
+      const phone = phoneNum ? (phoneCode + phoneNum) : "";
+      const idNum = buyPointsOriginId ? buyPointsOriginId.value.trim() : "";
+      const ref = buyPointsRef ? buyPointsRef.value.trim() : "";
       const totalBsText = currentTotalBs.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
       
-      if (isNaN(amount) || amount <= 0 || bank.length <= 2 || phoneNum.length !== 7 || idNum.length <= 5 || ref.length < 4 || dateVal === "") return;
+      if (isNaN(amount) || amount <= 0 || ref.length < 4) return;
       
       buyPointsSubmitBtn.disabled = true;
       buyPointsSubmitBtn.textContent = "Verificando pago en el banco...";
@@ -5355,7 +5348,6 @@ document.addEventListener("DOMContentLoaded", () => {
             originPhone: phone,
             originId: idNum,
             reference: ref,
-            date: dateVal,
             rate: currentBcvRate
           })
         });
@@ -5382,7 +5374,7 @@ document.addEventListener("DOMContentLoaded", () => {
         stepSuccess.style.display = "block";
       } catch (err) {
         console.error(err);
-        alert("Ocurrió un error al notificar el pago. Por favor, intenta de nuevo.");
+        alert(err.message || "Ocurrió un error al notificar el pago. Por favor, intenta de nuevo.");
         buyPointsSubmitBtn.disabled = false;
         buyPointsSubmitBtn.textContent = "Notificar Pago";
       }

@@ -7,6 +7,23 @@ function extractDigits(str) {
   return String(str || '').replace(/\D/g, '');
 }
 
+function parseAmount(val) {
+  if (typeof val === 'number') return val;
+  let s = String(val || '').trim();
+  if (!s) return 0;
+  if (s.includes(',') && s.includes('.')) {
+    if (s.lastIndexOf(',') > s.lastIndexOf('.')) {
+      s = s.replace(/\./g, '').replace(',', '.');
+    } else {
+      s = s.replace(/,/g, '');
+    }
+  } else if (s.includes(',')) {
+    s = s.replace(',', '.');
+  }
+  const parsed = parseFloat(s);
+  return isNaN(parsed) ? 0 : parsed;
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return sendJson(res, 405, { error: 'Method Not Allowed' });
@@ -20,12 +37,14 @@ export default async function handler(req, res) {
       return sendJson(res, 400, { error: 'Faltan campos básicos (cardNumber, amount, totalBs)' });
     }
 
-    if (!autoMatchOnly && (!reference || !originBank || !originPhone || !originId)) {
-      console.error('buy-points validation error:', body);
-      return sendJson(res, 400, { error: 'Faltan campos manuales requeridos' });
+    if (!autoMatchOnly && (!reference || reference.trim().length < 4)) {
+      console.error('buy-points validation error: reference is required and must have at least 4 digits', body);
+      return sendJson(res, 400, { error: 'Debes ingresar al menos los últimos 4 dígitos de la referencia' });
     }
 
     const db = await getFirestoreDb();
+    const baseUrl = (process.env.RECONCILIATION_API_URL || 'https://conciliacion.nexuslealtad.com/api').replace(/\/$/, '');
+    const defaultSede = process.env.RECONCILIATION_SEDE || 'VMAS';
 
     // CASHEA STYLE VERIFICATION: Polling the bank webhook records for up to 15 seconds
     let isApproved = false;
@@ -33,8 +52,7 @@ export default async function handler(req, res) {
     const maxRetries = 5;
     const delayMs = 3000;
 
-    const cleanTotalBsStr = String(totalBs).replace(/\./g, '').replace(',', '.');
-    const amountClient = parseFloat(cleanTotalBsStr);
+    const amountClient = parseAmount(totalBs);
     const refClient = reference ? String(reference).trim() : '';
 
     // If autoMatchOnly, we need the user's registered ID to match securely
@@ -61,32 +79,45 @@ export default async function handler(req, res) {
       clientPhone = extractDigits(cData.telefono || '');
     }
 
-    // Polling Loop
+    // Polling Loop / Verification
     for (let i = 0; i < maxRetries; i++) {
       try {
-        const verifyRes = await fetch('https://develop.conciliacion.nexuslealtad.com/api/verify-payment', {
+        const payload = autoMatchOnly
+          ? {
+              amount: parseFloat(amountClient.toFixed(2)),
+              phone: clientPhone,
+              sede: defaultSede
+            }
+          : {
+              amount: parseFloat(amountClient.toFixed(2)),
+              reference: refClient,
+              phone: extractDigits(originPhone) || clientPhone,
+              cedula: extractDigits(originId) || clientCedula,
+              sede: defaultSede
+            };
+
+        const verifyRes = await fetch(`${baseUrl}/verify-payment`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            amount: amountClient,
-            cedula: clientCedula,
-            phone: clientPhone,
-            date: autoMatchOnly ? null : date,
-            reference: autoMatchOnly ? null : refClient
-          })
+          body: JSON.stringify(payload)
         });
 
         const verifyData = await verifyRes.json();
 
         if (verifyRes.ok && verifyData.success) {
           isApproved = true;
-          matchedTx = { id: verifyData.matchedId };
+          const realRef = verifyData.reference || verifyData.referencia || verifyData.referencia_banco || refClient;
+          matchedTx = {
+            id: verifyData.matchedId,
+            reference: realRef
+          };
           break; // Stop polling!
         }
       } catch (e) {
         console.error('Error fetching verify-payment API:', e);
       }
 
+      // In manual mode if not found in first attempt, we don't necessarily need to loop 5 times if user already reported it
       if (i < maxRetries - 1) {
         await new Promise(resolve => setTimeout(resolve, delayMs));
       }
@@ -111,6 +142,8 @@ export default async function handler(req, res) {
       availableAtStr = availableAtDate.toISOString();
     }
 
+    const finalRef = matchedTx?.reference || (refClient || (autoMatchOnly ? 'Auto-Conciliado' : ''));
+
     const newPurchase = {
       cardNumber: String(cardNumber),
       clientName: resolvedClientName,
@@ -119,16 +152,16 @@ export default async function handler(req, res) {
       clientPhone: clientPhone || '',
       amount: Number(amount),
       totalBs: String(totalBs),
-      originBank: String(originBank || (autoMatchOnly ? 'Conciliación Automática' : '')),
+      originBank: String(originBank || (autoMatchOnly ? 'Conciliación Automática' : 'Pago Móvil')),
       originPhone: String(originPhone || clientPhone || ''),
       originId: String(originId || clientCedula || ''),
-      reference: String(reference || (autoMatchOnly ? 'Auto-Conciliado' : '')),
+      reference: finalRef,
       rate: Number(rate || 0),
       status: finalStatus,
       isAutoReconciled: isApproved && !!matchedTx,
       matchedTxId: matchedTx ? matchedTx.id : null,
       resolvedAt: isApproved ? new Date().toISOString() : null,
-      resolvedBy: isApproved ? 'Sistema (Auto-Conciliado)' : null,
+      resolvedBy: isApproved ? (autoMatchOnly ? 'Sistema (Auto-Conciliado)' : 'Sistema (Conciliación Manual Banco)') : null,
       availableAt: availableAtStr,
       createdAt: new Date().toISOString()
     };
@@ -150,7 +183,7 @@ export default async function handler(req, res) {
             amount: points,
             availableAt: availableAtStr,
             source: 'purchase',
-            reference: autoMatchOnly ? 'Auto-Conciliado' : String(reference)
+            reference: finalRef
           }),
           updatedAt: FieldValue.serverTimestamp()
         });
