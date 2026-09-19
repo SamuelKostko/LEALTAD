@@ -86,6 +86,7 @@ export default async function handler(req, res) {
           ? {
               amount: parseFloat(amountClient.toFixed(2)),
               phone: clientPhone,
+              cedula: clientCedula,
               sede: defaultSede
             }
           : {
