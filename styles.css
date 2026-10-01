@@ -5794,27 +5794,192 @@ body:has(.aDash:not([hidden])) {
   transform: scale(1.1);
 }
 
-/* === MEJORAS VISUALES (Premium Look) === */
+/* =========================================
+   CLIENT BOTTOM NAVIGATION BAR (Banesco style)
+   ========================================= */
 
-/* 1. Frosted Glass para elementos semitransparentes */
-.glass-panel, .aStatCard, .modal, .bottomSheet__content, .card {
-  backdrop-filter: blur(14px) !important;
-  -webkit-backdrop-filter: blur(14px) !important;
-}
-
-/* 2. Textura de Ruido Sutil en el fondo */
-body::before {
-  content: "";
+.cMobileNav {
+  display: flex;
   position: fixed;
-  top: 0; left: 0; width: 100vw; height: 100vh;
-  opacity: 0.04;
-  pointer-events: none;
-  z-index: 99999;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 65px;
+  background: rgba(22, 22, 22, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  z-index: 1000;
+  justify-content: space-around;
+  align-items: center;
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
-/* 3. Microinteracciones (Shrink en botones) */
-button:active, .btn:active, .action-btn:active, .fab:active, .aStatCard:active, .aStartupModeCard:active, .admin__back:active {
-  transform: scale(0.96) !important;
-  transition: transform 0.1s ease !important;
+@media (prefers-color-scheme: light) {
+  .cMobileNav {
+    background: rgba(255, 255, 255, 0.95);
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+  }
 }
+
+.cMobileNav__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  height: 100%;
+  color: var(--muted);
+  background: transparent;
+  border: none;
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color 0.2s;
+  padding: 0;
+}
+
+.cMobileNav__item svg {
+  margin-bottom: 4px;
+  transition: transform 0.2s, stroke 0.2s;
+}
+
+.cMobileNav__item:hover,
+.cMobileNav__item.is-active {
+  color: #60a5fa; /* Or the brand primary color */
+}
+
+.cMobileNav__item.is-active svg {
+  stroke: #60a5fa;
+  transform: translateY(-2px);
+}
+
+.cMobileNav__item--action {
+  position: relative;
+  top: -15px;
+  flex: 0 0 60px;
+}
+
+.cMobileNav__action-inner {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+  color: #fff;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.cMobileNav__item--action:hover .cMobileNav__action-inner {
+  transform: scale(1.05);
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5);
+}
+
+/* Adjust body padding so content doesn't hide under the nav */
+body {
+  padding-bottom: calc(65px + env(safe-area-inset-bottom));
+}
+
+/* Banesco Liquid Glass Overrides */
+.cMobileNav {
+  display: block;
+  position: fixed;
+  bottom: 24px;
+  left: 16px;
+  right: 16px;
+  height: 64px;
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-top: none;
+  z-index: 1000;
+  padding-bottom: 0;
+  pointer-events: none;
+}
+
+.cMobileNav__inner {
+  display: flex;
+  height: 100%;
+  background: rgba(36, 40, 52, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 40px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  justify-content: space-around;
+  align-items: center;
+  padding: 0 8px;
+  pointer-events: auto;
+}
+
+@media (prefers-color-scheme: light) {
+  .cMobileNav__inner {
+    background: rgba(255, 255, 255, 0.85);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  }
+}
+
+.cMobileNav__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  height: 48px;
+  max-width: 64px;
+  color: var(--muted);
+  background: transparent;
+  border: none;
+  border-radius: 24px;
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 0;
+}
+
+.cMobileNav__icon-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 2px;
+}
+
+.cMobileNav__item svg {
+  margin-bottom: 3px;
+  transition: transform 0.3s, stroke 0.3s;
+}
+
+.cMobileNav__item.is-active {
+  background: rgba(0, 0, 0, 0.4);
+  color: #fff;
+}
+
+@media (prefers-color-scheme: light) {
+  .cMobileNav__item.is-active {
+    background: rgba(0, 0, 0, 0.08);
+    color: #000;
+  }
+}
+
+.cMobileNav__item:hover:not(.is-active) {
+  color: var(--text-strong);
+}
+
+.cMobileNav__item.is-active svg,
+.cMobileNav__item.is-active .cMobileNav__icon-wrap svg {
+  stroke: #ef4444;
+  transform: translateY(-1px);
+}
+
+body {
+  padding-bottom: calc(100px + env(safe-area-inset-bottom)) !important;
+}
+

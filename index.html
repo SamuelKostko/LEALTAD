@@ -1534,7 +1534,7 @@
 
     </main>
 
-    <div class="cta" aria-label="Acción principal">
+    <div class="cta" aria-label="Acción principal" style="display: none;">
       <button class="qr" id="qrButton" type="button" aria-label="Mostrar codigo QR">
         <span class="qr__glow" aria-hidden="true"></span>
         <svg class="qr__icon" viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true">
@@ -1545,6 +1545,37 @@
         </svg>
       </button>
     </div>
+
+    <!-- Client Mobile Bottom Navigation -->
+    <nav class="cMobileNav" id="cMobileNav" aria-label="Navegación principal">
+      <div class="cMobileNav__inner">
+        <button class="cMobileNav__item is-active" id="cMobNavInicio" type="button" aria-label="Inicio">
+          <div class="cMobileNav__icon-wrap">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+          </div>
+          <span>Inicio</span>
+        </button>
+        <button class="cMobileNav__item" id="cMobNavPromos" type="button" aria-label="Promociones">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>
+          <span>Promos</span>
+        </button>
+      
+      <!-- Regular QR button in the nav -->
+      <button class="cMobileNav__item" id="cMobNavAction" type="button" aria-label="Código QR">
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="14" width="7" height="7" rx="1"></rect><rect x="3" y="14" width="7" height="7" rx="1"></rect></svg>
+        <span>QR</span>
+      </button>
+
+      <button class="cMobileNav__item" id="cMobNavTransfer" type="button" aria-label="Transferir">
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
+        <span>Transferir</span>
+      </button>
+      <button class="cMobileNav__item" id="cMobNavMore" type="button" aria-label="Más opciones" aria-haspopup="dialog" aria-controls="profileMenu">
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1.5"></circle><circle cx="12" cy="5" r="1.5"></circle><circle cx="12" cy="19" r="1.5"></circle></svg>
+        <span>Más</span>
+      </button>
+      </div>
+    </nav>
   </div>
   <!-- Overlay de escaneo QR -->
   <div class="scanner" id="qrScanner" aria-hidden="true">
@@ -2269,6 +2300,64 @@
   <!-- Librería ligera de decodificación QR -->
   <script src="https://unpkg.com/jsqr@1.4.0/dist/jsQR.js" crossorigin="anonymous"></script>
   <script src="/app.js?v=6" defer></script>
+
+  <!-- Client Mobile Nav Logic (Test Banesco Style) -->
+  <script>
+    window.addEventListener('DOMContentLoaded', () => {
+      const btnInicio = document.getElementById('cMobNavInicio');
+      const btnPromos = document.getElementById('cMobNavPromos');
+      const btnAction = document.getElementById('cMobNavAction');
+      const btnTransfer = document.getElementById('cMobNavTransfer');
+      const btnMore = document.getElementById('cMobNavMore');
+      const profileMenu = document.getElementById('profileMenu');
+      const qrButtonOld = document.getElementById('qrButton');
+
+      function setActive(activeBtn) {
+        [btnInicio, btnPromos, btnAction, btnTransfer, btnMore].forEach(btn => {
+          if (btn) btn.classList.remove('is-active');
+        });
+        if (activeBtn) activeBtn.classList.add('is-active');
+      }
+
+      if (btnInicio) {
+        btnInicio.addEventListener('click', () => {
+          setActive(btnInicio);
+          // Just goes to top or home
+          window.scrollTo({top: 0, behavior: 'smooth'});
+        });
+      }
+
+      if (btnPromos) {
+        btnPromos.addEventListener('click', () => {
+          setActive(btnPromos);
+          const promoBtn = document.getElementById('profilePromocionesBtn');
+          if (promoBtn) promoBtn.click();
+        });
+      }
+
+      if (btnAction) {
+        btnAction.addEventListener('click', () => {
+          if (qrButtonOld) qrButtonOld.click();
+        });
+      }
+
+      if (btnTransfer) {
+        btnTransfer.addEventListener('click', () => {
+          setActive(btnTransfer);
+          const transferBtn = document.getElementById('profileTransferBtn');
+          if (transferBtn) transferBtn.click();
+        });
+      }
+
+      if (btnMore) {
+        btnMore.addEventListener('click', () => {
+          setActive(btnMore);
+          const profileBtn = document.getElementById('profileButton');
+          if (profileBtn) profileBtn.click();
+        });
+      }
+    });
+  </script>
 </body>
 
 </html>
