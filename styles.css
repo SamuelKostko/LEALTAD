@@ -5809,7 +5809,7 @@ body:has(.aDash:not([hidden])) {
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border-top: 1px solid rgba(255, 255, 255, 0.08);
-  z-index: 1000;
+  z-index: 30;
   justify-content: space-around;
   align-items: center;
   padding-bottom: env(safe-area-inset-bottom);
@@ -5889,14 +5889,16 @@ body {
   display: block;
   position: fixed;
   bottom: 24px;
-  left: 16px;
-  right: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 32px);
+  max-width: 488px; /* 520px - 32px */
   height: 64px;
   background: transparent;
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
   border-top: none;
-  z-index: 1000;
+  z-index: 30;
   padding-bottom: 0;
   pointer-events: none;
 }
@@ -5981,5 +5983,15 @@ body {
 
 body {
   padding-bottom: calc(100px + env(safe-area-inset-bottom)) !important;
+}
+
+
+body.mode-admin .cMobileNav { display: none !important; }
+
+
+@media (max-height: 450px) {
+  .cMobileNav {
+    display: none !important;
+  }
 }
 
