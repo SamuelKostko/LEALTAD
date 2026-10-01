@@ -5680,3 +5680,46 @@ document.addEventListener("DOMContentLoaded", () => {
       };
     }
   })();
+
+  /* === MEJORAS VISUALES: Efecto Tilt y Háptica === */
+  (function applyVisualEnhancements() {
+    // 1. Tilt Effect para tarjetas
+    const initTilt = () => {
+      const cards = document.querySelectorAll('.card, .aStatCard, .aStartupModeCard');
+      cards.forEach(card => {
+        // Evitar multiples listeners si se llama de nuevo
+        if(card.dataset.tiltInit) return;
+        card.dataset.tiltInit = "true";
+
+        card.addEventListener('mousemove', (e) => {
+          const rect = card.getBoundingClientRect();
+          const x = e.clientX - rect.left;
+          const y = e.clientY - rect.top;
+          const centerX = rect.width / 2;
+          const centerY = rect.height / 2;
+          
+          const rotateX = ((y - centerY) / centerY) * -6;
+          const rotateY = ((x - centerX) / centerX) * 6;
+          
+          card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+          card.style.transition = 'none';
+        });
+        card.addEventListener('mouseleave', () => {
+          card.style.transform = `perspective(1000px) rotateX(0) rotateY(0) scale(1)`;
+          card.style.transition = 'transform 0.4s ease';
+        });
+      });
+    };
+    
+    // Iniciar al cargar y con un pequeño delay por si hay renderizado tardío
+    initTilt();
+    setTimeout(initTilt, 1000);
+
+    // 2. Feedback Háptico en botones principales
+    document.body.addEventListener('click', (e) => {
+      const btn = e.target.closest('button, .btn, .action-btn, .fab, .aStatCard');
+      if (btn && navigator.vibrate) {
+        try { navigator.vibrate(40); } catch(err){}
+      }
+    });
+  })();
