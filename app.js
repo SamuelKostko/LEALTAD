@@ -1437,6 +1437,10 @@ Esto eliminará también sus transacciones.`
       if (clientMetaEl) clientMetaEl.textContent = c.cedula ? `CI: ${c.cedula}` : "Sin c\xE9dula";
       const sedesEl = document.getElementById("aClientSedes");
       if (sedesEl) sedesEl.textContent = `Sede: ${c.sedes || "Sin sede"}`;
+      const lastOpenedEl = document.getElementById("aClientLastOpened");
+      if (lastOpenedEl) {
+        lastOpenedEl.textContent = `Última sesión: ${c.lastOpenedAt ? new Date(c.lastOpenedAt).toLocaleString("es-VE", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit", year: "numeric" }) : "Nunca"}`;
+      }
       if (clientBalanceEl) clientBalanceEl.textContent = formatPts((_a = c.balance) != null ? _a : 0);
       const cashEl = document.getElementById("aClientBalanceCash");
       if (cashEl) cashEl.textContent = `\u2248 ${formatPts(Number((_b = c.balance) != null ? _b : 0) / 100)} $`;
@@ -1484,7 +1488,8 @@ Esto eliminará también sus transacciones.`
         const btn = document.createElement("button");
         btn.type = "button";
         btn.className = "aDropdown__item";
-        btn.innerHTML = `<span class="aDropdown__name">${c.name || "\u2014"}</span><span class="aDropdown__cedula">${c.cedula || ""}</span><span class="aDropdown__pts">${formatPts(c.balance)} pts</span>`;
+        const dateStr = c.lastOpenedAt ? new Date(c.lastOpenedAt).toLocaleString("es-VE", { day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit" }) : "Nunca";
+        btn.innerHTML = `<span class="aDropdown__name">${c.name || "\u2014"}</span><span class="aDropdown__cedula">${c.cedula || ""} &middot; <span style="opacity:0.7">Acceso: ${dateStr}</span></span><span class="aDropdown__pts">${formatPts(c.balance)} pts</span>`;
         btn.addEventListener("click", () => selectClient(c));
         dropdown.appendChild(btn);
       }
@@ -1504,11 +1509,15 @@ Esto eliminará también sus transacciones.`
           email: String(c.email || "").trim(),
           cedula: String(c.cedula || "").trim(),
           sedes: String(c.sedes || "Sin sede").trim(),
-          balance: Number(c.balance || 0)
+          balance: Number(c.balance || 0),
+          lastOpenedAt: c.lastOpenedAt || null
         }));
         
         for (const r of results) {
-          if (!allCards.find(c => c.token === r.token)) {
+          const idx = allCards.findIndex(c => c.token === r.token);
+          if (idx !== -1) {
+            allCards[idx] = { ...allCards[idx], ...r };
+          } else {
             allCards.push(r);
           }
         }
@@ -1671,7 +1680,8 @@ Esto eliminará también sus transacciones.`
             email: String((c == null ? void 0 : c.email) || "").trim(),
             cedula: String((_c = c == null ? void 0 : c.cedula) != null ? _c : "").trim(),
             sedes: String((c == null ? void 0 : c.sedes) || (c == null ? void 0 : c.sede) || "Sin sede").trim(),
-            balance: Number.isFinite(Number(c == null ? void 0 : c.balance)) ? Number(c.balance) : 0
+            balance: Number.isFinite(Number(c == null ? void 0 : c.balance)) ? Number(c.balance) : 0,
+            lastOpenedAt: c.lastOpenedAt || null
           };
         }).filter((c) => c.token);
         
