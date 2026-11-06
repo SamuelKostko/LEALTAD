@@ -127,6 +127,10 @@ export default async function handler(req, res) {
       const promoData = promoDoc.data();
       const pointsRequired = Number(promoData.points || 0) * quantity;
 
+      if (promoData.startsAt && promoData.startsAt > Date.now()) {
+        throw new Error('Esta promoción aún no está disponible para canje.');
+      }
+
       if (promoData.expiresAt && promoData.expiresAt < Date.now()) {
         throw new Error('La promoción ha expirado.');
       }
@@ -243,6 +247,8 @@ export default async function handler(req, res) {
         type: 'promotion_request',
         status: 'completed',
         token: token,
+        clientName: String(clientData.nombre || clientData.name || '').trim(),
+        clientCedula: String(clientData.idNumber || clientData.cedula || '').trim(),
         points: pointsRequired,
         balanceBefore: currentBalance,
         balanceAfter: newBalance,

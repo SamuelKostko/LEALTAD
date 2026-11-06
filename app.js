@@ -4243,11 +4243,17 @@ document.addEventListener("DOMContentLoaded", () => {
         const statusText = p.deliveryStatus === 'delivered' ? 'Entregado' : 'Pendiente';
         const statusColor = p.deliveryStatus === 'delivered' ? '#10b981' : '#f59e0b';
         
+        const clientDisplayName = p.clientName || 'Sin nombre';
+        const clientDisplayCedula = p.clientCedula ? `C.I: ${p.clientCedula}` : '';
+        
         return `
           <tr style="border-bottom: 1px solid rgba(255,255,255,0.08); font-size: 13px; color: #fff;">
             <td style="padding: 12px; font-weight: 600; color: #fff;">#${p.orderNumber || 'N/A'}</td>
             <td style="padding: 12px; color: rgba(255,255,255,0.7);">${date}</td>
-            <td style="padding: 12px; color: #fff;">${p.clientName || p.token || 'N/A'}</td>
+            <td style="padding: 12px; color: #fff;">
+              <div style="font-weight: 600; color: #fff;">${clientDisplayName}</div>
+              ${clientDisplayCedula ? `<div style="font-size: 11px; color: rgba(255,255,255,0.55); margin-top: 2px;">${clientDisplayCedula}</div>` : ''}
+            </td>
             <td style="padding: 12px; color: #fff; font-weight: 500;">
               ${String(p.description || '').replace('Canje de promoción: ', '') || 'Promoción'}
             </td>
@@ -4457,6 +4463,17 @@ document.addEventListener("DOMContentLoaded", () => {
     return { label: `⏱ ${m}m ${s}s`, cls: "promo-critical" };
   };
 
+  const formatStartCountdown = (ms) => {
+    if (ms <= 0) return null;
+    const d = Math.floor(ms / 86400000);
+    const h = Math.floor((ms % 86400000) / 3600000);
+    const m = Math.floor((ms % 3600000) / 60000);
+    const s = Math.floor((ms % 60000) / 1000);
+    if (d > 0) return `⏳ Sale en ${d}d ${h}h ${m}m`;
+    if (h > 0) return `⏳ Sale en ${h}h ${m}m ${s}s`;
+    return `⏳ Sale en ${m}m ${s}s`;
+  };
+
   const renderPromotionCard = (p, container) => {
     const card = document.createElement("div");
     card.setAttribute("role", "button");
@@ -4473,15 +4490,21 @@ document.addEventListener("DOMContentLoaded", () => {
       "height: 100%"
     ].join(";");
 
+    const hasStartSchedule = Boolean(p.startsAt && p.startsAt > Date.now());
     const hasExpiry = Boolean(p.expiresAt);
+    const hasTimer = hasStartSchedule || hasExpiry;
     const countdownId = `promo-cd-${p.id}`;
+    const badgeId = `promo-badge-${p.id}`;
 
     card.innerHTML = `
-      <div style="aspect-ratio: 1 / 1; width: 100%; background: #000; overflow: hidden; border-radius: 20px 20px 0 0;">
+      <div style="position: relative; aspect-ratio: 1 / 1; width: 100%; background: #000; overflow: hidden; border-radius: 20px 20px 0 0;">
         <img src="${p.image}" alt="${p.title}"
-          style="width:100%; height:100%; object-fit:cover; display:block; transition: transform 0.4s;"
+          style="width:100%; height:100%; object-fit:cover; display:block; transition: transform 0.4s; ${hasStartSchedule ? 'filter: brightness(0.85);' : ''}"
           loading="lazy"
         />
+        <div id="${badgeId}" style="display:${hasStartSchedule ? 'inline-flex' : 'none'}; position:absolute; top:10px; left:10px; background:linear-gradient(135deg, rgba(124,58,237,0.95), rgba(8,145,178,0.95)); backdrop-filter:blur(8px); color:#fff; font-size:10px; font-weight:800; padding:5px 10px; border-radius:999px; letter-spacing:0.05em; text-transform:uppercase; box-shadow:0 4px 12px rgba(0,0,0,0.4); align-items:center; gap:4px;">
+          🗓 Próximamente
+        </div>
       </div>
       <div style="padding: 12px; display: flex; flex-direction: column; gap: 8px;">
         <span style="font-size:15px; font-weight:800; color:#fff; line-height:1.2; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${p.title}</span>
@@ -4493,7 +4516,7 @@ document.addEventListener("DOMContentLoaded", () => {
               ${Number(p.points).toLocaleString("es-VE")} Pts
             </span>
           </div>
-          ${hasExpiry ? `<div id="${countdownId}" style="font-size:11px; font-weight:600; letter-spacing:0.02em;"></div>` : ""}
+          ${hasTimer ? `<div id="${countdownId}" style="font-size:11px; font-weight:600; letter-spacing:0.02em;"></div>` : ""}
         </div>
       </div>
     `;
@@ -4501,16 +4524,29 @@ document.addEventListener("DOMContentLoaded", () => {
     card.addEventListener("click", () => openPromoDetailsModal(p));
     container.appendChild(card);
 
-    if (hasExpiry) {
+    if (hasTimer) {
       const el = document.getElementById(countdownId);
+      const badgeEl = document.getElementById(badgeId);
       if (el) {
         const tick = () => {
-          const { label, cls } = formatCountdown(new Date(p.expiresAt).getTime() - Date.now());
-          el.textContent = label;
-          el.style.color = cls === "promo-critical" ? "#ef4444"
-            : cls === "promo-urgent" ? "#f59e0b"
-            : cls === "promo-soon" ? "#fbbf24"
-            : "rgba(255,255,255,0.5)";
+          const now = Date.now();
+          if (p.startsAt && p.startsAt > now) {
+            const startLabel = formatStartCountdown(new Date(p.startsAt).getTime() - now);
+            el.textContent = startLabel || "";
+            el.style.color = "#c4b5fd";
+            if (badgeEl) badgeEl.style.display = "inline-flex";
+          } else if (p.expiresAt) {
+            if (badgeEl) badgeEl.style.display = "none";
+            const { label, cls } = formatCountdown(new Date(p.expiresAt).getTime() - now);
+            el.textContent = label;
+            el.style.color = cls === "promo-critical" ? "#ef4444"
+              : cls === "promo-urgent" ? "#f59e0b"
+              : cls === "promo-soon" ? "#fbbf24"
+              : "rgba(255,255,255,0.5)";
+          } else {
+            if (badgeEl) badgeEl.style.display = "none";
+            el.textContent = "";
+          }
         };
         tick();
         promoCountdownIntervals.push(setInterval(tick, 1000));
@@ -4519,6 +4555,7 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   let currentSelectedPromo = null;
+  let pdDetailsCountdownInterval = null;
   const promoDetailsView = document.getElementById("promoDetailsView");
   const pdCloseBtn = document.getElementById("pdCloseBtn");
   const pdRequestBtn = document.getElementById("pdRequestBtn");
@@ -4530,6 +4567,10 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   const closePromoDetailsModal = () => {
+    if (pdDetailsCountdownInterval) {
+      clearInterval(pdDetailsCountdownInterval);
+      pdDetailsCountdownInterval = null;
+    }
     if (!promoDetailsView) return;
     promoDetailsView.style.display = "none";
     promoDetailsView.setAttribute("aria-hidden", "true");
@@ -4614,6 +4655,12 @@ document.addEventListener("DOMContentLoaded", () => {
         expiresEl.style.display = "none";
       }
 
+      const startsAtEl = document.getElementById("pdStartsAt");
+      if (pdDetailsCountdownInterval) {
+        clearInterval(pdDetailsCountdownInterval);
+        pdDetailsCountdownInterval = null;
+      }
+
       const branchEl = document.getElementById("pdBranch");
       branchEl.style.display = "none";
 
@@ -4646,15 +4693,48 @@ document.addEventListener("DOMContentLoaded", () => {
       document.getElementById("pdRequestBtn").style.display = "flex";
       
       const pdRequestBtnLocal = document.getElementById("pdRequestBtn");
-      if (pdRequestBtnLocal) {
-        pdRequestBtnLocal.disabled = p.units <= 0;
-        if (p.units <= 0) {
-           pdRequestBtnLocal.innerHTML = "Agotada";
-           pdRequestBtnLocal.style.opacity = "0.5";
-        } else {
-           pdRequestBtnLocal.innerHTML = `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg> COMPRAR`;
-           pdRequestBtnLocal.style.opacity = "1";
+      const applyPromoAvailabilityState = () => {
+        const isScheduledNow = Boolean(p.startsAt && new Date(p.startsAt).getTime() > Date.now());
+        if (startsAtEl) {
+          if (isScheduledNow) {
+            const startDateStr = new Date(p.startsAt).toLocaleString("es-VE", {
+              day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit"
+            });
+            const cdText = formatStartCountdown(new Date(p.startsAt).getTime() - Date.now()) || "";
+            startsAtEl.textContent = `🗓 Disponible el ${startDateStr} (${cdText.replace('⏳ ', '')})`;
+            startsAtEl.style.display = "inline-flex";
+          } else {
+            startsAtEl.style.display = "none";
+          }
         }
+
+        if (pdRequestBtnLocal) {
+          if (isScheduledNow) {
+            const cdText = formatStartCountdown(new Date(p.startsAt).getTime() - Date.now()) || "Próximamente";
+            pdRequestBtnLocal.disabled = true;
+            pdRequestBtnLocal.innerHTML = `🔒 PRÓXIMAMENTE · ${cdText.replace('⏳ ', '')}`;
+            pdRequestBtnLocal.style.opacity = "0.65";
+          } else if (p.units <= 0) {
+            pdRequestBtnLocal.disabled = true;
+            pdRequestBtnLocal.innerHTML = "Agotada";
+            pdRequestBtnLocal.style.opacity = "0.5";
+          } else {
+            pdRequestBtnLocal.disabled = false;
+            pdRequestBtnLocal.innerHTML = `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg> COMPRAR`;
+            pdRequestBtnLocal.style.opacity = "1";
+          }
+        }
+      };
+
+      applyPromoAvailabilityState();
+      if (p.startsAt && new Date(p.startsAt).getTime() > Date.now()) {
+        pdDetailsCountdownInterval = setInterval(() => {
+          applyPromoAvailabilityState();
+          if (new Date(p.startsAt).getTime() <= Date.now() && pdDetailsCountdownInterval) {
+            clearInterval(pdDetailsCountdownInterval);
+            pdDetailsCountdownInterval = null;
+          }
+        }, 1000);
       }
 
       // Cargar comentarios de la promoción
@@ -4896,6 +4976,10 @@ document.addEventListener("DOMContentLoaded", () => {
     pdRequestBtn.addEventListener("click", async () => {
       if (!currentSelectedPromo) return;
       const resEl = document.getElementById("pdResult");
+      if (currentSelectedPromo.startsAt && new Date(currentSelectedPromo.startsAt).getTime() > Date.now()) {
+        setPromoResult(resEl, "err", "Esta promoción aún no está disponible para canje.");
+        return;
+      }
       
       const selectContainer = document.getElementById("pdBranchSelectContainer");
       const branchSelect = document.getElementById("pdBranchSelect");

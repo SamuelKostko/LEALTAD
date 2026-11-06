@@ -1,4 +1,4 @@
-const CACHE_NAME = "wallet-pwa-v66";
+const CACHE_NAME = "wallet-pwa-v67";
 
 const PRECACHE_URLS = [
   "/",
@@ -68,6 +68,8 @@ self.addEventListener("fetch", (event) => {
       url.pathname.startsWith('/admin/') ||
       url.pathname === '/admin-qr.html' ||
       url.pathname === '/admin-qr.js' ||
+      url.pathname === '/admin-promotions.html' ||
+      url.pathname === '/admin-promotions.js' ||
       url.pathname === '/comercio/qr' ||
       url.pathname.startsWith('/comercio/') ||
       url.pathname === '/merchant-qr.html' ||
