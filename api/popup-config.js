@@ -22,11 +22,14 @@ export default async function handler(req, res) {
 
     // 🎲 MODO 1: Promociones aleatorias
     if (type === 'random_promotion') {
+      const now = Date.now();
       const promosSnap = await firestore.collection('promotions').get();
       const validPromos = [];
       promosSnap.forEach(doc => {
         const p = doc.data() || {};
-        if (p.image && p.active !== false) {
+        const isExpired = p.expiresAt && Number(p.expiresAt) <= now;
+        const isSoldOut = p.units !== undefined && Number(p.units) <= 0;
+        if (p.image && p.active !== false && !isExpired && !isSoldOut) {
           validPromos.push({ id: doc.id, ...p });
         }
       });
