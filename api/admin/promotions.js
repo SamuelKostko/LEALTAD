@@ -33,10 +33,8 @@ export default async function handler(req, res) {
           };
         });
         
-      if (!isAdmin) {
-        promos = promos.filter(p => !p.expiresAt || p.expiresAt > now);
-      }
-      
+      // Return all promotions (active, upcoming, sold out, and expired) so clients
+      // can browse each category tab and read/post comments on past promotions.
       sendJson(res, 200, { promotions: promos });
       return;
     }
