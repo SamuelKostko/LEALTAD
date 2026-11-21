@@ -2090,12 +2090,13 @@
           </div>
           <h2 class="bpv__pane-title">Validación de Pago</h2>
           <p class="bpv__pane-subtitle">Ingresa la referencia de tu comprobante</p>
+          <p id="buyPointsStep3Amount" style="margin: 6px 0 0; font-size: 0.9rem; font-weight: 700; color: #10b981;"></p>
         </div>
 
         <div class="bpv__form">
           <div class="bpv__field">
             <label class="bpv__label" for="buyPointsRef">Número o últimos 4 dígitos de referencia</label>
-            <input class="bpv__input" type="text" id="buyPointsRef" placeholder="Ej. 123456" inputmode="numeric" />
+            <input class="bpv__input" type="text" id="buyPointsRef" placeholder="Ej. 123456" inputmode="numeric" pattern="[0-9]*" />
           </div>
         </div>
 
@@ -2119,6 +2120,7 @@
         </div>
         <h2 class="bpv__success-title">¡Pago reportado!</h2>
         <p class="bpv__success-text">Un administrador verificará tu transferencia pronto.</p>
+        <p id="buyPointsSuccessAmount" style="margin: 0.25rem 0 0.5rem; font-size: 1rem; font-weight: 700; color: #10b981;"></p>
         <div
           style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.2); padding: 1rem; border-radius: 8px; margin: 0.5rem 0;">
           <p style="margin: 0; font-size: 0.875rem; color: #f59e0b; font-weight: 600;">Importante:</p>
@@ -2268,7 +2270,7 @@
               <p style="margin: 0; font-size: 13px; color: rgba(255,255,255,0.6);">Hemos enviado un código a tu correo.
               </p>
             </div>
-            <input id="pdOtpInput" type="text" inputmode="numeric" placeholder="123456" autocomplete="one-time-code"
+            <input id="pdOtpInput" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="123456" autocomplete="one-time-code"
               maxlength="6"
               style="width: 100%; height: 50px; background: #000; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; color: #fff; font-size: 20px; text-align: center; font-weight: bold; letter-spacing: 4px;" />
             <button id="pdConfirmOtpBtn" class="bpv__cta" style="margin: 0; height: 50px; font-size: 15px;">Confirmar
@@ -2477,9 +2479,15 @@
           </div>
           <h3 class="transferModal__step-title">Seguridad</h3>
           <p class="transferModal__desc" style="text-align: center;">Hemos enviado un código de 6 dígitos a tu correo para autorizar el envío.</p>
+
+          <div style="margin-bottom: 16px; padding: 12px 14px; background: rgba(255, 255, 255, 0.05); border-radius: 10px; border: 1px dashed rgba(255,255,255,0.12); text-align: center;">
+            <p style="margin: 0; font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">Monto a transferir</p>
+            <p id="transferConfirmAmount" style="margin: 4px 0 0 0; font-size: 22px; font-weight: 700; color: #10b981;">0 Pts</p>
+            <p id="transferConfirmRecipient" style="margin: 4px 0 0 0; font-size: 12px; color: #cbd5e1;"></p>
+          </div>
           
           <div class="transferModal__otp-wrap">
-            <input class="transferModal__otp-input" type="text" id="transferOtpInput" placeholder="------" maxlength="6" />
+            <input class="transferModal__otp-input" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" id="transferOtpInput" placeholder="------" maxlength="6" />
           </div>
           
           <div class="transferModal__actions">

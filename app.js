@@ -3661,7 +3661,7 @@ Esto eliminará también sus transacciones.`
       scanPopup.show({
         kind: "ok",
         headline: "Exitosa",
-        detail: `Nuevo saldo: ${typeof data.balance !== "undefined" ? formatPts(data.balance) : "\u2014"}`
+        detail: `Monto pagado: ${formatPts(params.points)} Pts · Nuevo saldo: ${typeof data.balance !== "undefined" ? formatPts(data.balance) : "\u2014"}`
       });
       try {
         window.dispatchEvent(new Event("wallet:activity-refresh"));
@@ -5221,7 +5221,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const pdOtpInput = document.getElementById("pdOtpInput");
   if (pdOtpInput) {
     pdOtpInput.addEventListener("input", async (e) => {
-      const val = e.target.value.trim();
+      const digitsOnly = e.target.value.replace(/\D/g, "").slice(0, 6);
+      if (e.target.value !== digitsOnly) e.target.value = digitsOnly;
+      const val = digitsOnly.trim();
       if (val.length === 6) {
         const resEl = document.getElementById("pdResult");
         const otpContainer = document.getElementById("pdOtpContainer");
@@ -5542,9 +5544,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
           const successTitle = stepSuccess.querySelector(".bpv__success-title");
           const successText = stepSuccess.querySelector(".bpv__success-text");
+          const successAmountEl = document.getElementById("buyPointsSuccessAmount");
           if (successTitle && successText) {
             successTitle.textContent = "¡Pago Verificado!";
             successText.textContent = "Tu transferencia fue conciliada automáticamente. Los puntos han sido acreditados.";
+          }
+          if (successAmountEl) {
+            successAmountEl.textContent = `Monto: ${totalBsText} Bs · ${formatPts(currentTotalPts)} Pts`;
           }
           stepSuccess.style.display = "block";
 
@@ -5559,6 +5565,11 @@ document.addEventListener("DOMContentLoaded", () => {
       // Si falla, se muestra el formulario del paso 3 sin decir nada, de forma silenciosa
       buyPointsBtnNext2.disabled = false;
       buyPointsBtnNext2.textContent = originalText;
+      const step3AmountEl = document.getElementById("buyPointsStep3Amount");
+      if (step3AmountEl) {
+        const totalBsText = currentTotalBs.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        step3AmountEl.textContent = `Monto: ${totalBsText} Bs · ${formatPts(currentTotalPts)} Pts`;
+      }
       step2.style.display = "none";
       step3.style.display = "flex";
       if (bpvDot3) bpvDot3.classList.add("bpv__step-dot--active");
@@ -5624,6 +5635,10 @@ document.addEventListener("DOMContentLoaded", () => {
             successTitle.textContent = "¡Pago Reportado!";
             successText.textContent = "Estamos esperando confirmación del banco. Te notificaremos pronto.";
           }
+        }
+        const successAmountEl = document.getElementById("buyPointsSuccessAmount");
+        if (successAmountEl) {
+          successAmountEl.textContent = `Monto: ${totalBsText} Bs · ${formatPts(amount)} Pts`;
         }
 
         stepSuccess.style.display = "block";
@@ -5739,6 +5754,10 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("transferEmailInput").value = '';
     document.getElementById("transferAmountInput").value = '';
     document.getElementById("transferOtpInput").value = '';
+    const confirmAmountEl = document.getElementById("transferConfirmAmount");
+    if (confirmAmountEl) confirmAmountEl.textContent = '0 Pts';
+    const confirmRecipientEl = document.getElementById("transferConfirmRecipient");
+    if (confirmRecipientEl) confirmRecipientEl.textContent = '';
     const amountEl = document.getElementById("transferSuccessAmount");
     if (amountEl) amountEl.textContent = '0 Pts';
     const refEl = document.getElementById("transferReferenceNumber");
@@ -5851,6 +5870,15 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       state.amount = amount;
+      const confirmAmountEl = document.getElementById("transferConfirmAmount");
+      if (confirmAmountEl) {
+        const formatted = typeof window.formatPts === "function" ? window.formatPts(amount) : amount;
+        confirmAmountEl.textContent = `${formatted} Pts`;
+      }
+      const confirmRecipientEl = document.getElementById("transferConfirmRecipient");
+      if (confirmRecipientEl) {
+        confirmRecipientEl.textContent = state.name ? `Para: ${state.name}` : state.email ? `Para: ${state.email}` : '';
+      }
       showStep(3);
 
     } catch (err) {
@@ -5860,6 +5888,11 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   document.getElementById("transferBackTo1Btn")?.addEventListener("click", () => showStep(1));
+
+  document.getElementById("transferOtpInput")?.addEventListener("input", (e) => {
+    const digitsOnly = e.target.value.replace(/\D/g, "").slice(0, 6);
+    if (e.target.value !== digitsOnly) e.target.value = digitsOnly;
+  });
 
   // Step 3: Confirm Transfer
   document.getElementById("transferConfirmBtn")?.addEventListener("click", async () => {
