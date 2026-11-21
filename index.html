@@ -2463,7 +2463,7 @@
           
           <div class="transferModal__amount-wrap">
             <span class="transferModal__amount-currency">Pts</span>
-            <input class="transferModal__amount-input" type="number" id="transferAmountInput" placeholder="0" min="1" step="1" />
+            <input class="transferModal__amount-input" type="text" inputmode="numeric" pattern="[0-9]*" id="transferAmountInput" placeholder="0" />
           </div>
           
           <div class="transferModal__actions">
@@ -2521,7 +2521,7 @@
 
   <!-- Librería ligera de decodificación QR -->
   <script src="https://unpkg.com/jsqr@1.4.0/dist/jsQR.js" crossorigin="anonymous"></script>
-  <script src="/app.js?v=8" defer></script>
+  <script src="/app.js?v=9" defer></script>
 
   <!-- Client Mobile Nav Logic (Test Banesco Style) -->
   <script>

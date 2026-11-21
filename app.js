@@ -5889,6 +5889,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.getElementById("transferBackTo1Btn")?.addEventListener("click", () => showStep(1));
 
+  document.getElementById("transferAmountInput")?.addEventListener("input", (e) => {
+    const digitsOnly = e.target.value.replace(/\D/g, "");
+    if (e.target.value !== digitsOnly) e.target.value = digitsOnly;
+  });
+
   document.getElementById("transferOtpInput")?.addEventListener("input", (e) => {
     const digitsOnly = e.target.value.replace(/\D/g, "").slice(0, 6);
     if (e.target.value !== digitsOnly) e.target.value = digitsOnly;
@@ -5919,9 +5924,10 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      const transferredAmount = data.transferAmount !== undefined && data.transferAmount !== null
+      const inputFallbackAmount = Number(document.getElementById("transferAmountInput")?.value || 0);
+      const transferredAmount = data.transferAmount !== undefined && data.transferAmount !== null && Number(data.transferAmount) > 0
         ? Number(data.transferAmount)
-        : state.amount;
+        : (state.amount || inputFallbackAmount);
       const amountEl = document.getElementById("transferSuccessAmount");
       if (amountEl) {
         const formatted = typeof window.formatPts === "function" ? window.formatPts(transferredAmount) : transferredAmount;
