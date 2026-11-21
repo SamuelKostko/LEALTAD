@@ -50,7 +50,7 @@ if ("serviceWorker" in navigator) {
   if (!banner || !btn || !closeBtn || !desc) return;
 
   const BANNER_CLOSED_KEY = "wallet.installBannerClosed";
-  
+
   const isStandalone = () => {
     return (typeof navigator.standalone === "boolean" && navigator.standalone) ||
       (window.matchMedia && (
@@ -74,7 +74,7 @@ if ("serviceWorker" in navigator) {
   const showBanner = () => {
     if (localStorage.getItem(BANNER_CLOSED_KEY) === "1") {
       console.log("PWA: El banner est\xE1 bloqueado por el usuario (localStorage).");
-      return; 
+      return;
     }
     setTimeout(() => {
       banner.classList.add("installBanner--show");
@@ -117,7 +117,7 @@ if ("serviceWorker" in navigator) {
     const ios = isIOS();
     const inApp = isInApp();
     const mobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-    
+
     console.log("PWA Debug:", { mobile, ios, inApp, promptFired });
 
     if (promptFired || isStandalone()) return;
@@ -139,7 +139,7 @@ if ("serviceWorker" in navigator) {
       console.log("PWA: Android/Otro detectado (Manual).");
       desc.textContent = "Toca el men\xFA del navegador y selecciona 'Instalar App' o 'A\xF1adir a inicio'.";
     }
-    
+
     btn.textContent = "Entendido";
     btn.onclick = hideBanner;
     showBanner();
@@ -164,7 +164,7 @@ if ("serviceWorker" in navigator) {
 
       // Si hay un prompt nativo pendiente, lo usamos
       if (promptFired && window.deferredInstallPrompt) {
-        btn.click(); 
+        btn.click();
       } else {
         // Si no, mostramos el banner con instrucciones manuales
         showBanner();
@@ -283,7 +283,7 @@ if (qrButton) {
           if (initials) avatarInitialsEl.textContent = initials;
         }
         if (typeof data.updatedAt === "string") setUpdatedText(data.updatedAt);
-        
+
         // Render merchant-specific cards into the main carousel track
         const track = document.getElementById("cardsCarouselTrack");
         const hint = document.getElementById("cardsCarouselHint");
@@ -446,17 +446,17 @@ if (qrButton) {
             if (firstModal) {
               firstModal.classList.add("firstOpenModal--active");
               firstModal.setAttribute("aria-hidden", "false");
-  
+
               const hideFirstModal = () => {
                 firstModal.classList.remove("firstOpenModal--active");
                 firstModal.setAttribute("aria-hidden", "true");
               };
-  
+
               const triggerPromoAfterFirstModal = () => {
                 hideFirstModal();
                 showPromoModal();
               };
-  
+
               const installBtn = document.getElementById("firstOpenInstallBtn");
               if (installBtn) {
                 installBtn.onclick = async () => {
@@ -472,7 +472,7 @@ if (qrButton) {
                       triggerPromoAfterFirstModal();
                       return;
                     }
-  
+
                     // Fallback: mostrar el banner de instalación (con instrucciones según el navegador)
                     const banner = document.getElementById("installBanner");
                     if (banner) {
@@ -485,7 +485,7 @@ if (qrButton) {
                   }
                 };
               }
-              
+
               const btnClose = document.getElementById("firstOpenCloseBtn");
               if (btnClose) {
                 btnClose.onclick = () => {
@@ -500,12 +500,12 @@ if (qrButton) {
           }
         };
 
-          // Control del Modal de Teléfono
-          if (data.telefono && document.getElementById("phoneModalInput")) {
-            document.getElementById("phoneModalInput").value = data.telefono;
-          }
-          
-          if (!data.telefono) {
+        // Control del Modal de Teléfono
+        if (data.telefono && document.getElementById("phoneModalInput")) {
+          document.getElementById("phoneModalInput").value = data.telefono;
+        }
+
+        if (!data.telefono) {
           const phoneModal = document.getElementById("phoneModal");
           if (phoneModal) {
             setTimeout(() => {
@@ -527,7 +527,7 @@ if (qrButton) {
                 if (!confirm(`Confirma tu número: ${tel}`)) {
                   return;
                 }
-                
+
                 saveBtn.disabled = true;
                 saveBtn.textContent = "Guardando...";
 
@@ -538,7 +538,7 @@ if (qrButton) {
                     body: JSON.stringify({ token: data.token, telefono: tel })
                   });
                   if (!res.ok) throw new Error("Error al guardar");
-                  
+
                   phoneModal.classList.remove("firstOpenModal--active");
                   phoneModal.setAttribute("aria-hidden", "true");
                   setTimeout(() => {
@@ -621,12 +621,12 @@ if (qrButton) {
     const panelTx = document.getElementById("aPanelTx");
     const panelPendingPayments = document.getElementById("aPanelPendingPayments");
     const panelStats = document.getElementById("aPanelStats");
-    
+
     const navClientes = document.getElementById("aNavClientes");
     const navTx = document.getElementById("aNavTx");
     const navPendingPayments = document.getElementById("aNavPendingPayments");
     const navStats = document.getElementById("aNavStats");
-    
+
     const searchInput = document.getElementById("adminClientSearch");
     const dropdown = document.getElementById("adminSearchDropdown");
     const clientCard = document.getElementById("aClientCard");
@@ -650,11 +650,11 @@ if (qrButton) {
     const txList = document.getElementById("adminTxList");
     const txResult = document.getElementById("adminTxResult");
     const adminTxLoadMore = document.getElementById("adminTxLoadMore");
-    
+
     const pendingPaymentsRefresh = document.getElementById("adminPendingPaymentsRefresh");
     const pendingPaymentsList = document.getElementById("adminPendingPaymentsList");
     const pendingPaymentsResult = document.getElementById("adminPendingPaymentsResult");
-    
+
     const panelCajeros = document.getElementById("aPanelCajeros");
     const navCajeros = document.getElementById("aNavCajeros");
     const cajerosList = document.getElementById("adminCajerosList");
@@ -673,7 +673,7 @@ if (qrButton) {
     const sedesList = document.getElementById("adminSedesList");
     const sedesResult = document.getElementById("adminSedesResult");
     const sedesRefresh = document.getElementById("adminSedesRefresh");
-    
+
     // Reports Panel DOM elements
     const panelReportes = document.getElementById("aPanelReportes");
     const navReportes = document.getElementById("aNavReportes");
@@ -685,7 +685,7 @@ if (qrButton) {
     const navMarketing = document.getElementById("aNavMarketing");
     const panelStartup = document.getElementById("aPanelStartup");
     const navStartup = document.getElementById("aNavStartup");
-    
+
 
     const reportRefresh = document.getElementById("adminReportRefresh");
     const reportDateInput = document.getElementById("adminReportDate");
@@ -699,15 +699,15 @@ if (qrButton) {
     const repBalanceVal = document.getElementById("repBalanceVal");
     const repTotalClientsHistorical = document.getElementById("repTotalClientsHistorical");
     const reportSedesTableBody = document.getElementById("adminReportSedesTableBody");
-    const reportConfigForm     = document.getElementById("adminReportConfigForm");
-    const reportEmailInput      = document.getElementById("adminReportEmailInput");
-    const reportAddEmailBtn     = document.getElementById("adminReportAddEmailBtn");
-    const reportEmailsList      = document.getElementById("adminReportEmailsList");
-    const reportConfigResult    = document.getElementById("adminReportConfigResult");
-    const reportScheduleEnabled    = document.getElementById("adminReportScheduleEnabled");
-    const reportScheduleTime       = document.getElementById("adminReportScheduleTime");
-    const reportSchedulePeriod     = document.getElementById("adminReportSchedulePeriod");
-    const reportScheduleTimeGroup  = document.getElementById("adminReportScheduleTimeGroup");
+    const reportConfigForm = document.getElementById("adminReportConfigForm");
+    const reportEmailInput = document.getElementById("adminReportEmailInput");
+    const reportAddEmailBtn = document.getElementById("adminReportAddEmailBtn");
+    const reportEmailsList = document.getElementById("adminReportEmailsList");
+    const reportConfigResult = document.getElementById("adminReportConfigResult");
+    const reportScheduleEnabled = document.getElementById("adminReportScheduleEnabled");
+    const reportScheduleTime = document.getElementById("adminReportScheduleTime");
+    const reportSchedulePeriod = document.getElementById("adminReportSchedulePeriod");
+    const reportScheduleTimeGroup = document.getElementById("adminReportScheduleTimeGroup");
     const reportSchedulePeriodGroup = document.getElementById("adminReportSchedulePeriodGroup");
 
     // ── Email list state ─────────────────────────────────────────────────────
@@ -867,7 +867,7 @@ if (qrButton) {
         }
         addCell("Sede", String(t.branchName || "\u2014"));
         addCell("Descripci\xF3n", String(t.description || "\u2014"));
-        
+
         const actionsCell = document.createElement("div");
         actionsCell.className = "aTxCell aTxCell--actions";
         const delBtn = document.createElement("button");
@@ -912,7 +912,7 @@ if (qrButton) {
       if (navMarketing) navMarketing.classList.toggle("is-active", panel === "marketing");
       if (navStartup) navStartup.classList.toggle("is-active", panel === "startup");
 
-      
+
       const mobClientes = document.getElementById("aMobNavClientes");
       const mobTx = document.getElementById("aMobNavTx");
       const mobPendingPayments = document.getElementById("aMobNavPendingPayments");
@@ -1042,7 +1042,7 @@ if (qrButton) {
 
     const doResetTransactions = async () => {
       const password = window.prompt("\xBFEst\xE1s seguro de que deseas reiniciar todas las transacciones?\n\nEsta acci\xF3n eliminar\xE1 el historial completo y dejar\xE1 los saldos en 0.\n\nPOR FAVOR, INGRESA TU CLAVE PARA CONFIRMAR:");
-      
+
       if (password === null) return; // Cancelled
       if (!password.trim()) {
         alert("Se requiere la clave para proceder.");
@@ -1050,26 +1050,26 @@ if (qrButton) {
       }
 
       try {
-        const res = await fetch("/api/admin/reset-transactions", { 
-          method: "POST", 
+        const res = await fetch("/api/admin/reset-transactions", {
+          method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ password: password.trim() }),
-          credentials: "include" 
+          credentials: "include"
         });
         const data = await res.json().catch(() => null);
-        
+
         if (!res.ok || !(data == null ? void 0 : data.ok)) {
           alert("Error al reiniciar: " + ((data == null ? void 0 : data.error) || "Desconocido"));
           return;
         }
-        
+
         alert("Reinicio completado con \xE9xito. Todos los balances est\xE1n en 0.");
-        
+
         // Recargar el panel actual para reflejar los cambios
         if (panelClientes && !panelClientes.hidden) loadClients();
         if (panelTx && !panelTx.hidden) loadAllTransactions();
         if (panelStats && !panelStats.hidden) loadAdminStats();
-        
+
         // Cerrar el menú de perfil si está abierto
         const menu = document.getElementById("profileMenu");
         if (menu) {
@@ -1125,7 +1125,7 @@ if (qrButton) {
         }
 
         alert(data.message || "Puntos acreditados correctamente.");
-        
+
         // Recargar datos para ver el nuevo balance
         loadClients();
         if (selectedToken) loadCardTransactions(selectedToken);
@@ -1383,7 +1383,7 @@ Esto eliminará también sus transacciones.`
         }
 
         alert("Transacci\xF3n eliminada y balance actualizado.");
-        
+
         // Refresh relevant panels
         if (panelTx && !panelTx.hidden) loadAllTransactions();
         if (selectedToken) {
@@ -1457,8 +1457,8 @@ Esto eliminará también sus transacciones.`
         dropdown.innerHTML = "";
         return;
       }
-      const matches = allCards.filter((c) => 
-        c.name.toLowerCase().includes(q) || 
+      const matches = allCards.filter((c) =>
+        c.name.toLowerCase().includes(q) ||
         c.cedula.toLowerCase().includes(q) ||
         (c.email && c.email.toLowerCase().includes(q)) ||
         c.token.toLowerCase().includes(q)
@@ -1506,7 +1506,7 @@ Esto eliminará también sus transacciones.`
           sedes: String(c.sedes || "Sin sede").trim(),
           balance: Number(c.balance || 0)
         }));
-        
+
         for (const r of results) {
           if (!allCards.find(c => c.token === r.token)) {
             allCards.push(r);
@@ -1526,7 +1526,7 @@ Esto eliminará también sus transacciones.`
       searchInput.addEventListener("input", () => {
         const val = searchInput.value;
         buildDropdown(val);
-        
+
         if (searchTimeout) clearTimeout(searchTimeout);
         if (val.trim().length >= 2) {
           searchTimeout = setTimeout(() => performRemoteSearch(val), 500);
@@ -1674,7 +1674,7 @@ Esto eliminará también sus transacciones.`
             balance: Number.isFinite(Number(c == null ? void 0 : c.balance)) ? Number(c.balance) : 0
           };
         }).filter((c) => c.token);
-        
+
         renderTopClients(topListEl, allCards);
         setResult(clientsResult, "", "");
       } catch (err) {
@@ -1871,7 +1871,7 @@ Esto eliminará también sus transacciones.`
         if (status === "pending") {
           actionsEl = document.createElement("div");
           actionsEl.className = "aPurchaseActions";
-          
+
           const approveBtn = document.createElement("button");
           approveBtn.className = "aBtn aBtn--primary";
           approveBtn.style.cssText = "padding: 8px 16px; font-size: 0.85rem; flex: 1; font-weight: 700;";
@@ -1962,9 +1962,9 @@ Esto eliminará también sus transacciones.`
       try {
         const data = await apiGet("/api/admin/pending-purchases?status=all");
         if (!data || !data.ok) throw new Error(data?.error || "Error obteniendo compras.");
-        
+
         cachedPurchases = Array.isArray(data.purchases) ? data.purchases : (data.pending || []);
-        
+
         // Update tab counters
         updatePurchaseCounts(data.counts || {
           all: cachedPurchases.length,
@@ -1983,13 +1983,13 @@ Esto eliminará también sus transacciones.`
     const resolvePurchase = async (id, action) => {
       const actionLabel = action === "approve" ? "aprobar y programar los puntos de" : "rechazar";
       if (!confirm(`¿Estás seguro de que deseas ${actionLabel} este pago?`)) return;
-      
+
       try {
         if (pendingPaymentsResult) {
           pendingPaymentsResult.style.color = "var(--text-primary)";
           pendingPaymentsResult.textContent = "Procesando...";
         }
-        
+
         const response = await apiPost("/api/admin/resolve-purchase", { id, action });
         if (response && response.ok) {
           if (pendingPaymentsResult) {
@@ -2099,7 +2099,7 @@ Esto eliminará también sus transacciones.`
     const loadSedesStats = async (range = currentSedesRange) => {
       if (!sedesList) return;
       currentSedesRange = range;
-      
+
       const filterGroup = document.getElementById("sedesFilterGroups");
       if (filterGroup) {
         filterGroup.querySelectorAll(".aFilterBtn").forEach(btn => {
@@ -2135,11 +2135,11 @@ Esto eliminará también sus transacciones.`
     const renderSedesTable = (container, data) => {
       if (!container) return;
       container.innerHTML = "";
-      
+
       const earned = data.earnedByBranch || {};
       const redeemed = data.redeemedByBranch || {};
       const clients = data.clientsByBranch || {};
-      
+
       // Get unique list of all branches mentioned
       const branches = [...new Set([
         ...Object.keys(earned),
@@ -2157,7 +2157,7 @@ Esto eliminará también sus transacciones.`
 
       const wrap = document.createElement("div");
       wrap.className = "aTxTable";
-      
+
       const head = document.createElement("div");
       head.className = "aTxRow aTxRow--sedes aTxRow--head";
       ["Sede", "Clientes", "Acreditados", "Canjeados", "Balance"].forEach(lbl => {
@@ -2171,7 +2171,7 @@ Esto eliminará también sus transacciones.`
       for (const b of branches) {
         const row = document.createElement("div");
         row.className = "aTxRow aTxRow--sedes";
-        
+
         const bEarned = earned[b] || 0;
         const bRedeemed = redeemed[b] || 0;
         const bClients = clients[b] || 0;
@@ -2190,7 +2190,7 @@ Esto eliminará también sus transacciones.`
         addCell("Acreditados", formatPts(bEarned));
         addCell("Canjeados", formatPts(bRedeemed));
         addCell("Balance", formatPts(bBalance), bBalance >= 0 ? "aTxCell--pts" : "aTxCell--danger");
-        
+
         row.style.cursor = "pointer";
         row.addEventListener("click", () => {
           currentTxLimit = 10;
@@ -2226,7 +2226,7 @@ Esto eliminará también sus transacciones.`
 
     const loadAdminReports = async () => {
       if (!panelReportes) return;
-      
+
       // Update filter buttons UI
       const periodFilterGroup = document.getElementById("reportPeriodFilterGroups");
       if (periodFilterGroup) {
@@ -2248,30 +2248,30 @@ Esto eliminará también sus transacciones.`
 
       try {
         const data = await apiGet(`/api/admin/reports?date=${encodeURIComponent(currentReportDate)}&period=${encodeURIComponent(currentReportPeriod)}`);
-        
+
         // Update stats cards
         if (repNewClientsVal) repNewClientsVal.textContent = data.totalNewClients;
         if (repCreditedVal) repCreditedVal.textContent = `+${formatPts(data.totalPointsCredited)} pts`;
         if (repRedeemedVal) repRedeemedVal.textContent = `-${formatPts(data.totalPointsRedeemed)} pts`;
-        
+
         if (repBalanceVal) {
           const balance = Number(data.totalBalance || 0);
           repBalanceVal.textContent = `${balance >= 0 ? "+" : ""}${formatPts(balance)} pts`;
-          
+
           if (balance >= 0) {
             repBalanceVal.style.color = "#10b981";
           } else {
             repBalanceVal.style.color = "#f43f5e";
           }
         }
-        
+
         if (repTotalClientsHistorical) repTotalClientsHistorical.textContent = data.totalClients || 0;
 
         // Render date range label
         if (reportPeriodLabel) {
           const startD = new Date(data.startDate);
           const endD = new Date(data.endDate);
-          
+
           let periodText = "";
           if (currentReportPeriod === "day") {
             periodText = `Reporte Diario del ${startD.toLocaleDateString("es-VE", { timeZone: "America/Caracas", day: "2-digit", month: "2-digit", year: "numeric" })}`;
@@ -2288,7 +2288,7 @@ Esto eliminará también sus transacciones.`
         // Render Sede breakdown table body
         if (reportSedesTableBody) {
           reportSedesTableBody.innerHTML = "";
-          
+
           if (!data.branches || data.branches.length === 0) {
             const row = document.createElement("tr");
             row.innerHTML = `<td colspan="5" style="padding: 20px; text-align: center; color: rgba(255,255,255,0.4);">No hay actividad en ninguna sede en este período.</td>`;
@@ -2297,14 +2297,14 @@ Esto eliminará también sus transacciones.`
             data.branches.forEach(b => {
               const row = document.createElement("tr");
               row.style.borderBottom = "1px solid rgba(255,255,255,0.05)";
-              
+
               const formattedCredited = formatPts(b.pointsCredited);
               const formattedRedeemed = formatPts(b.pointsRedeemed);
               const formattedBalance = formatPts(b.balance);
-              
+
               const balanceSign = Number(b.balance) > 0 ? `+${formattedBalance}` : formattedBalance;
               const balanceColor = Number(b.balance) >= 0 ? "#10b981" : "#f43f5e";
-              
+
               row.innerHTML = `
                 <td style="padding: 12px 8px; text-align: left; font-weight: bold; color: #fff;">${b.branchName}</td>
                 <td style="padding: 12px 8px; text-align: center; color: rgba(255,255,255,0.8);">${b.newClients}</td>
@@ -2312,7 +2312,7 @@ Esto eliminará también sus transacciones.`
                 <td style="padding: 12px 8px; text-align: right; color: #f43f5e; font-weight: 500;">-${formattedRedeemed}</td>
                 <td style="padding: 12px 8px; text-align: right; color: ${balanceColor}; font-weight: bold;">${balanceSign} pts</td>
               `;
-              
+
               // Allow clicking a branch in report to view its transaction history
               row.style.cursor = "pointer";
               row.addEventListener("click", () => {
@@ -2321,7 +2321,7 @@ Esto eliminará también sus transacciones.`
                 switchPanel("transacciones");
                 loadAllTransactions(b.branchName);
               });
-              
+
               reportSedesTableBody.appendChild(row);
             });
           }
@@ -2463,7 +2463,7 @@ Esto eliminará también sus transacciones.`
 
     const sendReportByEmail = async () => {
       if (!reportActionStatus || !reportSendEmailBtn) return;
-      
+
       const originalText = reportSendEmailBtn.innerHTML;
       reportSendEmailBtn.disabled = true;
       reportSendEmailBtn.style.opacity = "0.7";
@@ -2473,23 +2473,23 @@ Esto eliminará también sus transacciones.`
         </svg>
         Enviando...
       `;
-      
+
       reportActionStatus.className = "aResult aResult--info";
       reportActionStatus.textContent = "Despachando correo del reporte actual...";
-      
+
       try {
         const response = await apiPost("/api/admin/send-report", {
           date: currentReportDate,
           period: currentReportPeriod
         });
-        
+
         reportActionStatus.className = "aResult aResult--ok";
         if (response.devMode) {
           reportActionStatus.textContent = `Reporte simulado enviado con éxito a: ${response.sentTo.join(", ")} (ver consola del servidor)`;
         } else {
           reportActionStatus.textContent = `Reporte enviado con éxito a: ${response.sentTo.join(", ")}`;
         }
-        
+
         setTimeout(() => {
           if (reportActionStatus.className.includes("aResult--ok")) {
             reportActionStatus.textContent = "";
@@ -2510,7 +2510,7 @@ Esto eliminará también sus transacciones.`
     if (reportRefresh) {
       reportRefresh.addEventListener("click", loadAdminReports);
     }
-    
+
     if (reportDateInput) {
       reportDateInput.addEventListener("change", (e) => {
         currentReportDate = e.target.value;
@@ -2596,7 +2596,7 @@ Esto eliminará también sus transacciones.`
 
     const doDeleteCashier = async (id, currentUsername) => {
       if (!window.confirm(`¿Estás seguro de que deseas ELIMINAR al cajero "${currentUsername}"? Esta acción no se puede deshacer.`)) return;
-      
+
       const pwd = window.prompt("Introduce tu CLAVE DE ADMINISTRADOR para confirmar la eliminación:");
       if (!pwd) return;
 
@@ -2671,11 +2671,11 @@ Esto eliminará también sus transacciones.`
         addCell("Usuario", c.username);
         addCell("Creado", c.createdAt ? new Date(c.createdAt).toLocaleDateString("es-VE") : "—");
         addCell("Último Acceso", c.lastLogin ? new Date(c.lastLogin).toLocaleString("es-VE", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit" }) : "Nunca");
-        
+
         const actionsCell = document.createElement("div");
         actionsCell.className = "aTxCell aTxCell--actions";
         actionsCell.style.gap = "6px";
-        
+
         const editBtn = document.createElement("button");
         editBtn.className = "aTxDelBtn";
         editBtn.style.background = "rgba(96, 165, 250, 0.1)";
@@ -2705,11 +2705,11 @@ Esto eliminará también sus transacciones.`
       if (name === null) return;
       const branchName = window.prompt(`Nueva sede fija para ${currentUsername}:`, currentBranchName || "");
       if (branchName === null) return;
-      
+
       const currentS = currentSettings || { pointsPerDollar: 1, minRedeemPoints: 0 };
       const pointsPerDollar = window.prompt(`Puntos por cada 1$ gastado (ej: 1 o 1.5):`, currentS.pointsPerDollar ?? 1);
       if (pointsPerDollar === null) return;
-      
+
       const minRedeemPoints = window.prompt(`Mínimo de puntos para canje:`, currentS.minRedeemPoints ?? 0);
       if (minRedeemPoints === null) return;
 
@@ -2879,7 +2879,7 @@ Esto eliminará también sus transacciones.`
         }
         if (elEarned) elEarned.textContent = formatPts(data.pointsEarned || 0);
         if (elRedeemed) elRedeemed.textContent = formatPts(data.pointsRedeemed || 0);
-        
+
         const renderBreakdown = (containerId, obj) => {
           const container = document.getElementById(containerId);
           if (!container) return;
@@ -3255,11 +3255,11 @@ Esto eliminará también sus transacciones.`
     window.loadAdminPopupConfig = loadAdminPopupConfig;
     const initAuthed = (role) => {
       showDash();
-      
+
       switchPanel("clientes");
       loadClients();
       if (adminResetTxsBtn) adminResetTxsBtn.hidden = false;
-      
+
       // Ocultar botón de perfil en admin mode si así se requiere
       if (profileButton) profileButton.hidden = true;
     };
@@ -3441,9 +3441,11 @@ Esto eliminará también sus transacciones.`
       root.addEventListener("click", close);
       return { show, close };
     } catch {
-      return { show: () => {
-      }, close: () => {
-      } };
+      return {
+        show: () => {
+        }, close: () => {
+        }
+      };
     }
   })();
   const confirmPopup = (() => {
@@ -3997,17 +3999,17 @@ document.addEventListener("DOMContentLoaded", () => {
             token = decodeURIComponent(path.slice("/card/".length)).trim();
           }
         }
-      } catch(e) {}
-      
+      } catch (e) { }
+
       if (!token) {
         alert("No se encontró el token de tu tarjeta.");
         return;
       }
-      
+
       const refCode = token.substring(0, 6).toUpperCase();
       const shareUrl = `https://form.vmaspuntos.com?ref=${refCode}`;
       const textToCopy = `Regístrate en V+ Puntos con mi código ${refCode} y obtén beneficios. ${shareUrl}`;
-      
+
       const copyToClipboardFallback = async () => {
         try {
           await navigator.clipboard.writeText(textToCopy);
@@ -4030,7 +4032,7 @@ document.addEventListener("DOMContentLoaded", () => {
           document.body.removeChild(textArea);
         }
       };
-      
+
       try {
         if (navigator.share) {
           await navigator.share({
@@ -4047,15 +4049,15 @@ document.addEventListener("DOMContentLoaded", () => {
           await copyToClipboardFallback();
         }
       }
-      
+
       refBtn.innerHTML = `Código: ${refCode}`;
     });
   }
-  
+
   // ==========================================
   // MARKETING & PROMOCIONES LOGIC
   // ==========================================
-  
+
   // Marketing Users Management
   window.loadMarketingUsers = async () => {
     const tbody = document.getElementById("marketingUsersTableBody");
@@ -4065,21 +4067,21 @@ document.addEventListener("DOMContentLoaded", () => {
       const res = await fetch("/api/admin/marketing-users", { credentials: "include" });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Error al cargar");
-      
+
       const usersList = data.marketingUsers || [];
       if (usersList.length === 0) {
         tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 20px; color: rgba(255,255,255,0.5);">No hay usuarios de marketing</td></tr>`;
         return;
       }
-      
+
       tbody.innerHTML = "";
       usersList.forEach(u => {
         const tr = document.createElement("tr");
         tr.style.borderBottom = "1px solid rgba(255,255,255,0.05)";
-        
+
         const statusText = u.isActive !== false ? `<span style="color: #22c55e; font-weight: 600;">Activo</span>` : `<span style="color: #ef4444; font-weight: 600;">Inactivo</span>`;
         const toggleText = u.isActive !== false ? "Desactivar" : "Activar";
-        
+
         tr.innerHTML = `
           <td style="padding: 12px; color: #fff; font-size: 14px;">${u.name || "—"}</td>
           <td style="padding: 12px; color: #fff; font-size: 14px;">${u.username}</td>
@@ -4090,7 +4092,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <button class="delBtn" style="background: rgba(239, 68, 68, 0.2); color: #ef4444; padding: 6px 12px; font-size: 12px; border-radius: 6px; border: none; cursor: pointer;">Eliminar</button>
           </td>
         `;
-        
+
         tr.querySelector(".editBtn").onclick = () => {
           document.getElementById("editPromoterId").value = u.id;
           document.getElementById("editPromoterName").value = u.name || "";
@@ -4098,7 +4100,7 @@ document.addEventListener("DOMContentLoaded", () => {
           document.getElementById("editPromoterModal").setAttribute("aria-hidden", "false");
           document.getElementById("editPromoterResult").style.display = "none";
         };
-        
+
         tr.querySelector(".toggleBtn").onclick = async () => {
           if (!confirm(`¿${toggleText} el promotor ${u.username}?`)) return;
           try {
@@ -4118,11 +4120,11 @@ document.addEventListener("DOMContentLoaded", () => {
         tr.querySelector(".delBtn").onclick = async () => {
           if (!confirm(`¿Eliminar usuario ${u.username}?`)) return;
           try {
-            const res = await fetch(`/api/admin/marketing-users`, { 
-              method: "DELETE", 
+            const res = await fetch(`/api/admin/marketing-users`, {
+              method: "DELETE",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ id: u.id }),
-              credentials: "include" 
+              credentials: "include"
             });
             if (!res.ok) throw new Error("Error al eliminar");
             loadMarketingUsers();
@@ -4143,17 +4145,17 @@ document.addEventListener("DOMContentLoaded", () => {
       editPromoterModal.style.display = "none";
       editPromoterModal.setAttribute("aria-hidden", "true");
     };
-    
+
     document.getElementById("editPromoterForm").onsubmit = async (e) => {
       e.preventDefault();
       const id = document.getElementById("editPromoterId").value;
       const name = document.getElementById("editPromoterName").value;
       const btn = document.getElementById("editPromoterSubmitBtn");
       const resEl = document.getElementById("editPromoterResult");
-      
+
       btn.disabled = true;
       resEl.style.display = "none";
-      
+
       try {
         const res = await fetch("/api/admin/marketing-users", {
           method: "PATCH",
@@ -4162,7 +4164,7 @@ document.addEventListener("DOMContentLoaded", () => {
           credentials: "include"
         });
         if (!res.ok) throw new Error("Error al guardar cambios");
-        
+
         editPromoterModal.style.display = "none";
         editPromoterModal.setAttribute("aria-hidden", "true");
         loadMarketingUsers();
@@ -4183,10 +4185,10 @@ document.addEventListener("DOMContentLoaded", () => {
       const name = document.getElementById("mktUserName").value;
       const email = document.getElementById("mktUserEmail").value;
       const resEl = document.getElementById("mktUserFormResult");
-      
+
       resEl.textContent = "Enviando invitación...";
       resEl.style.color = "#06b6d4";
-      
+
       try {
         const res = await fetch("/api/admin/invite-marketing", {
           method: "POST",
@@ -4226,13 +4228,13 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       tbody.innerHTML = promotions.map(p => {
-        const date = new Date(p.createdAt).toLocaleString('es-ES', { 
-          day: '2-digit', month: '2-digit', year: 'numeric', 
-          hour: '2-digit', minute: '2-digit' 
+        const date = new Date(p.createdAt).toLocaleString('es-ES', {
+          day: '2-digit', month: '2-digit', year: 'numeric',
+          hour: '2-digit', minute: '2-digit'
         });
         const statusText = p.deliveryStatus === 'delivered' ? 'Entregado' : 'Pendiente';
         const statusColor = p.deliveryStatus === 'delivered' ? '#10b981' : '#f59e0b';
-        
+
         return `
           <tr style="border-bottom: 1px solid rgba(255,255,255,0.08); font-size: 13px; color: #fff;">
             <td style="padding: 12px; font-weight: 600; color: #fff;">#${p.orderNumber || 'N/A'}</td>
@@ -4269,7 +4271,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   window.markRedemptionDelivered = async (id) => {
     if (!confirm("¿Marcar esta promoción como entregada al cliente?")) return;
-    
+
     try {
       const res = await fetch("/api/admin/redeemed-promotions", {
         method: "POST",
@@ -4277,10 +4279,10 @@ document.addEventListener("DOMContentLoaded", () => {
         body: JSON.stringify({ id, action: 'deliver' }),
         credentials: "include"
       });
-      
+
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Error al actualizar");
-      
+
       loadRedeemedPromotions();
     } catch (err) {
       alert(err.message);
@@ -4290,22 +4292,22 @@ document.addEventListener("DOMContentLoaded", () => {
   window.deleteRedemption = async (id) => {
     const refund = window.confirm("¿Deseas reembolsar los puntos al cliente por esta promoción?");
     const password = window.prompt("Introduce tu CLAVE DE ADMINISTRADOR para confirmar la eliminación:");
-    
+
     if (password === null) return;
     if (!password.trim()) {
       alert("Debes ingresar la clave.");
       return;
     }
-    
+
     try {
       const res = await fetch(`/api/admin/redeemed-promotions?id=${id}&password=${encodeURIComponent(password.trim())}&refund=${refund}`, {
         method: "DELETE",
         credentials: "include"
       });
-      
+
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Error al eliminar");
-      
+
       alert(data.message || "Promoción eliminada exitosamente.");
       loadRedeemedPromotions();
     } catch (err) {
@@ -4319,23 +4321,23 @@ document.addEventListener("DOMContentLoaded", () => {
     const list = document.getElementById("promotionsListAdmin");
     if (!list) return;
     list.innerHTML = `<div style="color: rgba(255,255,255,0.5);">Cargando...</div>`;
-    
+
     try {
       const res = await fetch("/api/admin/promotions", { credentials: "include" });
       const promos = await res.json();
-      
+
       if (!res.ok) throw new Error(promos.error || "Error al cargar");
-      
+
       if (promos.length === 0) {
         list.innerHTML = `<div style="color: rgba(255,255,255,0.5);">No hay promociones activas.</div>`;
         return;
       }
-      
+
       list.innerHTML = "";
       promos.forEach(p => {
         const card = document.createElement("div");
         card.style.cssText = "background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; overflow: hidden; display: flex; flex-direction: column;";
-        
+
         card.innerHTML = `
           <div style="height: 150px; background: #000; display: flex; align-items: center; justify-content: center; overflow: hidden;">
             <img src="${p.imageBase64}" alt="${p.title}" style="width: 100%; height: 100%; object-fit: cover;">
@@ -4349,7 +4351,7 @@ document.addEventListener("DOMContentLoaded", () => {
             </div>
           </div>
         `;
-        
+
         const delBtn = card.querySelector("button");
         delBtn.onclick = async () => {
           if (!confirm("¿Eliminar esta promoción?")) return;
@@ -4376,15 +4378,15 @@ document.addEventListener("DOMContentLoaded", () => {
       const points = parseInt(document.getElementById("promoPoints").value, 10);
       const fileInput = document.getElementById("promoImage");
       const resEl = document.getElementById("promoFormResult");
-      
+
       if (!fileInput.files[0]) return;
-      
+
       resEl.textContent = "Procesando imagen...";
       resEl.style.color = "#06b6d4";
-      
+
       const file = fileInput.files[0];
       const reader = new FileReader();
-      
+
       reader.onload = async (ev) => {
         const base64 = ev.target.result;
         resEl.textContent = "Subiendo...";
@@ -4499,8 +4501,8 @@ document.addEventListener("DOMContentLoaded", () => {
           el.textContent = label;
           el.style.color = cls === "promo-critical" ? "#ef4444"
             : cls === "promo-urgent" ? "#f59e0b"
-            : cls === "promo-soon" ? "#fbbf24"
-            : "rgba(255,255,255,0.5)";
+              : cls === "promo-soon" ? "#fbbf24"
+                : "rgba(255,255,255,0.5)";
         };
         tick();
         promoCountdownIntervals.push(setInterval(tick, 1000));
@@ -4539,7 +4541,7 @@ document.addEventListener("DOMContentLoaded", () => {
         promoImg.src = pdImageEl.src;
         promoModal.classList.add("promoModal--active");
         promoModal.setAttribute("aria-hidden", "false");
-        
+
         const hidePromo = () => {
           promoModal.classList.remove("promoModal--active");
           promoModal.setAttribute("aria-hidden", "true");
@@ -4576,14 +4578,14 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
       currentSelectedPromo = p;
-      
+
       document.getElementById("pdImage").src = p.image || "";
       document.getElementById("pdTitle").textContent = p.title || "Sin título";
       document.getElementById("pdDesc").textContent = p.description || "";
-      
+
       const pointsHtml = p.realPrice ? `<span style="font-size:14px; color:rgba(255,255,255,0.5); text-decoration:line-through; margin-right:6px;">${Number(p.realPrice).toLocaleString("es-VE")} Pts</span>${Number(p.points).toLocaleString("es-VE")} Pts` : `${Number(p.points).toLocaleString("es-VE")} Pts`;
       document.getElementById("pdPoints").innerHTML = pointsHtml;
-      
+
       const unitsEl = document.getElementById("pdUnits");
       if (p.units !== undefined) {
         unitsEl.textContent = `${p.units} ${p.units === 1 ? 'disponible' : 'disponibles'}`;
@@ -4624,26 +4626,26 @@ document.addEventListener("DOMContentLoaded", () => {
       } else if (selectContainer) {
         selectContainer.style.display = "none";
       }
-      
+
       currentPromoQty = 1;
       updateQtyUi();
 
       setPromoResult(document.getElementById("pdResult"), "", "");
-      
+
       // Reset OTP UI
       document.getElementById("pdOtpContainer").style.display = "none";
       document.getElementById("pdOtpInput").value = "";
       document.getElementById("pdRequestBtn").style.display = "flex";
-      
+
       const pdRequestBtnLocal = document.getElementById("pdRequestBtn");
       if (pdRequestBtnLocal) {
         pdRequestBtnLocal.disabled = p.units <= 0;
         if (p.units <= 0) {
-           pdRequestBtnLocal.innerHTML = "Agotada";
-           pdRequestBtnLocal.style.opacity = "0.5";
+          pdRequestBtnLocal.innerHTML = "Agotada";
+          pdRequestBtnLocal.style.opacity = "0.5";
         } else {
-           pdRequestBtnLocal.innerHTML = `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg> COMPRAR`;
-           pdRequestBtnLocal.style.opacity = "1";
+          pdRequestBtnLocal.innerHTML = `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg> COMPRAR`;
+          pdRequestBtnLocal.style.opacity = "1";
         }
       }
 
@@ -4651,7 +4653,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (typeof loadPromoComments === "function") {
         loadPromoComments(p.id);
       }
-      
+
       // Auto-completar nombre si existe en la tarjeta del cliente
       const nameField = document.getElementById("pdCommentUserName");
       if (nameField) {
@@ -4669,7 +4671,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (commentInput) commentInput.value = "";
       const commentResEl = document.getElementById("pdCommentResult");
       if (commentResEl) commentResEl.textContent = "";
-      
+
       selectedRating = 5;
       const starsContainer = document.getElementById("pdRatingStars");
       if (starsContainer) {
@@ -4755,7 +4757,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const initials = (c.userName || "C").slice(0, 2).toUpperCase();
         const dateStr = c.createdAt ? new Date(c.createdAt).toLocaleDateString("es-VE", { day: "2-digit", month: "short", year: "numeric" }) : "";
         const starsStr = "★".repeat(c.rating || 5) + "☆".repeat(Math.max(0, 5 - (c.rating || 5)));
-        
+
         return `
           <div class="pdCommentCard">
             <div class="pdCommentHeader">
@@ -4832,7 +4834,7 @@ document.addEventListener("DOMContentLoaded", () => {
           resultEl.textContent = "¡Gracias por tu opinión!";
         }
         commentInput.value = "";
-        
+
         // Reload comments
         await loadPromoComments(currentSelectedPromo.id);
 
@@ -4871,9 +4873,9 @@ document.addEventListener("DOMContentLoaded", () => {
         maxAllowed = Math.min(maxAllowed, currentSelectedPromo.maxPerUser);
       }
       if (typeof clientDataCache !== 'undefined' && clientDataCache) {
-         const clientPoints = clientDataCache.totalPoints || 0;
-         const maxAffordable = Math.floor(clientPoints / (currentSelectedPromo.points || 1));
-         maxAllowed = Math.min(maxAllowed, maxAffordable);
+        const clientPoints = clientDataCache.totalPoints || 0;
+        const maxAffordable = Math.floor(clientPoints / (currentSelectedPromo.points || 1));
+        maxAllowed = Math.min(maxAllowed, maxAffordable);
       }
       if (currentPromoQty < maxAllowed) {
         currentPromoQty++;
@@ -4886,7 +4888,7 @@ document.addEventListener("DOMContentLoaded", () => {
     pdRequestBtn.addEventListener("click", async () => {
       if (!currentSelectedPromo) return;
       const resEl = document.getElementById("pdResult");
-      
+
       const selectContainer = document.getElementById("pdBranchSelectContainer");
       const branchSelect = document.getElementById("pdBranchSelect");
       if (selectContainer && selectContainer.style.display !== "none") {
@@ -4898,10 +4900,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const otpContainer = document.getElementById("pdOtpContainer");
       const otpInput = document.getElementById("pdOtpInput");
-      
+
       pdRequestBtn.disabled = true;
       setPromoResult(resEl, "info", "Solicitando código de validación...");
-      
+
       try {
         let tk = new URLSearchParams(window.location.search).get("token") || new URLSearchParams(window.location.search).get("t");
         if (!tk && window.location.pathname.startsWith("/card/")) {
@@ -4920,13 +4922,13 @@ document.addEventListener("DOMContentLoaded", () => {
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || "Error al solicitar el código");
-        
+
         pdRequestBtn.style.display = "none";
         otpContainer.style.display = "block";
         otpInput.value = "";
         otpInput.focus();
         setPromoResult(resEl, "", "");
-        
+
       } catch (err) {
         let msg = err.message;
         if (msg === "Failed to fetch" || !navigator.onLine) {
@@ -4979,7 +4981,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
           setPromoResult(resEl, "ok", `¡Compra exitosa! Orden #${data.orderNumber || ''}. Revisa tu correo.`);
           otpContainer.style.display = "none";
-          
+
           if (typeof clientDataCache !== 'undefined' && clientDataCache) {
             clientDataCache.balance = Math.max(0, (clientDataCache.balance || 0) - currentSelectedPromo.points);
           }
@@ -5053,22 +5055,22 @@ document.addEventListener("DOMContentLoaded", () => {
   const profileBuyPointsBtn = document.getElementById("profileBuyPointsBtn");
   const buyPointsView = document.getElementById("buyPointsView");
   const buyPointsBackBtn = document.getElementById("buyPointsBackBtn");
-  
+
   const step1 = document.getElementById("buyPointsStep1");
   const step2 = document.getElementById("buyPointsStep2");
   const step3 = document.getElementById("buyPointsStep3");
   const stepSuccess = document.getElementById("buyPointsStepSuccess");
 
   const bcvRateDisplay = document.getElementById("bcvRateDisplay");
-  
+
   const buyPointsInputPts = document.getElementById("buyPointsInputPts");
   const buyPointsInputUsd = document.getElementById("buyPointsInputUsd");
   const buyPointsInputBs = document.getElementById("buyPointsInputBs");
   const buyPointsBtnNext1 = document.getElementById("buyPointsBtnNext1");
-  
+
   const buyPointsDisplayTotalBs = document.getElementById("buyPointsDisplayTotalBs");
   const buyPointsBtnNext2 = document.getElementById("buyPointsBtnNext2");
-  
+
   const buyPointsOriginBank = document.getElementById("buyPointsOriginBank");
   const buyPointsOriginPhoneCode = document.getElementById("buyPointsOriginPhoneCode");
   const buyPointsOriginPhoneNum = document.getElementById("buyPointsOriginPhoneNum");
@@ -5088,13 +5090,13 @@ document.addEventListener("DOMContentLoaded", () => {
     step2.style.display = "none";
     step3.style.display = "none";
     stepSuccess.style.display = "none";
-    
+
     if (buyPointsInputPts) buyPointsInputPts.value = "";
     if (buyPointsInputUsd) buyPointsInputUsd.value = "";
     if (buyPointsInputBs) buyPointsInputBs.value = "";
-    
+
     if (buyPointsRef) buyPointsRef.value = "";
-    
+
     buyPointsBtnNext1.disabled = true;
     buyPointsSubmitBtn.disabled = true;
     buyPointsSubmitBtn.textContent = "Verificar y Procesar";
@@ -5108,7 +5110,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     resetBuyPointsWizard();
 
-        buyPointsView.style.display = "flex";
+    buyPointsView.style.display = "flex";
     buyPointsView.setAttribute("aria-hidden", "false");
     fetchBcvRate();
   }
@@ -5134,7 +5136,7 @@ document.addEventListener("DOMContentLoaded", () => {
       bcvRateDisplay.textContent = "Error";
     }
   }
-  
+
   function handleInputPts() {
     if (!currentBcvRate) return;
     const pts = parseFloat(buyPointsInputPts.value);
@@ -5146,10 +5148,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     const usd = pts / PTS_PER_USD;
     const bs = usd * currentBcvRate;
-    
+
     buyPointsInputUsd.value = usd.toFixed(2);
     buyPointsInputBs.value = bs.toFixed(2);
-    
+
     currentTotalPts = Math.round(pts);
     currentTotalBs = bs;
     validateBuyPointsStep1();
@@ -5166,10 +5168,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     const pts = Math.round(usd * PTS_PER_USD);
     const bs = usd * currentBcvRate;
-    
+
     buyPointsInputPts.value = pts;
     buyPointsInputBs.value = bs.toFixed(2);
-    
+
     currentTotalPts = pts;
     currentTotalBs = bs;
     validateBuyPointsStep1();
@@ -5186,10 +5188,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     const usd = bs / currentBcvRate;
     const pts = Math.round(usd * PTS_PER_USD);
-    
+
     buyPointsInputUsd.value = usd.toFixed(2);
     buyPointsInputPts.value = pts;
-    
+
     currentTotalPts = pts;
     currentTotalBs = bs;
     validateBuyPointsStep1();
@@ -5224,7 +5226,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (buyPointsInputPts) buyPointsInputPts.addEventListener("input", handleInputPts);
     if (buyPointsInputUsd) buyPointsInputUsd.addEventListener("input", handleInputUsd);
     if (buyPointsInputBs) buyPointsInputBs.addEventListener("input", handleInputBs);
-    
+
     const bpvDot1 = document.getElementById("bpvDot1");
     const bpvDot2 = document.getElementById("bpvDot2");
     const bpvDot3 = document.getElementById("bpvDot3");
@@ -5250,10 +5252,10 @@ document.addEventListener("DOMContentLoaded", () => {
           if (!clientToken && url.pathname.startsWith("/card/")) {
             clientToken = decodeURIComponent(url.pathname.slice("/card/".length)).trim();
           }
-        } catch(e) {}
+        } catch (e) { }
 
         const totalBsText = currentTotalBs.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        
+
         const res = await fetch("/api/buy-points", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -5266,10 +5268,10 @@ document.addEventListener("DOMContentLoaded", () => {
         });
 
         const data = await res.json();
-        
+
         if (res.ok && data.success && data.status === 'approved') {
           step2.style.display = "none";
-          
+
           const successTitle = stepSuccess.querySelector(".bpv__success-title");
           const successText = stepSuccess.querySelector(".bpv__success-text");
           if (successTitle && successText) {
@@ -5277,7 +5279,7 @@ document.addEventListener("DOMContentLoaded", () => {
             successText.textContent = "Tu transferencia fue conciliada automáticamente. Los puntos han sido acreditados.";
           }
           stepSuccess.style.display = "block";
-          
+
           buyPointsBtnNext2.disabled = false;
           buyPointsBtnNext2.textContent = originalText;
           return;
@@ -5305,16 +5307,16 @@ document.addEventListener("DOMContentLoaded", () => {
       const amount = currentTotalPts;
       const ref = buyPointsRef ? buyPointsRef.value.trim() : "";
       const totalBsText = currentTotalBs.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-      
+
       if (isNaN(amount) || amount <= 0 || ref.length < 4) return;
-      
+
       buyPointsSubmitBtn.disabled = true;
       buyPointsSubmitBtn.textContent = "Verificando pago en el banco...";
 
       try {
         const nameEl = document.getElementById("clientName");
         const clientName = nameEl ? nameEl.textContent : "Desconocido";
-        
+
         let clientToken = "";
         try {
           const url = new URL(window.location.href);
@@ -5322,7 +5324,7 @@ document.addEventListener("DOMContentLoaded", () => {
           if (!clientToken && url.pathname.startsWith("/card/")) {
             clientToken = decodeURIComponent(url.pathname.slice("/card/".length)).trim();
           }
-        } catch(e) {}
+        } catch (e) { }
 
         const res = await fetch("/api/buy-points", {
           method: "POST",
@@ -5341,11 +5343,11 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!res.ok) throw new Error(data.error || "Error al notificar");
 
         step3.style.display = "none";
-        
+
         // Update success message based on status
         const successTitle = stepSuccess.querySelector(".bpv__success-title");
         const successText = stepSuccess.querySelector(".bpv__success-text");
-        
+
         if (successTitle && successText) {
           if (data.status === 'approved') {
             successTitle.textContent = "¡Pago Verificado!";
@@ -5413,7 +5415,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const modal = document.getElementById("transferModal");
   const closeBtn = document.getElementById("transferCloseBtn");
   const backdrop = document.getElementById("transferModalBackdrop");
-  
+
   if (!profileTransferBtn || !modal) return;
 
   const steps = {
@@ -5445,9 +5447,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const showStep = (stepNumber) => {
     Object.values(steps).forEach(el => {
-      if(el) el.style.display = 'none';
+      if (el) el.style.display = 'none';
     });
-    if(steps[stepNumber]) steps[stepNumber].style.display = 'block';
+    if (steps[stepNumber]) steps[stepNumber].style.display = 'block';
   };
 
   const openModal = () => {
@@ -5465,13 +5467,17 @@ document.addEventListener("DOMContentLoaded", () => {
     state.name = '';
     state.amount = 0;
     state.otp = '';
-    
+
     document.getElementById("transferEmailInput").value = '';
     document.getElementById("transferAmountInput").value = '';
     document.getElementById("transferOtpInput").value = '';
+    const amountEl = document.getElementById("transferSuccessAmount");
+    if (amountEl) amountEl.textContent = '0 Pts';
+    const refEl = document.getElementById("transferReferenceNumber");
+    if (refEl) refEl.textContent = '0000000';
 
     showStep(1);
-    
+
     modal.style.display = 'flex';
     // Small delay to allow display flex to apply before opacity transition
     setTimeout(() => {
@@ -5491,14 +5497,14 @@ document.addEventListener("DOMContentLoaded", () => {
   profileTransferBtn.addEventListener("click", openModal);
   closeBtn.addEventListener("click", closeModal);
   backdrop.addEventListener("click", closeModal);
-  
+
   document.getElementById("transferDoneBtn")?.addEventListener("click", closeModal);
 
   // --- API Calls ---
 
   const showLoading = (btnId) => {
     const btn = document.getElementById(btnId);
-    if(btn) {
+    if (btn) {
       btn.dataset.originalText = btn.textContent;
       btn.textContent = 'Cargando...';
       btn.disabled = true;
@@ -5507,7 +5513,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const hideLoading = (btnId) => {
     const btn = document.getElementById(btnId);
-    if(btn) {
+    if (btn) {
       btn.textContent = btn.dataset.originalText;
       btn.disabled = false;
     }
@@ -5516,7 +5522,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Step 1: Verify Email
   document.getElementById("transferVerifyEmailBtn")?.addEventListener("click", async () => {
     const emailInput = document.getElementById("transferEmailInput").value.trim();
-    if(!emailInput) {
+    if (!emailInput) {
       alert("Por favor ingresa un correo.");
       return;
     }
@@ -5529,8 +5535,8 @@ document.addEventListener("DOMContentLoaded", () => {
         body: JSON.stringify({ action: 'verify_email', email: emailInput })
       });
       const data = await res.json();
-      
-      if(!res.ok) {
+
+      if (!res.ok) {
         alert(data.error || 'Error al verificar el correo.');
         hideLoading("transferVerifyEmailBtn");
         return;
@@ -5538,9 +5544,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
       state.email = emailInput;
       state.name = data.name;
-      
+
       document.getElementById("transferRecipientName").textContent = state.name;
-      document.getElementById("transferAvatarInitials").textContent = state.name ? state.name.substring(0,2).toUpperCase() : '?';
+      document.getElementById("transferAvatarInitials").textContent = state.name ? state.name.substring(0, 2).toUpperCase() : '?';
       showStep(2);
 
     } catch (err) {
@@ -5554,7 +5560,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const amountInput = document.getElementById("transferAmountInput").value;
     const amount = Number(amountInput);
 
-    if(!amount || amount < 1) {
+    if (!amount || amount < 1) {
       alert("Por favor ingresa un monto válido (Mínimo 1).");
       return;
     }
@@ -5569,8 +5575,8 @@ document.addEventListener("DOMContentLoaded", () => {
         body: JSON.stringify({ action: 'request_otp', token, email: state.email, amount })
       });
       const data = await res.json();
-      
-      if(!res.ok) {
+
+      if (!res.ok) {
         alert(data.error || 'Error al solicitar transferencia.');
         hideLoading("transferRequestBtn");
         return;
@@ -5590,7 +5596,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Step 3: Confirm Transfer
   document.getElementById("transferConfirmBtn")?.addEventListener("click", async () => {
     const otpInput = document.getElementById("transferOtpInput").value.trim();
-    if(!otpInput || otpInput.length !== 6) {
+    if (!otpInput || otpInput.length !== 6) {
       alert("Por favor ingresa el código de 6 dígitos.");
       return;
     }
@@ -5605,24 +5611,33 @@ document.addEventListener("DOMContentLoaded", () => {
         body: JSON.stringify({ action: 'confirm', token, otp: otpInput })
       });
       const data = await res.json();
-      
-      if(!res.ok) {
+
+      if (!res.ok) {
         alert(data.error || 'Código incorrecto o error al confirmar.');
         hideLoading("transferConfirmBtn");
         return;
+      }
+
+      const transferredAmount = data.transferAmount !== undefined && data.transferAmount !== null
+        ? Number(data.transferAmount)
+        : state.amount;
+      const amountEl = document.getElementById("transferSuccessAmount");
+      if (amountEl) {
+        const formatted = typeof window.formatPts === "function" ? window.formatPts(transferredAmount) : transferredAmount;
+        amountEl.textContent = `${formatted} Pts`;
       }
 
       if (data.reference) {
         const refEl = document.getElementById("transferReferenceNumber");
         if (refEl) refEl.textContent = data.reference;
       }
-      
+
       showStep(4);
-      
+
       // Update global balance and refresh UI if possible
       setTimeout(() => {
-        if(window.loadClientData && token) {
-           window.loadClientData(token);
+        if (window.loadClientData && token) {
+          window.loadClientData(token);
         }
       }, 1500);
 
@@ -5636,47 +5651,47 @@ document.addEventListener("DOMContentLoaded", () => {
 })();
 
 
-  (() => {
-    const btn = document.getElementById("profileUpdatePhoneBtn");
-    const modal = document.getElementById("phoneModal");
-    const saveBtn = document.getElementById("phoneModalSaveBtn");
-    const cancelBtn = document.getElementById("phoneModalCancelBtn");
-    const input = document.getElementById("phoneModalInput");
-    if (!btn || !modal) return;
-    btn.addEventListener("click", () => {
-      const menu = document.getElementById("profileMenu");
-      if (menu) { menu.classList.remove("profileMenu--active"); menu.setAttribute("aria-hidden", "true"); }
-      if (cancelBtn) cancelBtn.style.display = "block";
-      modal.classList.add("firstOpenModal--active");
-      modal.setAttribute("aria-hidden", "false");
+(() => {
+  const btn = document.getElementById("profileUpdatePhoneBtn");
+  const modal = document.getElementById("phoneModal");
+  const saveBtn = document.getElementById("phoneModalSaveBtn");
+  const cancelBtn = document.getElementById("phoneModalCancelBtn");
+  const input = document.getElementById("phoneModalInput");
+  if (!btn || !modal) return;
+  btn.addEventListener("click", () => {
+    const menu = document.getElementById("profileMenu");
+    if (menu) { menu.classList.remove("profileMenu--active"); menu.setAttribute("aria-hidden", "true"); }
+    if (cancelBtn) cancelBtn.style.display = "block";
+    modal.classList.add("firstOpenModal--active");
+    modal.setAttribute("aria-hidden", "false");
+  });
+  if (cancelBtn) {
+    cancelBtn.addEventListener("click", () => {
+      modal.classList.remove("firstOpenModal--active");
+      modal.setAttribute("aria-hidden", "true");
+      if (cancelBtn) cancelBtn.style.display = "none";
     });
-    if (cancelBtn) {
-      cancelBtn.addEventListener("click", () => {
+  }
+  if (saveBtn && input) {
+    saveBtn.onclick = async () => {
+      const tel = input.value.trim();
+      if (tel.length < 10) return alert("Ingresa un número válido.");
+      if (!confirm("Confirma tu número: " + tel)) return;
+      saveBtn.disabled = true; saveBtn.textContent = "Guardando...";
+      try {
+        let token = ""; try { const u = new URL(window.location.href); token = (u.searchParams.get("token") || u.searchParams.get("t") || "").trim(); if (!token && u.pathname.startsWith("/card/")) token = decodeURIComponent(u.pathname.slice(6)).trim(); } catch (e) { }
+        const res = await fetch("/api/client/update-phone", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token: token, telefono: tel }) });
+        if (!res.ok) throw new Error("Error");
         modal.classList.remove("firstOpenModal--active");
         modal.setAttribute("aria-hidden", "true");
         if (cancelBtn) cancelBtn.style.display = "none";
-      });
-    }
-    if (saveBtn && input) {
-      saveBtn.onclick = async () => {
-        const tel = input.value.trim();
-        if (tel.length < 10) return alert("Ingresa un número válido.");
-        if (!confirm("Confirma tu número: " + tel)) return;
-        saveBtn.disabled = true; saveBtn.textContent = "Guardando...";
-        try {
-          let token = ""; try { const u = new URL(window.location.href); token = (u.searchParams.get("token") || u.searchParams.get("t") || "").trim(); if (!token && u.pathname.startsWith("/card/")) token = decodeURIComponent(u.pathname.slice(6)).trim(); } catch(e){}
-          const res = await fetch("/api/client/update-phone", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token: token, telefono: tel }) });
-          if (!res.ok) throw new Error("Error");
-          modal.classList.remove("firstOpenModal--active");
-          modal.setAttribute("aria-hidden", "true");
-          if (cancelBtn) cancelBtn.style.display = "none";
-          saveBtn.disabled = false; saveBtn.textContent = "Guardar Teléfono";
-          alert("Teléfono actualizado.");
-          if (typeof runFirstOpenFlow === "function") setTimeout(() => runFirstOpenFlow(), 300);
-        } catch (err) {
-          alert("Error al guardar.");
-          saveBtn.disabled = false; saveBtn.textContent = "Guardar Teléfono";
-        }
-      };
-    }
-  })();
+        saveBtn.disabled = false; saveBtn.textContent = "Guardar Teléfono";
+        alert("Teléfono actualizado.");
+        if (typeof runFirstOpenFlow === "function") setTimeout(() => runFirstOpenFlow(), 300);
+      } catch (err) {
+        alert("Error al guardar.");
+        saveBtn.disabled = false; saveBtn.textContent = "Guardar Teléfono";
+      }
+    };
+  }
+})();
