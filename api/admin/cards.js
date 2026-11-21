@@ -22,6 +22,20 @@ function toIso(value) {
       return '';
     }
   }
+  if (typeof value?.toISOString === 'function') {
+    try {
+      return value.toISOString();
+    } catch {
+      return '';
+    }
+  }
+  if (typeof value === 'number') {
+    try {
+      return new Date(value).toISOString();
+    } catch {
+      return '';
+    }
+  }
   return '';
 }
 
@@ -260,7 +274,8 @@ export default async function handler(req, res) {
         cedula: String(data.idNumber || data.cedula || ''),
         balance: balance,
         sedes: String(data.sedes || data.sede || 'Sin sede'),
-        updatedAt: toIso(data.updatedAt)
+        updatedAt: toIso(data.updatedAt),
+        lastOpenedAt: toIso(data.lastOpenedAt)
       };
     });
 

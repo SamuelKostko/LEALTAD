@@ -255,6 +255,187 @@
       background: #dc2626 !important;
       transform: scale(1.1) !important;
     }
+
+    /* =========================================================
+       PROMOTIONS CATALOG TABS & CARDS (CACHE PROOF)
+       ========================================================= */
+    .promoHero {
+      padding: 20px 18px 14px;
+      text-align: center;
+      background: radial-gradient(circle at 50% 0%, rgba(6, 182, 212, 0.14), rgba(124, 58, 237, 0.06) 55%, transparent 80%);
+    }
+
+    .promoHero__eyebrow {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: #22d3ee;
+      margin: 0 0 4px;
+    }
+
+    .promoHero__title {
+      font-size: 23px;
+      font-weight: 800;
+      color: #fff;
+      margin: 0 0 6px;
+      letter-spacing: -0.03em;
+    }
+
+    .promoHero__sub {
+      font-size: 12.5px;
+      color: rgba(255, 255, 255, 0.52);
+      margin: 0;
+      line-height: 1.4;
+    }
+
+    .promoTabsSticky {
+      position: sticky;
+      top: 0;
+      z-index: 15;
+      background: rgba(9, 9, 11, 0.88);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+      padding: 10px 14px;
+    }
+
+    .promoTabsBar {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+      padding-bottom: 2px;
+    }
+
+    .promoTabsBar::-webkit-scrollbar {
+      display: none;
+    }
+
+    .promoTabBtn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 13px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(255, 255, 255, 0.04);
+      color: rgba(255, 255, 255, 0.65);
+      font-size: 12.5px;
+      font-weight: 700;
+      font-family: inherit;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: all 0.18s ease;
+      flex-shrink: 0;
+    }
+
+    .promoTabBtn:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+    }
+
+    .promoTabBtn.is-active[data-tab="active"] {
+      background: linear-gradient(135deg, rgba(6, 182, 212, 0.22), rgba(16, 185, 129, 0.22));
+      border-color: rgba(6, 182, 212, 0.6);
+      color: #fff;
+      box-shadow: 0 4px 14px rgba(6, 182, 212, 0.2);
+    }
+
+    .promoTabBtn.is-active[data-tab="upcoming"] {
+      background: linear-gradient(135deg, rgba(124, 58, 237, 0.28), rgba(8, 145, 178, 0.22));
+      border-color: rgba(167, 139, 250, 0.65);
+      color: #fff;
+      box-shadow: 0 4px 14px rgba(124, 58, 237, 0.25);
+    }
+
+    .promoTabBtn.is-active[data-tab="sold_out"] {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.24), rgba(239, 68, 68, 0.2));
+      border-color: rgba(245, 158, 11, 0.6);
+      color: #fff;
+      box-shadow: 0 4px 14px rgba(245, 158, 11, 0.2);
+    }
+
+    .promoTabBtn.is-active[data-tab="expired"] {
+      background: linear-gradient(135deg, rgba(148, 163, 184, 0.22), rgba(239, 68, 68, 0.18));
+      border-color: rgba(148, 163, 184, 0.5);
+      color: #fff;
+      box-shadow: 0 4px 14px rgba(148, 163, 184, 0.15);
+    }
+
+    .promoTabCount {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 19px;
+      height: 19px;
+      padding: 0 6px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.1);
+      font-size: 11px;
+      font-weight: 800;
+      color: rgba(255, 255, 255, 0.85);
+    }
+
+    .promoTabBtn.is-active .promoTabCount {
+      background: rgba(255, 255, 255, 0.22);
+      color: #fff;
+    }
+
+    .promoTabContext {
+      margin: 12px 16px 14px;
+      padding: 10px 14px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.65);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .promoCatalogGrid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      padding: 0 16px 48px;
+    }
+
+    .promoCardItem {
+      position: relative;
+      background: linear-gradient(180deg, rgba(24, 24, 29, 0.95) 0%, rgba(14, 14, 18, 0.98) 100%);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 18px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+      cursor: pointer;
+      height: 100%;
+    }
+
+    .promoCardItem:active {
+      transform: scale(0.98);
+    }
+
+    .promoCardItem--active:hover {
+      border-color: rgba(6, 182, 212, 0.4);
+      box-shadow: 0 8px 24px rgba(6, 182, 212, 0.12);
+    }
+
+    .promoCardItem--upcoming {
+      border-color: rgba(167, 139, 250, 0.22);
+    }
+
+    .promoCardItem--sold_out {
+      border-color: rgba(245, 158, 11, 0.18);
+    }
+
+    .promoCardItem--expired {
+      border-color: rgba(255, 255, 255, 0.06);
+    }
   </style>
 </head>
 
@@ -560,6 +741,8 @@
                 <div class="aClientCard__meta" id="aClientMeta">—</div>
                 <div class="aClientCard__meta" id="aClientSedes"
                   style="font-size: 11px; opacity: 0.7; color: #a5b4fc; margin-top: 2px;">Sede: —</div>
+                <div class="aClientCard__meta" id="aClientLastOpened"
+                  style="font-size: 11px; opacity: 0.7; color: #94a3b8; margin-top: 2px;">Última sesión: —</div>
               </div>
               <div class="aClientCard__balance">
                 <div class="aClientCard__balanceVal" id="aClientBalance">0.00</div>
@@ -1534,7 +1717,7 @@
 
     </main>
 
-    <div class="cta" aria-label="Acción principal">
+    <div class="cta" aria-label="Acción principal" style="display: none;">
       <button class="qr" id="qrButton" type="button" aria-label="Mostrar codigo QR">
         <span class="qr__glow" aria-hidden="true"></span>
         <svg class="qr__icon" viewBox="0 0 24 24" width="22" height="22" fill="none" aria-hidden="true">
@@ -1545,6 +1728,37 @@
         </svg>
       </button>
     </div>
+
+    <!-- Client Mobile Bottom Navigation -->
+    <nav class="cMobileNav" id="cMobileNav" aria-label="Navegación principal">
+      <div class="cMobileNav__inner">
+        <button class="cMobileNav__item is-active" id="cMobNavInicio" type="button" aria-label="Inicio">
+          <div class="cMobileNav__icon-wrap">
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+          </div>
+          <span>Inicio</span>
+        </button>
+        <button class="cMobileNav__item" id="cMobNavPromos" type="button" aria-label="Promociones">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>
+          <span>Promos</span>
+        </button>
+      
+      <!-- Regular QR button in the nav -->
+      <button class="cMobileNav__item" id="cMobNavAction" type="button" aria-label="Código QR">
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="14" width="7" height="7" rx="1"></rect><rect x="3" y="14" width="7" height="7" rx="1"></rect></svg>
+        <span>QR</span>
+      </button>
+
+      <button class="cMobileNav__item" id="cMobNavTransfer" type="button" aria-label="Transferir">
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
+        <span>Transferir</span>
+      </button>
+      <button class="cMobileNav__item" id="cMobNavMore" type="button" aria-label="Más opciones" aria-haspopup="dialog" aria-controls="profileMenu">
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1.5"></circle><circle cx="12" cy="5" r="1.5"></circle><circle cx="12" cy="19" r="1.5"></circle></svg>
+        <span>Más</span>
+      </button>
+      </div>
+    </nav>
   </div>
   <!-- Overlay de escaneo QR -->
   <div class="scanner" id="qrScanner" aria-hidden="true">
@@ -1934,15 +2148,41 @@
 
     <div class="bpv__body" style="padding: 0; overflow-y: auto;">
       <!-- Hero tagline -->
-      <div style="padding: 20px 20px 0; text-align: center;">
-        <p
-          style="font-size: 12px; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(255,255,255,0.4); margin: 0 0 4px;">
-          Canjea tus puntos por</p>
-        <p style="font-size: 22px; font-weight: 800; color: #fff; margin: 0 0 20px; letter-spacing: -0.03em;">Ofertas
-          Exclusivas</p>
+      <div class="promoHero">
+        <p class="promoHero__eyebrow">Catálogo V+ Puntos</p>
+        <p class="promoHero__title">Ofertas Exclusivas</p>
+        <p class="promoHero__sub">Canjea tus puntos o revisa las opiniones de la comunidad</p>
       </div>
-      <div id="promotionsListClientContainer"
-        style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 0 16px 40px;">
+
+      <!-- Pestañas superiores de categorías -->
+      <div class="promoTabsSticky">
+        <div class="promoTabsBar" id="promotionsClientTabs" role="tablist" aria-label="Categorías de promociones">
+          <button type="button" class="promoTabBtn is-active" data-tab="active" role="tab" aria-selected="true">
+            <span>🔥 Activas</span>
+            <span class="promoTabCount" id="promoTabCountActive">0</span>
+          </button>
+          <button type="button" class="promoTabBtn" data-tab="upcoming" role="tab" aria-selected="false">
+            <span>🗓 Próximamente</span>
+            <span class="promoTabCount" id="promoTabCountUpcoming">0</span>
+          </button>
+          <button type="button" class="promoTabBtn" data-tab="sold_out" role="tab" aria-selected="false">
+            <span>📦 Agotadas</span>
+            <span class="promoTabCount" id="promoTabCountSoldOut">0</span>
+          </button>
+          <button type="button" class="promoTabBtn" data-tab="expired" role="tab" aria-selected="false">
+            <span>⌛ Vencidas</span>
+            <span class="promoTabCount" id="promoTabCountExpired">0</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Banner contextual de la pestaña seleccionada -->
+      <div class="promoTabContext" id="promotionsTabBanner">
+        <span>✨</span>
+        <span id="promotionsTabBannerText">Disponibles para canje inmediato con tus puntos.</span>
+      </div>
+
+      <div id="promotionsListClientContainer" class="promoCatalogGrid">
         <!-- Cards injected dynamically -->
       </div>
     </div>
@@ -1979,6 +2219,8 @@
               style="background: linear-gradient(135deg, #0891b2, #7c3aed); color: #fff; font-weight: 700; font-size: 14px; padding: 6px 12px; border-radius: 12px;"></span>
             <span id="pdUnits"
               style="background: rgba(16, 185, 129, 0.15); color: #10b981; font-weight: 600; font-size: 13px; padding: 6px 12px; border-radius: 12px; display: none;"></span>
+            <span id="pdStartsAt"
+              style="background: rgba(124, 58, 237, 0.2); border: 1px solid rgba(167, 139, 250, 0.35); color: #c4b5fd; font-weight: 700; font-size: 13px; padding: 6px 12px; border-radius: 12px; display: none;"></span>
             <span id="pdExpires"
               style="background: rgba(245,158,11,0.15); color: #f59e0b; font-weight: 600; font-size: 13px; padding: 6px 12px; border-radius: 12px; display: none;"></span>
             <span id="pdBranch"
@@ -2271,7 +2513,65 @@
 
   <!-- Librería ligera de decodificación QR -->
   <script src="https://unpkg.com/jsqr@1.4.0/dist/jsQR.js" crossorigin="anonymous"></script>
-  <script src="/app.js?v=6" defer></script>
+  <script src="/app.js?v=8" defer></script>
+
+  <!-- Client Mobile Nav Logic (Test Banesco Style) -->
+  <script>
+    window.addEventListener('DOMContentLoaded', () => {
+      const btnInicio = document.getElementById('cMobNavInicio');
+      const btnPromos = document.getElementById('cMobNavPromos');
+      const btnAction = document.getElementById('cMobNavAction');
+      const btnTransfer = document.getElementById('cMobNavTransfer');
+      const btnMore = document.getElementById('cMobNavMore');
+      const profileMenu = document.getElementById('profileMenu');
+      const qrButtonOld = document.getElementById('qrButton');
+
+      function setActive(activeBtn) {
+        [btnInicio, btnPromos, btnAction, btnTransfer, btnMore].forEach(btn => {
+          if (btn) btn.classList.remove('is-active');
+        });
+        if (activeBtn) activeBtn.classList.add('is-active');
+      }
+
+      if (btnInicio) {
+        btnInicio.addEventListener('click', () => {
+          setActive(btnInicio);
+          // Just goes to top or home
+          window.scrollTo({top: 0, behavior: 'smooth'});
+        });
+      }
+
+      if (btnPromos) {
+        btnPromos.addEventListener('click', () => {
+          setActive(btnPromos);
+          const promoBtn = document.getElementById('profilePromocionesBtn');
+          if (promoBtn) promoBtn.click();
+        });
+      }
+
+      if (btnAction) {
+        btnAction.addEventListener('click', () => {
+          if (qrButtonOld) qrButtonOld.click();
+        });
+      }
+
+      if (btnTransfer) {
+        btnTransfer.addEventListener('click', () => {
+          setActive(btnTransfer);
+          const transferBtn = document.getElementById('profileTransferBtn');
+          if (transferBtn) transferBtn.click();
+        });
+      }
+
+      if (btnMore) {
+        btnMore.addEventListener('click', () => {
+          setActive(btnMore);
+          const profileBtn = document.getElementById('profileButton');
+          if (profileBtn) profileBtn.click();
+        });
+      }
+    });
+  </script>
 </body>
 
 </html>

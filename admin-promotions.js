@@ -52,6 +52,20 @@ const formatExpiry = (ts) => {
   return `⏱ Vence en ${hours}h ${mins}m`;
 };
 
+const formatScheduled = (ts) => {
+  if (!ts) return null;
+  const diff = ts - Date.now();
+  if (diff <= 0) return null;
+  const days = Math.floor(diff / 86400000);
+  const hours = Math.floor((diff % 86400000) / 3600000);
+  const dateStr = new Date(ts).toLocaleString('es-VE', {
+    day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
+  });
+  if (days > 0) return `🗓 Programada: sale en ${days}d ${hours}h (${dateStr})`;
+  const mins = Math.floor((diff % 3600000) / 60000);
+  return `🗓 Programada: sale en ${hours}h ${mins}m (${dateStr})`;
+};
+
 /* ─── Cropper Setup ───────────────────────────────────────────────────────── */
 
 let currentCropper = null;
@@ -211,12 +225,14 @@ const fetchPromotions = async () => {
 
     container.innerHTML = '';
     promos.forEach(p => {
+      const scheduledText = formatScheduled(p.startsAt);
       const expiryText = formatExpiry(p.expiresAt);
       const card = document.createElement('div');
       card.className = 'ap-promo-item';
       card.innerHTML = `
-        <div class="ap-promo-item__thumb">
+        <div class="ap-promo-item__thumb" style="position: relative;">
           <img src="${p.image}" alt="${p.title}" loading="lazy" />
+          ${scheduledText ? `<span style="position:absolute; top:6px; left:6px; background:rgba(124,58,237,0.92); color:#fff; font-size:9px; font-weight:800; padding:2px 6px; border-radius:6px; text-transform:uppercase; letter-spacing:0.04em;">Programada</span>` : ''}
         </div>
         <div class="ap-promo-item__info">
           <div class="ap-promo-item__title">${p.title}</div>
@@ -226,6 +242,7 @@ const fetchPromotions = async () => {
             ${p.branch}
           </div>` : ''}
           <div class="ap-promo-item__pts">${p.points.toLocaleString('es-VE')} Pts</div>
+          ${scheduledText ? `<div class="ap-promo-item__expires" style="color: #a78bfa; font-weight: 600;">${scheduledText}</div>` : ''}
           ${expiryText ? `<div class="ap-promo-item__expires">${expiryText}</div>` : ''}
           <div class="ap-promo-item__actions">
             <button class="ap-promo-action ap-promo-action--edit" data-id="${p.id}">✎ Editar</button>
@@ -366,11 +383,17 @@ if (promoForm) {
     const points = parseInt($('promoPoints').value, 10);
     const realPrice = parseFloat($('promoRealPrice').value);
     const units = parseInt($('promoUnits').value, 10);
+    const startsAt = dateToTimestamp($('promoStartsAt')?.value);
     const expiresAt = dateToTimestamp($('promoExpires').value);
     const maxPerUser = parseInt($('promoMaxPerUser').value, 10) || 0;
 
     if (!title || !points || points <= 0 || !branch || isNaN(units) || units < 1 || isNaN(realPrice) || realPrice < 0) {
       setResult(promoResult, 'err', 'Completa los campos obligatorios correctamente');
+      return;
+    }
+
+    if (startsAt && expiresAt && expiresAt <= startsAt) {
+      setResult(promoResult, 'err', 'La fecha de vencimiento debe ser posterior a la fecha de salida programada');
       return;
     }
 
@@ -385,7 +408,7 @@ if (promoForm) {
       const res = await fetch('/api/admin/promotions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, description, branch, points, realPrice, units, image, expiresAt, maxPerUser }),
+        body: JSON.stringify({ title, description, branch, points, realPrice, units, image, startsAt, expiresAt, maxPerUser }),
         credentials: 'include'
       });
       const data = await res.json();
@@ -426,6 +449,7 @@ const openEditModal = (promo) => {
   $('editPromoPoints').value = promo.points;
   $('editPromoRealPrice').value = promo.realPrice || 0;
   $('editPromoUnits').value = promo.units || 1;
+  if ($('editPromoStartsAt')) $('editPromoStartsAt').value = timestampToDateInput(promo.startsAt);
   $('editPromoExpires').value = timestampToDateInput(promo.expiresAt);
   $('editPromoMaxPerUser').value = promo.maxPerUser || 0;
   if (editImagePreview) {
@@ -461,6 +485,7 @@ if (editForm) {
     const points = parseInt($('editPromoPoints').value, 10);
     const realPrice = parseFloat($('editPromoRealPrice').value);
     const units = parseInt($('editPromoUnits').value, 10);
+    const startsAt = dateToTimestamp($('editPromoStartsAt')?.value);
     const expiresAt = dateToTimestamp($('editPromoExpires').value);
     const maxPerUser = parseInt($('editPromoMaxPerUser').value, 10) || 0;
     const editResult = $('editPromoResult');
@@ -470,12 +495,17 @@ if (editForm) {
       return;
     }
 
+    if (startsAt && expiresAt && expiresAt <= startsAt) {
+      setResult(editResult, 'err', 'La fecha de vencimiento debe ser posterior a la fecha de salida programada');
+      return;
+    }
+
     const btn = $('saveEditBtn');
     btn.disabled = true;
     setResult(editResult, 'info', 'Guardando...');
 
     try {
-      const payload = { id, title, description, branch, points, realPrice, units, expiresAt, maxPerUser };
+      const payload = { id, title, description, branch, points, realPrice, units, startsAt, expiresAt, maxPerUser };
 
       const newFile = editImageInput?.files[0];
       if (newFile && croppedImageDataUrl) {

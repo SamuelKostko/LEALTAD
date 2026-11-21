@@ -34,6 +34,8 @@ export default async function handler(req, res) {
           id: doc.id,
           createdAt: createdAtIso,
           token: data.token,
+          clientName: data.clientName || '',
+          clientCedula: data.clientCedula || '',
           description: data.description,
           points: data.points,
           promotionId: data.promotionId,
@@ -42,32 +44,48 @@ export default async function handler(req, res) {
         });
       });
 
-      const clientNames = {};
-      const tokensArray = Array.from(tokensToFetch);
-      
-      if (tokensArray.length <= 50) {
-          await Promise.all(tokensArray.map(async (token) => {
-             if (typeof token !== 'string' || !token.trim() || token.includes('/')) return;
-             try {
-               const clientSnap = await db.collection('clientes').doc(token).get();
-               if (clientSnap.exists) {
-                   clientNames[token] = clientSnap.data().nombre || clientSnap.data().name || token;
-               } else {
-                   const clientQ = await db.collection('clientes').where('token', '==', token).limit(1).get();
-                   if (!clientQ.empty) {
-                       clientNames[token] = clientQ.docs[0].data().nombre || clientQ.docs[0].data().name || token;
-                   }
-               }
-             } catch (e) {
-               console.error('Error fetching client name for token', token, e);
-             }
-          }));
+      const clientInfoMap = {};
+      const tokensArray = Array.from(tokensToFetch).filter(
+        t => typeof t === 'string' && t.trim() && !t.includes('/')
+      );
+
+      // Process in batches of 25 to avoid overwhelming Firestore when there are many unique clients
+      const BATCH_SIZE = 25;
+      for (let i = 0; i < tokensArray.length; i += BATCH_SIZE) {
+        const chunk = tokensArray.slice(i, i + BATCH_SIZE);
+        await Promise.all(chunk.map(async (token) => {
+          try {
+            let cData = null;
+            const clientQ = await db.collection('clientes').where('token', '==', token).limit(1).get();
+            if (!clientQ.empty) {
+              cData = clientQ.docs[0].data();
+            } else {
+              const clientSnap = await db.collection('clientes').doc(token).get();
+              if (clientSnap.exists) {
+                cData = clientSnap.data();
+              } else {
+                const cardSnap = await db.collection('cards').doc(token).get();
+                if (cardSnap.exists) cData = cardSnap.data();
+              }
+            }
+            if (cData) {
+              clientInfoMap[token] = {
+                name: String(cData.nombre || cData.name || '').trim(),
+                cedula: String(cData.idNumber || cData.cedula || '').trim()
+              };
+            }
+          } catch (e) {
+            console.error('Error fetching client info for token', token, e);
+          }
+        }));
       }
 
       promotions.forEach(p => {
-          if (clientNames[p.token]) {
-              p.clientName = clientNames[p.token];
-          }
+        const info = clientInfoMap[p.token];
+        if (info) {
+          if (info.name) p.clientName = info.name;
+          if (info.cedula) p.clientCedula = info.cedula;
+        }
       });
 
       sendJson(res, 200, { promotions });

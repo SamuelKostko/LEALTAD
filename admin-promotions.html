@@ -205,14 +205,18 @@
                 <input id="promoUnits" type="number" inputmode="numeric" min="1" step="1" placeholder="Ej: 50" required />
               </div>
               <div class="ap-field" style="margin-bottom:0">
-                <label for="promoExpires">Vencimiento (opcional)</label>
-                <input id="promoExpires" type="datetime-local" />
-              </div>
-            </div>
-            <div style="margin-top: 12px;">
-              <div class="ap-field" style="margin-bottom:0">
                 <label for="promoMaxPerUser">Límite Diario por Persona</label>
                 <input id="promoMaxPerUser" type="number" inputmode="numeric" min="0" step="1" value="0" placeholder="0 = Sin límite" required />
+              </div>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-top: 12px;">
+              <div class="ap-field" style="margin-bottom:0">
+                <label for="promoStartsAt">Programar Salida (opcional)</label>
+                <input id="promoStartsAt" type="datetime-local" />
+              </div>
+              <div class="ap-field" style="margin-bottom:0">
+                <label for="promoExpires">Vencimiento (opcional)</label>
+                <input id="promoExpires" type="datetime-local" />
               </div>
             </div>
             <br/>
@@ -276,14 +280,18 @@
             <input id="editPromoUnits" type="number" min="1" required />
           </div>
           <div class="ap-field" style="margin-bottom:0">
-            <label for="editPromoExpires">Vencimiento</label>
-            <input id="editPromoExpires" type="datetime-local" />
-          </div>
-        </div>
-        <div style="margin-top: 12px;">
-          <div class="ap-field" style="margin-bottom:0">
             <label for="editPromoMaxPerUser">Límite Diario por Persona</label>
             <input id="editPromoMaxPerUser" type="number" min="0" step="1" value="0" placeholder="0 = Sin límite" required />
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-top: 12px;">
+          <div class="ap-field" style="margin-bottom:0">
+            <label for="editPromoStartsAt">Programar Salida (opcional)</label>
+            <input id="editPromoStartsAt" type="datetime-local" />
+          </div>
+          <div class="ap-field" style="margin-bottom:0">
+            <label for="editPromoExpires">Vencimiento (opcional)</label>
+            <input id="editPromoExpires" type="datetime-local" />
           </div>
         </div>
         <br/>
@@ -324,6 +332,6 @@
     </div>
   </div>
 
-  <script src="/admin-promotions.js" defer></script>
+  <script src="/admin-promotions.js?v=2" defer></script>
 </body>
 </html>

@@ -27,15 +27,14 @@ export default async function handler(req, res) {
             units: data.units || 0,
             maxPerUser: data.maxPerUser || 0,
             image: data.image || '',
+            startsAt: data.startsAt || null,
             expiresAt: data.expiresAt || null,
             createdAt: data.createdAt || null
           };
         });
         
-      if (!isAdmin) {
-        promos = promos.filter(p => !p.expiresAt || p.expiresAt > now);
-      }
-      
+      // Return all promotions (active, upcoming, sold out, and expired) so clients
+      // can browse each category tab and read/post comments on past promotions.
       sendJson(res, 200, { promotions: promos });
       return;
     }
@@ -53,10 +52,16 @@ export default async function handler(req, res) {
       const units = Number(body?.units || 0);
       const maxPerUser = Number(body?.maxPerUser || 0);
       const image = String(body?.image || '').trim();
+      const startsAt = body?.startsAt ? Number(body.startsAt) : null;
       const expiresAt = body?.expiresAt ? Number(body.expiresAt) : null;
 
       if (!title || !image) {
         sendJson(res, 400, { error: 'El título y la imagen son requeridos' });
+        return;
+      }
+
+      if (startsAt && expiresAt && expiresAt <= startsAt) {
+        sendJson(res, 400, { error: 'La fecha de vencimiento debe ser posterior a la fecha de inicio programada' });
         return;
       }
 
@@ -72,6 +77,7 @@ export default async function handler(req, res) {
         image,
         createdAt: Date.now()
       };
+      if (startsAt) docData.startsAt = startsAt;
       if (expiresAt) docData.expiresAt = expiresAt;
 
       await collection.doc(id).set(docData);
@@ -96,7 +102,13 @@ export default async function handler(req, res) {
       if (body.units !== undefined) updates.units = Number(body.units);
       if (body.maxPerUser !== undefined) updates.maxPerUser = Number(body.maxPerUser);
       if (body.image) updates.image = String(body.image).trim();
+      if (body.startsAt !== undefined) updates.startsAt = body.startsAt ? Number(body.startsAt) : null;
       if (body.expiresAt !== undefined) updates.expiresAt = body.expiresAt ? Number(body.expiresAt) : null;
+
+      if (updates.startsAt && updates.expiresAt && updates.expiresAt <= updates.startsAt) {
+        sendJson(res, 400, { error: 'La fecha de vencimiento debe ser posterior a la fecha de inicio programada' });
+        return;
+      }
       
       if (Object.keys(updates).length > 0) {
         await collection.doc(id).update(updates);
