@@ -1,6 +1,7 @@
 import { FieldValue } from 'firebase-admin/firestore';
 import { getFirestoreDb } from '../_lib/firestore.js';
 import { readJsonBody, sendJson } from '../_lib/http.js';
+import { sendPushToAdmins, sendPushToClient } from '../_lib/push.js';
 
 async function sendPromotionEmail(clientData, promoData, configData) {
   const mailerSendApiKey = process.env.MAILERSEND_API_KEY;
@@ -261,11 +262,53 @@ export default async function handler(req, res) {
         quantity: quantity
       });
 
-      return { clientData, promoData };
+      return {
+        clientData,
+        promoData,
+        clientToken: String(clientData.token || token).trim(),
+        pointsRequired,
+        remainingUnits: promoData.units !== undefined ? Number(promoData.units) - quantity : null
+      };
     });
 
     // Send email asynchronously without blocking the response
     sendPromotionEmail(result.clientData, result.promoData, configData).catch(e => console.error(e));
+
+    // Push notifications to client & staff (admin + marketing)
+    const clientName = String(result.clientData?.nombre || result.clientData?.name || 'Cliente').trim();
+    sendPushToClient(
+      result.clientToken,
+      {
+        title: `¡Canje confirmado! #${result.promoData.orderNumber}`,
+        body: `Canjeaste "${result.promoData.title}" (-${result.pointsRequired} Pts) para retirar en ${result.promoData.branch || 'tienda'}.`,
+        tag: `promo-redeem-${result.promoData.orderNumber}`
+      },
+      firestore
+    ).catch(() => null);
+
+    sendPushToAdmins(
+      {
+        title: `Nuevo canje de promoción (#${result.promoData.orderNumber})`,
+        body: `${clientName} canjeó ${result.promoData.quantity || 1}x ${result.promoData.title}.`,
+        url: '/admin',
+        tag: `admin-promo-redeem-${result.promoData.orderNumber}`
+      },
+      { includeMarketing: true },
+      firestore
+    ).catch(() => null);
+
+    if (result.remainingUnits !== null && result.remainingUnits <= 0) {
+      sendPushToAdmins(
+        {
+          title: 'Promoción agotada',
+          body: `"${result.promoData.title}" se quedó sin unidades disponibles.`,
+          url: '/admin/promotions',
+          tag: `promo-soldout-${promotionId}`
+        },
+        { includeMarketing: true },
+        firestore
+      ).catch(() => null);
+    }
 
     sendJson(res, 200, { ok: true, orderNumber: result.promoData.orderNumber });
   } catch (err) {

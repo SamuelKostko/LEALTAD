@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 import { getFirestoreDb } from './firestore.js';
 import { sendEmail } from './mailer.js';
+import { sendPushToClient } from './push.js';
 
 let isListening = false;
 const processedTxIds = new Set();
@@ -229,14 +230,11 @@ export function initPurchaseListener() {
             console.warn(`[PurchaseListener] Error buscando datos del cliente para tx ${txId}:`, lookupErr);
           }
 
-          if (!customerEmail || !customerEmail.includes('@')) {
-            console.log(`[PurchaseListener] Transacción ${txId} omitida (cliente sin correo electrónico válido).`);
-            continue;
-          }
-
           // Generate single-use secure survey token (valid 24 hours)
           const surveyToken = crypto.randomBytes(16).toString('hex');
           const expiresAt = Date.now() + (24 * 60 * 60 * 1000); // 24 Hours
+          const formattedPts = formatPoints(points);
+          const surveyUrl = `https://encuestas.vmaspuntos.com/?token=${encodeURIComponent(surveyToken)}&sede=${encodeURIComponent(branchName || 'Principal')}&cedula=${encodeURIComponent(cedula || '')}`;
 
           try {
             await firestore.collection('survey_invites').doc(surveyToken).set({
@@ -254,8 +252,25 @@ export function initPurchaseListener() {
             console.error(`[PurchaseListener] Error creando survey_invite para tx ${txId}:`, tokenErr);
           }
 
+          if (token) {
+            sendPushToClient(
+              token,
+              {
+                title: `¡Puntos acreditados! +${formattedPts} Pts`,
+                body: `Gracias por tu compra en ${branchName || 'nuestra tienda'}. Toca aquí para valorar tu atención y ganar un bono.`,
+                url: surveyUrl,
+                tag: `physical-tx-${txId}`
+              },
+              firestore
+            ).catch(() => null);
+          }
+
+          if (!customerEmail || !customerEmail.includes('@')) {
+            console.log(`[PurchaseListener] Transacción ${txId} sin correo electrónico válido (push enviado si estaba suscrito).`);
+            continue;
+          }
+
           // Build email HTML & Subject
-          const formattedPts = formatPoints(points);
           const emailHtml = buildPhysicalPurchaseEmail({
             customerName,
             points,

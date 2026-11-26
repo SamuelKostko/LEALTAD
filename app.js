@@ -34,6 +34,133 @@ if ("serviceWorker" in navigator) {
     }).catch(() => { });
   });
 }
+
+window.walletPush = (() => {
+  let cachedVapidKey = "";
+
+  const isSupported = () =>
+    typeof window !== "undefined" &&
+    "serviceWorker" in navigator &&
+    "PushManager" in window &&
+    "Notification" in window;
+
+  const isIosDevice = () =>
+    /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+
+  const isStandaloneMode = () =>
+    (typeof navigator.standalone === "boolean" && navigator.standalone) ||
+    window.matchMedia("(display-mode: standalone)").matches;
+
+  const urlBase64ToUint8Array = (base64String) => {
+    const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+    const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+    for (let i = 0; i < rawData.length; ++i) {
+      outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+  };
+
+  const getVapidKey = async () => {
+    if (cachedVapidKey) return cachedVapidKey;
+    const res = await fetch("/api/push/vapid-key", { cache: "no-store" });
+    const data = await res.json();
+    if (!res.ok || !data?.configured || !data?.publicKey) {
+      throw new Error("Las notificaciones push no están configuradas en el servidor.");
+    }
+    cachedVapidKey = data.publicKey;
+    return cachedVapidKey;
+  };
+
+  const getActiveSubscription = async () => {
+    if (!isSupported()) return null;
+    const reg = await navigator.serviceWorker.register("/service-worker.js");
+    await navigator.serviceWorker.ready;
+    return reg.pushManager.getSubscription();
+  };
+
+  const subscribe = async ({ scope = "client", token = "" } = {}) => {
+    if (!isSupported()) {
+      if (isIosDevice() && !isStandaloneMode()) {
+        throw new Error('En iPhone/iPad debes tocar Compartir → "Agregar a pantalla de inicio" y abrir la app desde el ícono para activar notificaciones.');
+      }
+      throw new Error("Este navegador no soporta notificaciones push.");
+    }
+
+    if (Notification.permission === "denied") {
+      throw new Error("Las notificaciones están bloqueadas en este navegador. Habilítalas en la configuración del sitio.");
+    }
+
+    const permission =
+      Notification.permission === "granted" ? "granted" : await Notification.requestPermission();
+    if (permission !== "granted") {
+      throw new Error("Permiso de notificaciones no concedido.");
+    }
+
+    const publicKey = await getVapidKey();
+    const reg = await navigator.serviceWorker.register("/service-worker.js");
+    await navigator.serviceWorker.ready;
+
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) {
+      sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(publicKey)
+      });
+    }
+
+    const res = await fetch("/api/push/subscribe", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({
+        scope,
+        token,
+        subscription: sub.toJSON()
+      })
+    });
+    const data = await res.json();
+    if (!res.ok || !data?.ok) {
+      throw new Error(data?.error || "No se pudo guardar la suscripción push.");
+    }
+    return sub;
+  };
+
+  const unsubscribe = async () => {
+    const sub = await getActiveSubscription();
+    if (!sub) return;
+    const endpoint = sub.endpoint;
+    await sub.unsubscribe().catch(() => null);
+    await fetch("/api/push/subscribe", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ endpoint })
+    }).catch(() => null);
+  };
+
+  const syncIfGranted = async ({ scope = "client", token = "" } = {}) => {
+    if (!isSupported() || Notification.permission !== "granted") return false;
+    try {
+      await subscribe({ scope, token });
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  return {
+    isSupported,
+    isIosDevice,
+    isStandaloneMode,
+    getActiveSubscription,
+    subscribe,
+    unsubscribe,
+    syncIfGranted
+  };
+})();
 (() => {
   const setAppHeightVar = () => {
     document.documentElement.style.setProperty("--app-height", `${window.innerHeight}px`);
@@ -283,6 +410,18 @@ if (qrButton) {
           if (initials) avatarInitialsEl.textContent = initials;
         }
         if (typeof data.updatedAt === "string") setUpdatedText(data.updatedAt);
+
+        if (window.walletPush) {
+          window.walletPush.syncIfGranted({ scope: "client", token }).then(() => {
+            if (typeof window.refreshClientPushLabel === "function") {
+              window.refreshClientPushLabel();
+            }
+          });
+        }
+        if (window.location.hash === "#promos") {
+          try { history.replaceState(null, "", window.location.pathname + window.location.search); } catch {}
+          setTimeout(() => document.getElementById("profilePromocionesBtn")?.click(), 250);
+        }
 
         // Render merchant-specific cards into the main carousel track
         const track = document.getElementById("cardsCarouselTrack");
@@ -3393,12 +3532,107 @@ Esto eliminará también sus transacciones.`
 
     // Expose loadAdminPopupConfig globally so it can be called from the sidebar
     window.loadAdminPopupConfig = loadAdminPopupConfig;
+
+    const refreshAdminPushBtn = async () => {
+      const btn = document.getElementById("adminPushBtn");
+      const label = document.getElementById("adminPushLabel");
+      if (!btn || !label || !window.walletPush) return;
+      if (!window.walletPush.isSupported()) {
+        if (!window.walletPush.isIosDevice() || window.walletPush.isStandaloneMode()) {
+          btn.hidden = true;
+        }
+        return;
+      }
+      try {
+        const sub = await window.walletPush.getActiveSubscription();
+        if (Notification.permission === "granted" && sub) {
+          label.textContent = "Alertas activas";
+          btn.style.color = "#34d399";
+        } else if (Notification.permission === "denied") {
+          label.textContent = "Alertas bloqueadas";
+          btn.style.color = "#f87171";
+        } else {
+          label.textContent = "Activar Alertas";
+          btn.style.color = "#f59e0b";
+        }
+      } catch {}
+    };
+
+    const adminPushBtn = document.getElementById("adminPushBtn");
+    if (adminPushBtn) {
+      adminPushBtn.addEventListener("click", async () => {
+        if (!window.walletPush) return;
+        try {
+          const sub = await window.walletPush.getActiveSubscription();
+          if (Notification.permission === "granted" && sub) {
+            if (confirm("¿Deseas desactivar las alertas push en este dispositivo?")) {
+              await window.walletPush.unsubscribe();
+              await refreshAdminPushBtn();
+            }
+          } else {
+            await window.walletPush.subscribe({ scope: "admin" });
+            await refreshAdminPushBtn();
+            alert("Alertas de administrador activadas.");
+          }
+        } catch (err) {
+          alert(err?.message || "No se pudieron activar las alertas.");
+        }
+      });
+    }
+
+    const adminPushCampaignForm = document.getElementById("adminPushCampaignForm");
+    if (adminPushCampaignForm) {
+      adminPushCampaignForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const titleEl = document.getElementById("adminPushCampaignTitle");
+        const bodyEl = document.getElementById("adminPushCampaignBody");
+        const btn = document.getElementById("adminPushCampaignBtn");
+        const resultEl = document.getElementById("adminPushCampaignResult");
+        const title = titleEl?.value.trim();
+        const body = bodyEl?.value.trim();
+        if (!title || !body) return;
+
+        if (btn) btn.disabled = true;
+        setResult(resultEl, "", "Enviando notificación...");
+        try {
+          const res = await apiPost("/api/admin/push-campaign", {
+            title,
+            body,
+            url: "/#promos"
+          });
+          if (!res || !res.ok) throw new Error(res?.error || "Error al enviar notificación.");
+          setResult(resultEl, "ok", res.message || "Notificación enviada.");
+          adminPushCampaignForm.reset();
+        } catch (err) {
+          setResult(resultEl, "err", String(err?.message || err));
+        } finally {
+          if (btn) btn.disabled = false;
+        }
+      });
+    }
+
     const initAuthed = (role) => {
       showDash();
 
-      switchPanel("clientes");
-      loadClients();
+      let initialPanel = "clientes";
+      try {
+        const qp = new URLSearchParams(window.location.search);
+        if (qp.get("panel") === "pendientes") {
+          initialPanel = "pendientes";
+        }
+      } catch {}
+
+      switchPanel(initialPanel);
+      if (initialPanel === "pendientes") {
+        loadPendingPayments();
+      } else {
+        loadClients();
+      }
       if (adminResetTxsBtn) adminResetTxsBtn.hidden = false;
+
+      if (window.walletPush) {
+        window.walletPush.syncIfGranted({ scope: "admin" }).then(refreshAdminPushBtn);
+      }
 
       // Ocultar botón de perfil en admin mode si así se requiere
       if (profileButton) profileButton.hidden = true;
@@ -6272,4 +6506,128 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     };
   }
+})();
+
+(() => {
+  const btn = document.getElementById("profilePushBtn");
+  const label = document.getElementById("profilePushLabel");
+  if (!btn || !label) return;
+
+  const getToken = () => {
+    try {
+      const u = new URL(window.location.href);
+      let t = (u.searchParams.get("token") || u.searchParams.get("t") || "").trim();
+      if (!t && u.pathname.startsWith("/card/")) {
+        t = decodeURIComponent(u.pathname.slice("/card/".length)).trim();
+      }
+      return t;
+    } catch {
+      return "";
+    }
+  };
+
+  const refreshClientPushLabel = (window.refreshClientPushLabel = async () => {
+    if (!window.walletPush) return;
+    if (!window.walletPush.isSupported()) {
+      if (window.walletPush.isIosDevice() && !window.walletPush.isStandaloneMode()) {
+        label.textContent = "Notificaciones (instalar app)";
+        btn.style.color = "#f59e0b";
+      } else {
+        btn.hidden = true;
+      }
+      return;
+    }
+    try {
+      const sub = await window.walletPush.getActiveSubscription();
+      if (Notification.permission === "granted" && sub) {
+        label.textContent = "Notificaciones activas ✓";
+        btn.style.color = "#10b981";
+      } else if (Notification.permission === "denied") {
+        label.textContent = "Notificaciones bloqueadas";
+        btn.style.color = "#ef4444";
+      } else {
+        label.textContent = "Activar Notificaciones";
+        btn.style.color = "#f59e0b";
+      }
+    } catch {}
+  });
+
+  refreshClientPushLabel();
+
+  // Show gentle opt-in banner on client card when permission is still 'default'
+  const pushBanner = document.getElementById("pushPromptBanner");
+  const pushAcceptBtn = document.getElementById("pushPromptAcceptBtn");
+  const pushCloseBtn = document.getElementById("pushPromptCloseBtn");
+  const PUSH_DISMISSED_KEY = "wallet.pushBannerClosed";
+
+  const hidePushBanner = () => {
+    if (!pushBanner) return;
+    pushBanner.classList.remove("installBanner--active");
+    pushBanner.setAttribute("aria-hidden", "true");
+  };
+
+  if (pushBanner && pushAcceptBtn && pushCloseBtn && getToken()) {
+    pushCloseBtn.addEventListener("click", () => {
+      try { localStorage.setItem(PUSH_DISMISSED_KEY, "1"); } catch {}
+      hidePushBanner();
+    });
+
+    pushAcceptBtn.addEventListener("click", async () => {
+      if (!window.walletPush) return;
+      const token = getToken();
+      if (!token) return;
+      pushAcceptBtn.disabled = true;
+      pushAcceptBtn.textContent = "Activando...";
+      try {
+        await window.walletPush.subscribe({ scope: "client", token });
+        await refreshClientPushLabel();
+        hidePushBanner();
+      } catch (err) {
+        alert(err?.message || "No se pudieron activar las notificaciones.");
+      } finally {
+        pushAcceptBtn.disabled = false;
+        pushAcceptBtn.textContent = "Activar";
+      }
+    });
+
+    setTimeout(async () => {
+      if (!window.walletPush || !window.walletPush.isSupported()) return;
+      if (Notification.permission !== "default") return;
+      try {
+        if (localStorage.getItem(PUSH_DISMISSED_KEY) === "1") return;
+      } catch {}
+      const installBanner = document.getElementById("installBanner");
+      if (installBanner && installBanner.classList.contains("installBanner--active")) return;
+      const existingSub = await window.walletPush.getActiveSubscription().catch(() => null);
+      if (existingSub) return;
+      pushBanner.classList.add("installBanner--active");
+      pushBanner.setAttribute("aria-hidden", "false");
+    }, 2800);
+  }
+
+  btn.addEventListener("click", async () => {
+    if (!window.walletPush) return;
+    const token = getToken();
+    if (!token) return;
+
+    try {
+      const sub = window.walletPush.isSupported()
+        ? await window.walletPush.getActiveSubscription()
+        : null;
+
+      if (window.walletPush.isSupported() && Notification.permission === "granted" && sub) {
+        if (confirm("¿Deseas desactivar las notificaciones push en este dispositivo?")) {
+          await window.walletPush.unsubscribe();
+          await refreshClientPushLabel();
+        }
+        return;
+      }
+
+      await window.walletPush.subscribe({ scope: "client", token });
+      await refreshClientPushLabel();
+      alert("¡Listo! Notificaciones activadas en este dispositivo.");
+    } catch (err) {
+      alert(err?.message || "No se pudieron activar las notificaciones.");
+    }
+  });
 })();

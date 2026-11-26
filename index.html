@@ -578,6 +578,13 @@
 
           </nav>
           <div class="aSidebar__bottom">
+            <button class="aSidebar__logout" id="adminPushBtn" type="button" style="margin-bottom: 10px; color: #f59e0b;">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M13.73 21a2 2 0 0 1-3.46 0" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+              <span id="adminPushLabel">Activar Alertas</span>
+            </button>
             <a class="aSidebar__goQr" id="adminHeaderGoQr" href="/admin/qr">
               <svg viewBox="0 0 24 24" width="15" height="15" fill="none">
                 <rect x="3" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.6" />
@@ -1548,6 +1555,26 @@
                 <div id="popupResult" style="font-size: 13.5px; font-weight: 600;" aria-live="polite"></div>
               </div>
             </div>
+
+            <!-- Difusión Push a Clientes -->
+            <div class="aCard" style="margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 22px;">
+              <h3 style="font-size: 16px; font-weight: 700; color: #fff; margin: 0 0 6px;">📢 Enviar Notificación Push a Clientes</h3>
+              <p style="font-size: 13px; color: rgba(255,255,255,0.62); margin: 0 0 16px;">
+                Envía un aviso inmediato a todos los clientes que activaron las notificaciones en su teléfono o navegador.
+              </p>
+              <form id="adminPushCampaignForm" style="display: flex; flex-direction: column; gap: 12px; max-width: 560px;">
+                <input type="text" id="adminPushCampaignTitle" maxlength="100" placeholder="Título (ej: ¡Promo Relámpago hoy!)" required
+                  style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.14); color: #fff; padding: 10px 14px; border-radius: 10px; font-family: inherit; font-size: 14px;" />
+                <textarea id="adminPushCampaignBody" rows="3" maxlength="240" placeholder="Mensaje (ej: Canjea tus puntos con 20% de descuento en todas nuestras sedes)" required
+                  style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.14); color: #fff; padding: 10px 14px; border-radius: 10px; font-family: inherit; font-size: 14px; resize: vertical;"></textarea>
+                <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                  <button class="aBtn aBtn--primary" id="adminPushCampaignBtn" type="submit" style="padding: 10px 22px; font-weight: 700;">
+                    Enviar Notificación
+                  </button>
+                  <div id="adminPushCampaignResult" class="aResult" aria-live="polite" style="font-size: 13px;"></div>
+                </div>
+              </form>
+            </div>
           </section>
 
         </div>
@@ -1872,6 +1899,15 @@
             <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
           </svg>
           Actualizar Teléfono
+        </button>
+
+        <button class="profileMenu__item" id="profilePushBtn" type="button"
+          style="color: #f59e0b;">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" style="margin-right: 10px;">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" stroke-linecap="round" stroke-linejoin="round"></path>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0" stroke-linecap="round" stroke-linejoin="round"></path>
+          </svg>
+          <span id="profilePushLabel">Activar Notificaciones</span>
         </button>
 
         <button class="profileMenu__item profileMenu__item--install" id="profileInstallBtn" type="button" hidden>
@@ -2397,6 +2433,18 @@
       </div>
       <button class="installBanner__btn" id="installBannerBtn" type="button">Instalar</button>
       <button class="installBanner__close" id="installBannerClose" type="button" aria-label="Cerrar">✕</button>
+    </div>
+  </div>
+
+  <!-- Web Push Opt-In Banner -->
+  <div class="installBanner" id="pushPromptBanner" aria-hidden="true">
+    <div class="installBanner__content">
+      <div class="installBanner__text">
+        <div class="installBanner__title">🔔 Activa las notificaciones</div>
+        <div class="installBanner__desc">Entérate al instante de tus puntos, recargas y promociones.</div>
+      </div>
+      <button class="installBanner__btn" id="pushPromptAcceptBtn" type="button">Activar</button>
+      <button class="installBanner__close" id="pushPromptCloseBtn" type="button" aria-label="Cerrar">✕</button>
     </div>
   </div>
 

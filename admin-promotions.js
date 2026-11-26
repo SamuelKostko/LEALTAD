@@ -151,10 +151,122 @@ const setAuthenticated = (ok) => {
   const loginCard = $('loginCard');
   const promoSection = $('promoSection');
   const logoutBtn = $('logoutBtn');
+  const pushBtn = $('promoPushSubscribeBtn');
   if (loginCard) loginCard.hidden = ok;
   if (promoSection) promoSection.hidden = !ok;
   if (logoutBtn) logoutBtn.style.display = ok ? 'inline-block' : 'none';
+  if (pushBtn) pushBtn.style.display = ok ? 'inline-block' : 'none';
 };
+
+/* ─── Web Push Helpers (Marketing / Admin) ────────────────────────────────── */
+const urlBase64ToUint8Array = (base64String) => {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; ++i) outputArray[i] = rawData.charCodeAt(i);
+  return outputArray;
+};
+
+const refreshMarketingPushBtn = async () => {
+  const btn = $('promoPushSubscribeBtn');
+  if (!btn) return;
+  if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) {
+    btn.style.display = 'none';
+    return;
+  }
+  try {
+    const reg = await navigator.serviceWorker.register('/service-worker.js');
+    const sub = await reg.pushManager.getSubscription();
+    if (Notification.permission === 'granted' && sub) {
+      btn.textContent = '🔔 Alertas activas';
+      btn.style.borderColor = 'rgba(16,185,129,0.45)';
+      btn.style.color = '#34d399';
+    } else if (Notification.permission === 'denied') {
+      btn.textContent = '🔕 Bloqueadas';
+    } else {
+      btn.textContent = '🔔 Activar alertas';
+    }
+  } catch {}
+};
+
+const subscribeMarketingPush = async (silent = false) => {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) return;
+  try {
+    const reg = await navigator.serviceWorker.register('/service-worker.js');
+    await navigator.serviceWorker.ready;
+    if (silent && Notification.permission !== 'granted') return;
+
+    if (Notification.permission === 'denied') {
+      if (!silent) alert('Las notificaciones están bloqueadas en el navegador.');
+      return;
+    }
+
+    const permission = Notification.permission === 'granted' ? 'granted' : await Notification.requestPermission();
+    if (permission !== 'granted') return;
+
+    const keyRes = await fetch('/api/push/vapid-key', { cache: 'no-store' });
+    const keyData = await keyRes.json();
+    if (!keyData?.configured || !keyData?.publicKey) {
+      if (!silent) alert('Falta configurar las claves VAPID en el servidor.');
+      return;
+    }
+
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) {
+      sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(keyData.publicKey)
+      });
+    }
+
+    await fetch('/api/push/subscribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ scope: 'marketing', subscription: sub.toJSON() })
+    });
+
+    await refreshMarketingPushBtn();
+    if (!silent) alert('Alertas activadas en este dispositivo.');
+  } catch (err) {
+    if (!silent) alert(err?.message || 'Error activando alertas.');
+  }
+};
+
+if ($('promoPushSubscribeBtn')) {
+  $('promoPushSubscribeBtn').addEventListener('click', () => subscribeMarketingPush(false));
+}
+
+if ($('promoPushCampaignForm')) {
+  $('promoPushCampaignForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const title = $('promoPushTitle')?.value.trim();
+    const body = $('promoPushBody')?.value.trim();
+    const resEl = $('promoPushResult');
+    const btn = $('promoPushSendBtn');
+    if (!title || !body) return;
+
+    if (btn) btn.disabled = true;
+    setResult(resEl, 'info', 'Enviando notificación...');
+    try {
+      const res = await fetch('/api/admin/push-campaign', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ title, body, url: '/#promos' })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error enviando notificación');
+      setResult(resEl, 'ok', data.message || 'Notificación enviada.');
+      $('promoPushCampaignForm').reset();
+    } catch (err) {
+      setResult(resEl, 'err', err.message);
+    } finally {
+      if (btn) btn.disabled = false;
+    }
+  });
+}
 
 const checkAuth = async () => {
   try {
@@ -164,6 +276,8 @@ const checkAuth = async () => {
       if (data?.authenticated) {
         setAuthenticated(true);
         fetchPromotions();
+        refreshMarketingPushBtn();
+        subscribeMarketingPush(true);
         return;
       }
     }

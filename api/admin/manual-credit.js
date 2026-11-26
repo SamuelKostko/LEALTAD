@@ -2,6 +2,7 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { getFirestoreDb } from '../_lib/firestore.js';
 import { readJsonBody, sendJson } from '../_lib/http.js';
 import { verifySession } from '../_lib/adminAuth.js';
+import { sendPushToClient } from '../_lib/push.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -55,6 +56,11 @@ export default async function handler(req, res) {
     const clientRef = firestore.collection('clientes').doc(token);
     const clientDoc = await clientRef.get();
     
+    let creditedClientToken = token;
+    let creditedNewBalance = null;
+    const isMerchantRole = role === 'merchant';
+    const merchantNameDisplay = String(auth.data?.name ?? '').trim();
+
     if (!clientDoc.exists) {
       // Try search by token field if id is not token
       const clientSnap = await firestore.collection('clientes').where('token', '==', token).limit(1).get();
@@ -64,9 +70,13 @@ export default async function handler(req, res) {
       }
       // Use the doc from the snap
       const targetDoc = clientSnap.docs[0];
-      await applyCredit(targetDoc.ref, targetDoc.data());
+      const targetData = targetDoc.data();
+      creditedClientToken = String(targetData?.token || token).trim();
+      creditedNewBalance = await applyCredit(targetDoc.ref, targetData);
     } else {
-      await applyCredit(clientRef, clientDoc.data());
+      const targetData = clientDoc.data();
+      creditedClientToken = String(targetData?.token || token).trim();
+      creditedNewBalance = await applyCredit(clientRef, targetData);
     }
 
     async function applyCredit(ref, data) {
@@ -139,6 +149,21 @@ export default async function handler(req, res) {
       batch.set(txRef, txPayload);
 
       await batch.commit();
+      return newBalance;
+    }
+
+    if (creditedClientToken) {
+      sendPushToClient(
+        creditedClientToken,
+        {
+          title: `¡Puntos acreditados! +${points} Pts`,
+          body: isMerchantRole && merchantNameDisplay
+            ? `${merchantNameDisplay} acreditó +${points} Pts a tu cuenta. Nuevo saldo: ${creditedNewBalance} Pts.`
+            : `Recibiste un abono de +${points} Pts en tu cuenta. Nuevo saldo: ${creditedNewBalance} Pts.`,
+          tag: `manual-credit-${Date.now()}`
+        },
+        firestore
+      ).catch(() => null);
     }
 
     sendJson(res, 200, { ok: true, message: `Se han acreditado ${points} puntos exitosamente.` });

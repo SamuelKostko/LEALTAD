@@ -137,7 +137,8 @@
         Panel
       </a>
       <span class="ap-header__title">Promociones</span>
-      <div style="width:60px; text-align:right;">
+      <div style="display:flex; align-items:center; gap:10px; justify-content:flex-end;">
+        <button id="promoPushSubscribeBtn" type="button" style="display:none; background: rgba(245,158,11,0.14); border: 1px solid rgba(245,158,11,0.35); color: #fbbf24; font-size: 12px; font-weight: 700; padding: 5px 10px; border-radius: 999px; cursor: pointer;">🔔 Alertas</button>
         <button id="logoutBtn" style="background: none; border: none; color: rgba(239,68,68,0.9); font-size: 13px; font-weight: 600; cursor: pointer; display: none; padding: 4px 0;">Salir</button>
       </div>
     </header>
@@ -225,6 +226,24 @@
               Crear Promoción
             </button>
             <div class="ap-result" id="promoResult"></div>
+          </form>
+        </div>
+
+        <!-- Push Campaign -->
+        <div class="ap-card" style="margin-bottom: 20px;">
+          <p class="ap-card__title">📢 Enviar Notificación Push</p>
+          <p class="ap-card__sub">Envía un aviso directo a todos los clientes suscritos</p>
+          <form id="promoPushCampaignForm">
+            <div class="ap-field">
+              <label for="promoPushTitle">Título</label>
+              <input id="promoPushTitle" type="text" maxlength="100" placeholder="Ej: ¡Nueva oferta por tiempo limitado!" required />
+            </div>
+            <div class="ap-field">
+              <label for="promoPushBody">Mensaje</label>
+              <textarea id="promoPushBody" maxlength="240" placeholder="Ej: Aprovecha hoy 2x1 en nuestras sedes" required></textarea>
+            </div>
+            <button class="ap-btn ap-btn--primary" id="promoPushSendBtn" type="submit">Enviar a Clientes</button>
+            <div class="ap-result" id="promoPushResult"></div>
           </form>
         </div>
 

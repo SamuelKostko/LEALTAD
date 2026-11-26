@@ -2,6 +2,7 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { getFirestoreDb } from './_lib/firestore.js';
 import { sendJson, readJsonBody } from './_lib/http.js';
 import { sendEmail } from './_lib/mailer.js';
+import { sendPushToAdmins, sendPushToClient } from './_lib/push.js';
 import {
   computeAvailableAtDate,
   formatReleaseDurationLabel,
@@ -297,6 +298,19 @@ export default async function handler(req, res) {
         }).catch(e => console.error("Error enviando correo al cliente:", e));
       }
 
+      // Send Push notification to Client (non-blocking)
+      sendPushToClient(
+        token,
+        {
+          title: isImmediate ? `¡Pago verificado! +${points} Pts` : '¡Pago verificado!',
+          body: isImmediate
+            ? `Tus ${points} puntos ya fueron acreditados y están disponibles en tu saldo.`
+            : `Tu compra de ${points} puntos fue aprobada. Estarán disponibles en ${durationLabel}.`,
+          tag: `buy-points-${purchaseRef.id}`
+        },
+        db
+      ).catch(() => null);
+
     } else {
       // Pending Logic
       await batch.commit();
@@ -324,6 +338,18 @@ export default async function handler(req, res) {
         `,
         fromName: "V+ Puntos Sistema"
       }).catch(e => console.error("Error enviando correo al administrador:", e));
+
+      // Notify admins via Web Push so pending Pago Móvil can be reviewed promptly
+      sendPushToAdmins(
+        {
+          title: 'Nuevo Pago Móvil pendiente',
+          body: `${newPurchase.clientName} reportó Bs. ${newPurchase.totalBs} (+${newPurchase.amount} Pts) · Ref: ${newPurchase.reference}`,
+          url: '/admin?panel=pendientes',
+          tag: `pending-purchase-${purchaseRef.id}`
+        },
+        {},
+        db
+      ).catch(() => null);
     }
 
     return sendJson(res, 200, {

@@ -2,6 +2,7 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { getFirestoreDb } from '../_lib/firestore.js';
 import { readJsonBody, sendJson } from '../_lib/http.js';
 import { sendEmail } from '../_lib/mailer.js';
+import { sendPushToClient } from '../_lib/push.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -218,6 +219,7 @@ export default async function handler(req, res) {
 
         return {
           transferAmount,
+          recipientToken: String(recipientData.token || '').trim(),
           recipientName: recipientData.nombre,
           recipientEmail: lowerEmail,
           senderName: senderData.nombre,
@@ -271,6 +273,18 @@ export default async function handler(req, res) {
           `,
           fromName: "V+ Puntos - Transferencias"
         }).catch(e => console.error("Error enviando recibo a receptor:", e));
+      }
+
+      if (result.recipientToken) {
+        sendPushToClient(
+          result.recipientToken,
+          {
+            title: '¡Recibiste puntos!',
+            body: `${result.senderName} te envió +${result.transferAmount} Pts (Ref. #${result.reference}).`,
+            tag: `transfer-in-${result.reference}`
+          },
+          firestore
+        ).catch(() => null);
       }
 
       sendJson(res, 200, { success: true, transferAmount: result.transferAmount, recipientName: result.recipientName, reference: result.reference });

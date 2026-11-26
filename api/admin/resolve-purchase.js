@@ -3,6 +3,7 @@ import { getFirestoreDb } from '../_lib/firestore.js';
 import { requireAdmin, verifySession } from '../_lib/adminAuth.js';
 import { readJsonBody, sendJson } from '../_lib/http.js';
 import { sendEmail } from '../_lib/mailer.js';
+import { sendPushToClient } from '../_lib/push.js';
 import {
   DEFAULT_BUY_POINTS_RELEASE,
   computeAvailableAtDate,
@@ -68,6 +69,19 @@ export default async function handler(req, res) {
         resolvedBy: adminIdentifier
       });
       await batch.commit();
+
+      if (purchaseData.cardNumber) {
+        sendPushToClient(
+          purchaseData.cardNumber,
+          {
+            title: 'Pago no aprobado',
+            body: `Tu compra de ${Number(purchaseData.amount || 0)} Pts (Ref. ${purchaseData.reference || 'N/A'}) no fue aprobada.`,
+            tag: `purchase-resolved-${purchaseId}`
+          },
+          firestore
+        ).catch(() => null);
+      }
+
       return sendJson(res, 200, { ok: true, message: 'Pago rechazado exitosamente.' });
     }
 
@@ -206,6 +220,19 @@ export default async function handler(req, res) {
         fromName: "V+ Puntos - Recargas"
       }).catch(e => console.error("Error enviando correo de confirmación:", e));
     }
+
+    // Send push notification to client
+    sendPushToClient(
+      String(clientData?.token || token || '').trim(),
+      {
+        title: isImmediate ? `¡Pago aprobado! +${points} Pts` : `¡Pago aprobado! +${points} Pts`,
+        body: isImmediate
+          ? 'Tus puntos ya fueron acreditados a tu saldo y están disponibles para usar.'
+          : `Tus puntos estarán disponibles en ${durationLabel} (${availableDisplayStr}).`,
+        tag: `purchase-resolved-${purchaseId}`
+      },
+      firestore
+    ).catch(() => null);
 
     const successMsg = isImmediate
       ? `Se han acreditado ${points} puntos de forma inmediata.`

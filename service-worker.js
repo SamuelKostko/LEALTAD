@@ -1,11 +1,13 @@
-const CACHE_NAME = "wallet-pwa-v69";
+const CACHE_NAME = "wallet-pwa-v70";
 
 const PRECACHE_URLS = [
   "/",
   "/index.html",
   "/styles.css",
   "/app.js",
-  "/icons/icon-v2.svg"
+  "/icons/icon-v2.svg",
+  "/icons/icon-192.png",
+  "/icons/badge-72.png"
 ];
 
 self.addEventListener("install", (event) => {
@@ -150,6 +152,48 @@ self.addEventListener("fetch", (event) => {
           return response;
         })
         .catch(() => caches.match("./index.html"));
+    })
+  );
+});
+
+self.addEventListener("push", (event) => {
+  let data = {};
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch {
+    data = { body: event.data ? event.data.text() : "" };
+  }
+
+  const title = data.title || "V+ Puntos";
+  const options = {
+    body: data.body || "",
+    icon: data.icon || "/icons/icon-192.png",
+    badge: data.badge || "/icons/badge-72.png",
+    tag: data.tag || undefined,
+    data: {
+      url: data.url || "/",
+      ...(data.data || {})
+    }
+  };
+
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const targetUrl = (event.notification.data && event.notification.data.url) || "/";
+
+  event.waitUntil(
+    clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
+      const resolvedTarget = new URL(targetUrl, self.location.origin).href;
+      for (const client of clientList) {
+        if (client.url === resolvedTarget && "focus" in client) {
+          return client.focus();
+        }
+      }
+      if (clients.openWindow) {
+        return clients.openWindow(resolvedTarget);
+      }
     })
   );
 });

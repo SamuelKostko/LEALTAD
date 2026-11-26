@@ -2,6 +2,7 @@ import crypto from 'node:crypto';
 import { FieldValue } from 'firebase-admin/firestore';
 import { getFirestoreDb } from '../_lib/firestore.js';
 import { getPublicOrigin, sendJson } from '../_lib/http.js';
+import { sendPushToClient } from '../_lib/push.js';
 
 function getQrSecret() {
   return String(process.env.QR_SECRET ?? '').trim();
@@ -318,10 +319,34 @@ export default async function handler(req, res) {
 
       return { 
         previous: isClosed ? currentBalance : currentBalance, 
-        next: updateFields[`merchantBalances.${merchantId}`] ?? updateFields.totalPoints 
+        next: updateFields[`merchantBalances.${merchantId}`] ?? updateFields.totalPoints,
+        referrerToken: referrerClientRef ? referrerToken : '',
+        referralBonusPoints: referrerClientRef ? referralBonusPoints : 0,
+        referredUserName: String(cardData.name || clientData.nombre || 'un amigo').trim()
       };
     });
 
+    sendPushToClient(
+      token,
+      {
+        title: `Canje confirmado (-${points} Pts)`,
+        body: `${desc || 'Pago en tienda'}. Saldo actual: ${result.next} Pts.`,
+        tag: `pos-redeem-${nonce}`
+      },
+      firestore
+    ).catch(() => null);
+
+    if (result.referrerToken && result.referralBonusPoints > 0) {
+      sendPushToClient(
+        result.referrerToken,
+        {
+          title: `¡Bono por referido! +${result.referralBonusPoints} Pts`,
+          body: `${result.referredUserName} realizó su primera compra y ganaste +${result.referralBonusPoints} Pts.`,
+          tag: `referral-bonus-${nonce}`
+        },
+        firestore
+      ).catch(() => null);
+    }
 
     sendJson(res, 200, {
       ok: true,

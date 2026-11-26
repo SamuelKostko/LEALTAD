@@ -1,4 +1,6 @@
+import { FieldValue } from 'firebase-admin/firestore';
 import { getFirestoreDb } from './firestore.js';
+import { sendPushToClient } from './push.js';
 
 export const DEFAULT_BUY_POINTS_RELEASE = {
   releaseValue: 10,
@@ -80,7 +82,7 @@ export function formatReleaseTermsText(config) {
 }
 
 /**
- * Resolves any scheduled points that have matured for a client.
+ * Resolves any scheduled points that have matured for a client inside a transaction.
  * If any points are matured, it updates the client document and returns the new data.
  * If no updates are needed, it returns the clientData as-is.
  * 
@@ -93,41 +95,140 @@ export async function resolveScheduledPoints(clientDoc, clientData) {
     return clientData;
   }
 
-  const now = new Date().getTime();
-  let maturedPoints = 0;
-  let remainingScheduled = [];
-  let hasUpdates = false;
+  const now = Date.now();
+  const hasAnyMatured = clientData.scheduledPoints.some(sp => now >= new Date(sp.availableAt).getTime());
+  if (!hasAnyMatured) {
+    return clientData;
+  }
 
-  clientData.scheduledPoints.forEach(sp => {
-    const availableTime = new Date(sp.availableAt).getTime();
-    if (now >= availableTime) {
-      maturedPoints += Number(sp.amount || 0);
-      hasUpdates = true;
-    } else {
-      remainingScheduled.push(sp);
+  const db = getFirestoreDb();
+  const clientRef = db.collection('clientes').doc(clientDoc.id);
+
+  const txResult = await db.runTransaction(async (tx) => {
+    const freshSnap = await tx.get(clientRef);
+    if (!freshSnap.exists) return null;
+
+    const freshData = freshSnap.data() || {};
+    const list = Array.isArray(freshData.scheduledPoints) ? freshData.scheduledPoints : [];
+    const txNow = Date.now();
+    let maturedPoints = 0;
+    const remainingScheduled = [];
+
+    list.forEach(sp => {
+      const availableTime = new Date(sp.availableAt).getTime();
+      if (txNow >= availableTime) {
+        maturedPoints += Number(sp.amount || 0);
+      } else {
+        remainingScheduled.push(sp);
+      }
+    });
+
+    if (maturedPoints <= 0) {
+      return { updated: false, data: freshData };
     }
-  });
 
-  if (hasUpdates) {
-    const currentBalance = Number(clientData.totalPoints || 0);
+    const currentBalance = Number(freshData.totalPoints || 0);
     const newBalance = currentBalance + maturedPoints;
-    
-    // Update the database
-    const db = await getFirestoreDb();
-    const clientRef = db.collection('clientes').doc(clientDoc.id);
-    await clientRef.update({
+
+    tx.update(clientRef, {
       totalPoints: newBalance,
-      scheduledPoints: remainingScheduled,
+      scheduledPoints: remainingScheduled.length > 0 ? remainingScheduled : FieldValue.delete(),
       updatedAt: new Date().toISOString()
     });
 
-    // Return the updated data so the calling function can use it immediately
     return {
-      ...clientData,
-      totalPoints: newBalance,
-      scheduledPoints: remainingScheduled
+      updated: true,
+      maturedPoints,
+      newBalance,
+      token: String(freshData.token || '').trim(),
+      data: {
+        ...freshData,
+        totalPoints: newBalance,
+        scheduledPoints: remainingScheduled
+      }
     };
+  });
+
+  if (!txResult) return clientData;
+  return txResult.data;
+}
+
+/**
+ * Background processor that releases all matured scheduledPoints across clients
+ * and notifies each client via Web Push when their points become available.
+ */
+export async function processAllMaturedScheduledPoints() {
+  const db = getFirestoreDb();
+  const snap = await db.collection('clientes').orderBy('scheduledPoints').get();
+  if (snap.empty) return { processed: 0 };
+
+  const now = Date.now();
+  let processed = 0;
+
+  for (const docSnap of snap.docs) {
+    const data = docSnap.data() || {};
+    if (!Array.isArray(data.scheduledPoints) || data.scheduledPoints.length === 0) continue;
+
+    const hasMatured = data.scheduledPoints.some(sp => now >= new Date(sp.availableAt).getTime());
+    if (!hasMatured) continue;
+
+    try {
+      const clientRef = docSnap.ref;
+      const txResult = await db.runTransaction(async (tx) => {
+        const freshSnap = await tx.get(clientRef);
+        if (!freshSnap.exists) return null;
+
+        const freshData = freshSnap.data() || {};
+        const list = Array.isArray(freshData.scheduledPoints) ? freshData.scheduledPoints : [];
+        const txNow = Date.now();
+        let maturedPoints = 0;
+        const remainingScheduled = [];
+
+        list.forEach(sp => {
+          const availableTime = new Date(sp.availableAt).getTime();
+          if (txNow >= availableTime) {
+            maturedPoints += Number(sp.amount || 0);
+          } else {
+            remainingScheduled.push(sp);
+          }
+        });
+
+        if (maturedPoints <= 0) return null;
+
+        const currentBalance = Number(freshData.totalPoints || 0);
+        const newBalance = currentBalance + maturedPoints;
+
+        tx.update(clientRef, {
+          totalPoints: newBalance,
+          scheduledPoints: remainingScheduled.length > 0 ? remainingScheduled : FieldValue.delete(),
+          updatedAt: new Date().toISOString()
+        });
+
+        return {
+          maturedPoints,
+          newBalance,
+          token: String(freshData.token || '').trim()
+        };
+      });
+
+      if (txResult && txResult.maturedPoints > 0) {
+        processed++;
+        if (txResult.token) {
+          sendPushToClient(
+            txResult.token,
+            {
+              title: '¡Tus puntos ya están disponibles!',
+              body: `Se liberaron +${txResult.maturedPoints} Pts en tu saldo. Nuevo saldo: ${txResult.newBalance} Pts.`,
+              tag: `points-released-${docSnap.id}`
+            },
+            db
+          ).catch(() => null);
+        }
+      }
+    } catch (err) {
+      console.warn(`[PushScheduler] Error liberando puntos para ${docSnap.id}:`, err?.message || err);
+    }
   }
 
-  return clientData;
+  return { processed };
 }

@@ -1,6 +1,7 @@
 import { getFirestoreDb } from '../_lib/firestore.js';
 import { readJsonBody, sendJson } from '../_lib/http.js';
 import { isAdminOrMarketingRequest } from '../_lib/adminAuth.js';
+import { sendPushToAdmins } from '../_lib/push.js';
 import crypto from 'node:crypto';
 
 export default async function handler(req, res) {
@@ -124,6 +125,17 @@ export default async function handler(req, res) {
       };
 
       await commentsCollection.doc(commentId).set(newComment);
+
+      sendPushToAdmins(
+        {
+          title: `Nuevo comentario (${rating}★)`,
+          body: `${userName}: ${commentText.slice(0, 100)}`,
+          url: '/admin/promotions',
+          tag: `promo-comment-${commentId}`
+        },
+        { includeMarketing: true },
+        db
+      ).catch(() => null);
 
       sendJson(res, 201, {
         ok: true,

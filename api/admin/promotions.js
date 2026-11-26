@@ -1,6 +1,7 @@
 import { getFirestoreDb } from '../_lib/firestore.js';
 import { readJsonBody, sendJson } from '../_lib/http.js';
 import { requireAdminOrMarketing } from '../_lib/adminAuth.js';
+import { sendPushToAllClients } from '../_lib/push.js';
 import crypto from 'node:crypto';
 
 export default async function handler(req, res) {
@@ -66,6 +67,7 @@ export default async function handler(req, res) {
       }
 
       const id = crypto.randomUUID();
+      const publishNow = !startsAt || startsAt <= Date.now();
       const docData = {
         title,
         description,
@@ -75,12 +77,26 @@ export default async function handler(req, res) {
         units,
         maxPerUser,
         image,
-        createdAt: Date.now()
+        createdAt: Date.now(),
+        startPushSent: publishNow
       };
       if (startsAt) docData.startsAt = startsAt;
       if (expiresAt) docData.expiresAt = expiresAt;
 
       await collection.doc(id).set(docData);
+
+      if (publishNow) {
+        sendPushToAllClients(
+          {
+            title: '¡Nueva promoción disponible!',
+            body: `${title} por ${points.toLocaleString('es-VE')} Pts${branch ? ` en ${branch}` : ''}.`,
+            url: '/#promos',
+            tag: `promo-start-${id}`
+          },
+          db
+        ).catch(() => null);
+      }
+
       sendJson(res, 200, { ok: true, id });
       return;
     }

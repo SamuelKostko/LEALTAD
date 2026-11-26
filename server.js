@@ -10,6 +10,7 @@ config();
 import { getFirestoreDb } from './api/_lib/firestore.js';
 import { sendReportEmail } from './api/admin/send-report.js';
 import { initPurchaseListener } from './api/_lib/purchase-listener.js';
+import { initPushSchedulers } from './api/_lib/push-scheduler.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -289,6 +290,7 @@ const server = app.listen(PORT, HOST, () => {
    console.log(`Server running on http://${HOST}:${PORT}`);
    startReportScheduler();
    initPurchaseListener();
+   initPushSchedulers();
 });
 
 function gracefulShutdown(signal) {
