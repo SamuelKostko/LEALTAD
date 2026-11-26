@@ -29,10 +29,8 @@
         const link = document.createElement("link");
         link.rel = "manifest";
         link.href = token
-          ? `/api/manifest.webmanifest?token=${encodeURIComponent(token)}&v=2`
-          : "/api/manifest.webmanifest?v=2";
           ? `/api/manifest.webmanifest?token=${encodeURIComponent(token)}&v=3`
-          : "/a/manifest.webmanifest?v=3";
+          : "/api/manifest.webmanifest?v=3";
         document.head.appendChild(link);
       } catch {
         // Ignore.
@@ -48,7 +46,6 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Wallet V+ Puntos" />
-  <link rel="apple-touch-icon" href="/icons/icon-v2.svg" />
   <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png" />
 
 
@@ -2743,10 +2740,10 @@
       }
 
       if (btnInicio) {
-        btnInicio.addEv entListener('click', () =>  {
+        btnInicio.addEventListener('click', () => {
           setActive(btnInicio);
           // Just goes to top or home
-          window.scrollTo({top: 0, behavior: 'smooth'});
+          window.scrollTo({ top: 0, behavior: 'smooth' });
         });
       }
 
@@ -2775,7 +2772,7 @@
       if (btnMore) {
         btnMore.addEventListener('click', () => {
           setActive(btnMore);
-          const proleBcument.getElementById('profileButton');
+          const profileBtn = document.getElementById('profileButton');
           if (profileBtn) profileBtn.click();
         });
       }
