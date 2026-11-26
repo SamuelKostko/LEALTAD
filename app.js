@@ -5485,6 +5485,8 @@ document.addEventListener("DOMContentLoaded", () => {
   let currentTotalPts = 0;
   let currentReleaseConfig = { releaseValue: 10, releaseUnit: "days", loaded: false };
   const PTS_PER_USD = 100;
+  const MIN_PURCHASE_USD = 1;
+  const MIN_PURCHASE_PTS = MIN_PURCHASE_USD * PTS_PER_USD;
 
   function formatClientReleaseLabel(cfg) {
     const val = Number(cfg?.releaseValue ?? 10);
@@ -5578,11 +5580,33 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  function updateMinPurchaseHint(isBelowMinimum = false) {
+    const hintEl = document.getElementById("buyPointsMinHint");
+    if (!hintEl) return;
+
+    if (isBelowMinimum) {
+      hintEl.classList.add("bpv__min-hint--error");
+      hintEl.textContent = "El monto mínimo de compra es de $1.00 (100 pts).";
+      return;
+    }
+
+    hintEl.classList.remove("bpv__min-hint--error");
+    if (currentBcvRate && currentBcvRate > 0) {
+      const minBsStr = currentBcvRate.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      hintEl.innerHTML = `Compra mínima: <strong>$1.00</strong> (100 pts · Bs. ${minBsStr})`;
+    } else {
+      hintEl.innerHTML = `Compra mínima: <strong>$1.00</strong> (100 pts)`;
+    }
+  }
+
   function resetBuyPointsWizard() {
     step1.style.display = "flex";
     step2.style.display = "none";
     step3.style.display = "none";
     stepSuccess.style.display = "none";
+
+    currentTotalPts = 0;
+    currentTotalBs = 0;
 
     if (buyPointsInputPts) buyPointsInputPts.value = "";
     if (buyPointsInputUsd) buyPointsInputUsd.value = "";
@@ -5594,6 +5618,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const term2 = document.getElementById("bpvTerm2");
     if (term1) term1.checked = false;
     if (term2) term2.checked = false;
+
+    updateMinPurchaseHint(false);
 
     buyPointsBtnNext1.disabled = true;
     buyPointsSubmitBtn.disabled = true;
@@ -5627,6 +5653,10 @@ document.addEventListener("DOMContentLoaded", () => {
       if (data && data.rate) {
         currentBcvRate = parseFloat(data.rate);
         bcvRateDisplay.textContent = currentBcvRate.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        if (buyPointsInputBs && currentBcvRate > 0) {
+          buyPointsInputBs.min = currentBcvRate.toFixed(2);
+        }
+        updateMinPurchaseHint(false);
       } else {
         bcvRateDisplay.textContent = "Error";
       }
@@ -5642,16 +5672,19 @@ document.addEventListener("DOMContentLoaded", () => {
     if (isNaN(pts) || pts <= 0) {
       buyPointsInputUsd.value = "";
       buyPointsInputBs.value = "";
+      currentTotalPts = 0;
+      currentTotalBs = 0;
       validateBuyPointsStep1();
       return;
     }
-    const usd = pts / PTS_PER_USD;
+    const roundedPts = Math.round(pts);
+    const usd = roundedPts / PTS_PER_USD;
     const bs = usd * currentBcvRate;
 
     buyPointsInputUsd.value = usd.toFixed(2);
     buyPointsInputBs.value = bs.toFixed(2);
 
-    currentTotalPts = Math.round(pts);
+    currentTotalPts = roundedPts;
     currentTotalBs = bs;
     validateBuyPointsStep1();
   }
@@ -5662,6 +5695,8 @@ document.addEventListener("DOMContentLoaded", () => {
     if (isNaN(usd) || usd <= 0) {
       buyPointsInputPts.value = "";
       buyPointsInputBs.value = "";
+      currentTotalPts = 0;
+      currentTotalBs = 0;
       validateBuyPointsStep1();
       return;
     }
@@ -5682,6 +5717,8 @@ document.addEventListener("DOMContentLoaded", () => {
     if (isNaN(bs) || bs <= 0) {
       buyPointsInputPts.value = "";
       buyPointsInputUsd.value = "";
+      currentTotalPts = 0;
+      currentTotalBs = 0;
       validateBuyPointsStep1();
       return;
     }
@@ -5700,8 +5737,14 @@ document.addEventListener("DOMContentLoaded", () => {
     const term1 = document.getElementById("bpvTerm1")?.checked;
     const term2 = document.getElementById("bpvTerm2")?.checked;
     const pts = parseFloat(buyPointsInputPts.value);
+    const usd = parseFloat(buyPointsInputUsd.value);
 
-    if (term1 && term2 && !isNaN(pts) && pts > 0) {
+    const hasPositiveInput = (!isNaN(pts) && pts > 0) || (!isNaN(usd) && usd > 0);
+    const meetsMinimum = !isNaN(pts) && pts >= MIN_PURCHASE_PTS && !isNaN(usd) && usd >= MIN_PURCHASE_USD;
+
+    updateMinPurchaseHint(hasPositiveInput && !meetsMinimum);
+
+    if (term1 && term2 && meetsMinimum && currentBcvRate > 0) {
       buyPointsBtnNext1.disabled = false;
     } else {
       buyPointsBtnNext1.disabled = true;
@@ -5731,7 +5774,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const bpvDot3 = document.getElementById("bpvDot3");
 
     buyPointsBtnNext1.addEventListener("click", () => {
-      if (currentTotalPts <= 0) return;
+      const usdVal = parseFloat(buyPointsInputUsd?.value || "0");
+      if (currentTotalPts < MIN_PURCHASE_PTS || isNaN(usdVal) || usdVal < MIN_PURCHASE_USD) {
+        alert("La compra mínima es de $1.00 (100 puntos).");
+        return;
+      }
       buyPointsDisplayTotalBs.textContent = currentTotalBs.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
       step1.style.display = "none";
       step2.style.display = "flex";
@@ -5814,7 +5861,12 @@ document.addEventListener("DOMContentLoaded", () => {
       const ref = buyPointsRef ? buyPointsRef.value.trim() : "";
       const totalBsText = currentTotalBs.toLocaleString("es-VE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-      if (isNaN(amount) || amount <= 0 || ref.length < 4) return;
+      if (isNaN(amount) || amount < MIN_PURCHASE_PTS || ref.length < 4) {
+        if (isNaN(amount) || amount < MIN_PURCHASE_PTS) {
+          alert("La compra mínima es de $1.00 (100 puntos).");
+        }
+        return;
+      }
 
       buyPointsSubmitBtn.disabled = true;
       buyPointsSubmitBtn.textContent = "Verificando pago en el banco...";

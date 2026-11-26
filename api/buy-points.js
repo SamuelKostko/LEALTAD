@@ -42,12 +42,37 @@ export default async function handler(req, res) {
       return sendJson(res, 400, { error: 'Faltan campos básicos (cardNumber, amount, totalBs)' });
     }
 
+    const MIN_PURCHASE_USD = 1;
+    const PTS_PER_USD = 100;
+    const MIN_PURCHASE_PTS = MIN_PURCHASE_USD * PTS_PER_USD;
+    const numericPoints = Number(amount);
+    if (!Number.isFinite(numericPoints) || numericPoints < MIN_PURCHASE_PTS) {
+      return sendJson(res, 400, { error: 'La compra mínima es de 1 dólar (100 puntos).' });
+    }
+
+    const amountClient = parseAmount(totalBs);
+    if (!Number.isFinite(amountClient) || amountClient <= 0) {
+      return sendJson(res, 400, { error: 'El monto en Bs debe ser mayor a 0.' });
+    }
+
     if (!autoMatchOnly && (!reference || reference.trim().length < 4)) {
       console.error('buy-points validation error: reference is required and must have at least 4 digits', body);
       return sendJson(res, 400, { error: 'Debes ingresar al menos los últimos 4 dígitos de la referencia' });
     }
 
     const db = await getFirestoreDb();
+
+    // Sanity-check Bs amount against cached BCV rate so < $1 cannot bypass client checks
+    try {
+      const bcvDoc = await db.collection('config').doc('bcv_rate').get();
+      const cachedBcvRate = bcvDoc.exists ? Number(bcvDoc.data()?.rate || 0) : 0;
+      if (cachedBcvRate > 0 && amountClient < cachedBcvRate * 0.95) {
+        return sendJson(res, 400, { error: 'El monto mínimo de compra es el equivalente a 1 dólar (100 puntos).' });
+      }
+    } catch (bcvErr) {
+      console.warn('Could not verify cached BCV rate in buy-points:', bcvErr?.message || bcvErr);
+    }
+
     const baseUrl = (process.env.RECONCILIATION_API_URL || 'https://conciliacion.nexuslealtad.com/api').replace(/\/$/, '');
     const defaultSede = process.env.RECONCILIATION_SEDE || 'VMAS';
 
@@ -57,7 +82,6 @@ export default async function handler(req, res) {
     const maxRetries = 5;
     const delayMs = 3000;
 
-    const amountClient = parseAmount(totalBs);
     const refClient = reference ? String(reference).trim() : '';
 
     // If autoMatchOnly, we need the user's registered ID to match securely

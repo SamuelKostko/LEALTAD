@@ -1956,8 +1956,8 @@
               <span>Puntos</span>
             </div>
             <div class="bpv__calc-input-wrap">
-              <input class="bpv__calc-input" type="number" id="buyPointsInputPts" min="1" step="1" inputmode="numeric"
-                placeholder="0" />
+              <input class="bpv__calc-input" type="number" id="buyPointsInputPts" min="100" step="1" inputmode="numeric"
+                placeholder="100" />
               <span class="bpv__calc-unit">pts</span>
             </div>
           </div>
@@ -1976,8 +1976,8 @@
             </div>
             <div class="bpv__calc-input-wrap">
               <span class="bpv__calc-prefix">$</span>
-              <input class="bpv__calc-input bpv__calc-input--usd" type="number" id="buyPointsInputUsd" min="0.01"
-                step="0.01" inputmode="decimal" placeholder="0.00" />
+              <input class="bpv__calc-input bpv__calc-input--usd" type="number" id="buyPointsInputUsd" min="1"
+                step="0.01" inputmode="decimal" placeholder="1.00" />
             </div>
           </div>
 
@@ -1995,6 +1995,8 @@
           </div>
 
         </div>
+
+        <p class="bpv__min-hint" id="buyPointsMinHint">Compra mínima: <strong>$1.00</strong> (100 pts)</p>
 
         <!-- Términos y Condiciones -->
         <div class="bpv__terms">

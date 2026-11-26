@@ -4473,6 +4473,23 @@ body:has(.aDash:not([hidden])) {
   user-select: none;
 }
 
+.bpv__min-hint {
+  margin: 0.625rem 0 0;
+  font-size: 0.8125rem;
+  color: var(--muted);
+  text-align: center;
+  transition: color 0.15s ease;
+}
+
+.bpv__min-hint strong {
+  color: var(--text);
+}
+
+.bpv__min-hint--error {
+  color: #f87171;
+  font-weight: 600;
+}
+
 /* --- Amount highlight --- */
 .bpv__amount-highlight {
   color: #10b981;
