@@ -1,10 +1,11 @@
-const CACHE_NAME = "wallet-pwa-v70";
+const CACHE_NAME = "wallet-pwa-v71";
 
 const PRECACHE_URLS = [
   "/",
   "/index.html",
   "/styles.css",
   "/app.js",
+  "/icons/apple-touch-icon.png",
   "/icons/icon-v2.svg",
   "/icons/icon-192.png",
   "/icons/badge-72.png"

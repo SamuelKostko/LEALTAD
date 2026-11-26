@@ -3,7 +3,8 @@
 
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
 
   <title>Wallet V+ Puntos</title>
 
@@ -30,6 +31,8 @@
         link.href = token
           ? `/api/manifest.webmanifest?token=${encodeURIComponent(token)}&v=2`
           : "/api/manifest.webmanifest?v=2";
+          ? `/api/manifest.webmanifest?token=${encodeURIComponent(token)}&v=3`
+          : "/a/manifest.webmanifest?v=3";
         document.head.appendChild(link);
       } catch {
         // Ignore.
@@ -46,8 +49,10 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Wallet V+ Puntos" />
   <link rel="apple-touch-icon" href="/icons/icon-v2.svg" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png" />
 
 
+  <link rel="icon" href="/icons/icon-192.png" type="image/png" sizes="192x192" />
   <link rel="icon" href="/icons/icon-v2.svg" type="image/svg+xml" />
 
   <link rel="stylesheet" href="/styles.css?v=2.0" />
@@ -89,10 +94,13 @@
     }
 
     @keyframes bootPulse {
-      0%, 100% {
+
+      0%,
+      100% {
         opacity: 1;
         transform: scale(1);
       }
+
       50% {
         opacity: 0.5;
         transform: scale(0.95);
@@ -222,7 +230,7 @@
 
     .aGalleryItem:hover {
       transform: scale(1.03) !important;
-      box-shadow: 0 4px 14px rgba(0,0,0,0.5) !important;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5) !important;
       border-color: rgba(255, 255, 255, 0.35) !important;
     }
 
@@ -247,7 +255,7 @@
       display: grid !important;
       place-items: center !important;
       padding: 0 !important;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.4) !important;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4) !important;
       transition: background 150ms !important;
     }
 
@@ -445,7 +453,7 @@
     if (window.location.pathname === '/admin' || window.location.pathname.startsWith('/admin/')) {
       document.documentElement.style.setProperty('--_splash-hide', 'none');
     }
-    // Hard failsafe: always dismiss after 3.5s no matter what
+    // Hard failse: alwayafter 3.5s no matter what
     setTimeout(function () { document.body.classList.add('is-ready'); }, 3500);
   </script>
 
@@ -456,7 +464,7 @@
     </div>
   </div>
   <script>
-    // Fallback dismissal in case cached app.js misses the new hook
+    // Fallback dismissal in case cached app.js misses e new hook
     window.addEventListener('load', () => { setTimeout(() => document.body.classList.add('is-ready'), 2000); });
   </script>
 
@@ -571,17 +579,21 @@
             </button>
             <button class="aSidebar__navItem" id="aNavStartup" type="button" data-panel="startup">
               <svg viewBox="0 0 24 24" width="17" height="17" fill="none">
-                <path d="M4 5a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5zM8 10h8m-8 4h8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M4 5a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5zM8 10h8m-8 4h8"
+                  stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
               </svg>
               Inicio de App
             </button>
 
           </nav>
           <div class="aSidebar__bottom">
-            <button class="aSidebar__logout" id="adminPushBtn" type="button" style="margin-bottom: 10px; color: #f59e0b;">
+            <button class="aSidebar__logout" id="adminPushBtn" type="button"
+              style="margin-bottom: 10px; color: #f59e0b;">
               <svg viewBox="0 0 24 24" width="15" height="15" fill="none">
-                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
-                <path d="M13.73 21a2 2 0 0 1-3.46 0" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" stroke="currentColor" stroke-width="1.6"
+                  stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M13.73 21a2 2 0 0 1-3.46 0" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"
+                  stroke-linejoin="round" />
               </svg>
               <span id="adminPushLabel">Activar Alertas</span>
             </button>
@@ -837,24 +849,17 @@
               <div class="aReleaseConfigCard__info">
                 <h3 class="aReleaseConfigCard__title">Tiempo de liberación de puntos</h3>
                 <p class="aReleaseConfigCard__sub">
-                  Define cuánto tiempo después de aprobarse una compra se acreditan los puntos (<strong>0 = inmediato</strong>).
+                  Define cuánto tiempo después de aprobarse una compra se acreditan los puntos (<strong>0 =
+                    inmediato</strong>).
                   Solo aplica a compras que comiencen después de guardar este cambio.
                 </p>
               </div>
               <form class="aReleaseConfigCard__form" id="adminBuyPointsReleaseForm">
                 <div class="aReleaseConfigCard__fields">
-                  <input
-                    class="aReleaseConfigCard__input"
-                    type="number"
-                    id="adminBuyPointsReleaseValue"
-                    min="0"
-                    max="365"
-                    step="1"
-                    value="10"
-                    aria-label="Cantidad de tiempo de liberación"
-                    required
-                  />
-                  <select class="aReleaseConfigCard__select" id="adminBuyPointsReleaseUnit" aria-label="Unidad de tiempo de liberación">
+                  <input class="aReleaseConfigCard__input" type="number" id="adminBuyPointsReleaseValue" min="0"
+                    max="365" step="1" value="10" aria-label="Cantidad de tiempo de liberación" required />
+                  <select class="aReleaseConfigCard__select" id="adminBuyPointsReleaseUnit"
+                    aria-label="Unidad de tiempo de liberación">
                     <option value="days">Días</option>
                     <option value="hours">Horas</option>
                   </select>
@@ -867,13 +872,15 @@
             </div>
 
             <!-- Filtros de Estado e Input de Búsqueda -->
-            <div class="aPurchasesControls" style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
+            <div class="aPurchasesControls"
+              style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
               <div class="aSearch" style="margin-bottom: 0;">
                 <svg class="aSearch__icon" viewBox="0 0 24 24" width="16" height="16" fill="none">
                   <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.8" />
                   <path d="M16 16l4.5 4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
                 </svg>
-                <input class="aSearch__input" id="adminPurchasesSearch" type="search" placeholder="Buscar por referencia, cliente, cédula o teléfono..." autocomplete="off">
+                <input class="aSearch__input" id="adminPurchasesSearch" type="search"
+                  placeholder="Buscar por referencia, cliente, cédula o teléfono..." autocomplete="off">
               </div>
 
               <!-- Pestañas de Filtro -->
@@ -882,13 +889,16 @@
                   Todos <span class="aPillCount" id="countPurchasesAll">0</span>
                 </button>
                 <button type="button" class="aPillBtn" data-status="pending">
-                  <span class="aPillDot aPillDot--pending"></span> En espera <span class="aPillCount" id="countPurchasesPending">0</span>
+                  <span class="aPillDot aPillDot--pending"></span> En espera <span class="aPillCount"
+                    id="countPurchasesPending">0</span>
                 </button>
                 <button type="button" class="aPillBtn" data-status="approved">
-                  <span class="aPillDot aPillDot--approved"></span> Conciliados <span class="aPillCount" id="countPurchasesApproved">0</span>
+                  <span class="aPillDot aPillDot--approved"></span> Conciliados <span class="aPillCount"
+                    id="countPurchasesApproved">0</span>
                 </button>
                 <button type="button" class="aPillBtn" data-status="rejected">
-                  <span class="aPillDot aPillDot--rejected"></span> Rechazados <span class="aPillCount" id="countPurchasesRejected">0</span>
+                  <span class="aPillDot aPillDot--rejected"></span> Rechazados <span class="aPillCount"
+                    id="countPurchasesRejected">0</span>
                 </button>
               </div>
             </div>
@@ -1360,8 +1370,7 @@
             </div>
 
             <!-- List of Redeemed Promotions -->
-            <div class="aCard"
-              style="margin-top: 15px; border-top: 1px solid var(--border); padding-top: 25px;">
+            <div class="aCard" style="margin-top: 15px; border-top: 1px solid var(--border); padding-top: 25px;">
               <h3
                 style="font-size: 16px; font-weight: 600; color: var(--text-strong, var(--text)); margin-top: 0; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
                 <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
@@ -1426,18 +1435,22 @@
             <div class="aPanel__header">
               <div>
                 <h2 class="aPanel__title">Inicio de App & Popups</h2>
-                <p class="aPanel__sub">Configura las promociones o imágenes que verán tus clientes al abrir la Wallet.</p>
+                <p class="aPanel__sub">Configura las promociones o imágenes que verán tus clientes al abrir la Wallet.
+                </p>
               </div>
             </div>
-            
+
             <div class="aCard" style="margin-top: 10px; padding: 24px;">
-              <h3 style="font-size: 16px; font-weight: 700; color: #fff; margin-top: 0; margin-bottom: 6px;">Modo de Visualización Inicial</h3>
-              <p style="font-size: 13px; color: rgba(255,255,255,0.5); margin-bottom: 20px;">Elige cómo se presentarán las imágenes o promociones emergentes cuando un usuario inicie sesión en la app.</p>
+              <h3 style="font-size: 16px; font-weight: 700; color: #fff; margin-top: 0; margin-bottom: 6px;">Modo de
+                Visualización Inicial</h3>
+              <p style="font-size: 13px; color: rgba(255,255,255,0.5); margin-bottom: 20px;">Elige cómo se presentarán
+                las imágenes o promociones emergentes cuando un usuario inicie sesión en la app.</p>
 
               <!-- Grid de Modos de Popup -->
               <div class="aStartupModesGrid" id="popupModeSelector">
                 <!-- Modo 1: Desactivado -->
-                <div class="aStartupModeCard is-active" data-mode="none" onclick="window.selectStartupMode && window.selectStartupMode('none')">
+                <div class="aStartupModeCard is-active" data-mode="none"
+                  onclick="window.selectStartupMode && window.selectStartupMode('none')">
                   <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
                     <span class="aStartupModeCard__icon">📴</span>
                     <span class="aStartupRadio"></span>
@@ -1447,7 +1460,8 @@
                 </div>
 
                 <!-- Modo 2: Promociones Aleatorias -->
-                <div class="aStartupModeCard" data-mode="random_promotion" onclick="window.selectStartupMode && window.selectStartupMode('random_promotion')">
+                <div class="aStartupModeCard" data-mode="random_promotion"
+                  onclick="window.selectStartupMode && window.selectStartupMode('random_promotion')">
                   <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
                     <span class="aStartupModeCard__icon">🎲</span>
                     <span class="aStartupRadio"></span>
@@ -1457,7 +1471,8 @@
                 </div>
 
                 <!-- Modo 3: Galería de Imágenes Aleatorias -->
-                <div class="aStartupModeCard" data-mode="random_images" onclick="window.selectStartupMode && window.selectStartupMode('random_images')">
+                <div class="aStartupModeCard" data-mode="random_images"
+                  onclick="window.selectStartupMode && window.selectStartupMode('random_images')">
                   <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
                     <span class="aStartupModeCard__icon">🖼️</span>
                     <span class="aStartupRadio"></span>
@@ -1467,7 +1482,8 @@
                 </div>
 
                 <!-- Modo 4: Promoción Fija -->
-                <div class="aStartupModeCard" data-mode="promotion" onclick="window.selectStartupMode && window.selectStartupMode('promotion')">
+                <div class="aStartupModeCard" data-mode="promotion"
+                  onclick="window.selectStartupMode && window.selectStartupMode('promotion')">
                   <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
                     <span class="aStartupModeCard__icon">🎯</span>
                     <span class="aStartupRadio"></span>
@@ -1477,7 +1493,8 @@
                 </div>
 
                 <!-- Modo 5: Imagen Fija -->
-                <div class="aStartupModeCard" data-mode="custom_image" onclick="window.selectStartupMode && window.selectStartupMode('custom_image')">
+                <div class="aStartupModeCard" data-mode="custom_image"
+                  onclick="window.selectStartupMode && window.selectStartupMode('custom_image')">
                   <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
                     <span class="aStartupModeCard__icon">📷</span>
                     <span class="aStartupRadio"></span>
@@ -1492,32 +1509,43 @@
 
               <!-- Sección 1: Selección de Promoción Fija -->
               <div id="popupPromotionSection" class="aStartupSection" style="display: none;">
-                <label for="popupPromotionSelect" class="aLabel" style="font-weight: 700; color: #fff;">Selecciona la Promoción del Catálogo</label>
+                <label for="popupPromotionSelect" class="aLabel" style="font-weight: 700; color: #fff;">Selecciona la
+                  Promoción del Catálogo</label>
                 <select id="popupPromotionSelect" class="aInput" style="cursor: pointer; margin-top: 6px;">
                   <!-- Options populated dynamically -->
                 </select>
                 <div id="popupSelectedPromoPreview" style="margin-top: 14px; display: none;">
-                  <img id="popupSelectedPromoImg" src="" alt="Vista previa promoción" style="max-height: 220px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); object-fit: contain; background: #000;" />
+                  <img id="popupSelectedPromoImg" src="" alt="Vista previa promoción"
+                    style="max-height: 220px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); object-fit: contain; background: #000;" />
                 </div>
               </div>
 
               <!-- Sección 2: Galería de Varias Imágenes Aleatorias -->
               <div id="popupRandomImagesSection" class="aStartupSection" style="display: none;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
+                <div
+                  style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
                   <div>
-                    <label class="aLabel" style="font-weight: 700; color: #fff; margin-bottom: 2px;">Fotos en Rotación Aleatoria</label>
-                    <p style="margin: 0; font-size: 12px; color: rgba(255,255,255,0.5);">Sube todas las fotos que quieras; saldrá una diferente al azar cada vez que abran la app.</p>
+                    <label class="aLabel" style="font-weight: 700; color: #fff; margin-bottom: 2px;">Fotos en Rotación
+                      Aleatoria</label>
+                    <p style="margin: 0; font-size: 12px; color: rgba(255,255,255,0.5);">Sube todas las fotos que
+                      quieras; saldrá una diferente al azar cada vez que abran la app.</p>
                   </div>
-                  <span class="aPillCount" id="popupGalleryCount" style="padding: 4px 10px; font-size: 12px; background: rgba(99,102,241,0.2); color: #a5b4fc; border: 1px solid rgba(99,102,241,0.3);">0 fotos</span>
+                  <span class="aPillCount" id="popupGalleryCount"
+                    style="padding: 4px 10px; font-size: 12px; background: rgba(99,102,241,0.2); color: #a5b4fc; border: 1px solid rgba(99,102,241,0.3);">0
+                    fotos</span>
                 </div>
 
                 <div class="aUploadBox" id="popupGalleryDropzone">
                   <input id="popupGalleryInput" type="file" accept="image/*" multiple style="display: none;" />
-                  <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.6" style="color: #6366f1; margin-bottom: 8px;">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" stroke-linecap="round" stroke-linejoin="round"/>
+                  <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.6"
+                    style="color: #6366f1; margin-bottom: 8px;">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" stroke-linecap="round"
+                      stroke-linejoin="round" />
                   </svg>
-                  <div style="font-size: 14px; font-weight: 600; color: #fff;">Haz clic o arrastra para subir una o varias imágenes</div>
-                  <div style="font-size: 12px; color: rgba(255,255,255,0.4); margin-top: 4px;">PNG, JPG, WEBP (Se optimizan automáticamente)</div>
+                  <div style="font-size: 14px; font-weight: 600; color: #fff;">Haz clic o arrastra para subir una o
+                    varias imágenes</div>
+                  <div style="font-size: 12px; color: rgba(255,255,255,0.4); margin-top: 4px;">PNG, JPG, WEBP (Se
+                    optimizan automáticamente)</div>
                 </div>
 
                 <!-- Galería de Miniaturas con botón de eliminar -->
@@ -1526,30 +1554,37 @@
 
               <!-- Sección 3: Imagen Única Fija -->
               <div id="popupCustomImageSection" class="aStartupSection" style="display: none;">
-                <label class="aLabel" style="font-weight: 700; color: #fff; margin-bottom: 6px;">Sube la Imagen Fija</label>
+                <label class="aLabel" style="font-weight: 700; color: #fff; margin-bottom: 6px;">Sube la Imagen
+                  Fija</label>
                 <div class="aUploadBox" id="popupSingleDropzone">
                   <input id="popupCustomImage" type="file" accept="image/*" style="display: none;" />
                   <div style="font-size: 14px; font-weight: 600; color: #fff;">Haz clic para subir una imagen</div>
-                  <div style="font-size: 12px; color: rgba(255,255,255,0.4); margin-top: 4px;">Reemplazará la imagen actual</div>
+                  <div style="font-size: 12px; color: rgba(255,255,255,0.4); margin-top: 4px;">Reemplazará la imagen
+                    actual</div>
                 </div>
                 <div id="popupSinglePreviewContainer" style="margin-top: 14px; display: none;">
-                  <img id="popupImagePreview" alt="Vista previa" style="max-height: 240px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); object-fit: contain; background: #000;" />
+                  <img id="popupImagePreview" alt="Vista previa"
+                    style="max-height: 240px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); object-fit: contain; background: #000;" />
                 </div>
               </div>
 
               <!-- Sección 4: Promociones Aleatorias Info -->
               <div id="popupRandomPromoInfoSection" class="aStartupSection" style="display: none;">
-                <div style="background: rgba(99,102,241,0.1); border: 1px solid rgba(99,102,241,0.25); border-radius: 12px; padding: 16px; color: #c7d2fe; font-size: 13.5px; line-height: 1.5;">
+                <div
+                  style="background: rgba(99,102,241,0.1); border: 1px solid rgba(99,102,241,0.25); border-radius: 12px; padding: 16px; color: #c7d2fe; font-size: 13.5px; line-height: 1.5;">
                   <div style="font-weight: 700; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;">
                     <span>🎲 Modo Aleatorio de Promociones Activado</span>
                   </div>
-                  El sistema elegirá automáticamente al azar una de las promociones activas registradas en tu catálogo de promociones cada vez que un cliente abra la Wallet. Si tocan la imagen en el popup, se abrirá el detalle de esa promoción para que puedan canjearla.
+                  El sistema elegirá automáticamente al azar una de las promociones activas registradas en tu catálogo
+                  de promociones cada vez que un cliente abra la Wallet. Si tocan la imagen en el popup, se abrirá el
+                  detalle de esa promoción para que puedan canjearla.
                 </div>
               </div>
 
               <!-- Botón de Guardar y Resultados -->
               <div style="margin-top: 24px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap;">
-                <button class="aBtn aBtn--primary" id="savePopupConfigBtn" type="button" style="padding: 12px 28px; font-weight: 700; border-radius: 10px;">
+                <button class="aBtn aBtn--primary" id="savePopupConfigBtn" type="button"
+                  style="padding: 12px 28px; font-weight: 700; border-radius: 10px;">
                   Guardar Configuración
                 </button>
                 <div id="popupResult" style="font-size: 13.5px; font-weight: 600;" aria-live="polite"></div>
@@ -1557,18 +1592,25 @@
             </div>
 
             <!-- Difusión Push a Clientes -->
-            <div class="aCard" style="margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 22px;">
-              <h3 style="font-size: 16px; font-weight: 700; color: #fff; margin: 0 0 6px;">📢 Enviar Notificación Push a Clientes</h3>
+            <div class="aCard"
+              style="margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 22px;">
+              <h3 style="font-size: 16px; font-weight: 700; color: #fff; margin: 0 0 6px;">📢 Enviar Notificación Push a
+                Clientes</h3>
               <p style="font-size: 13px; color: rgba(255,255,255,0.62); margin: 0 0 16px;">
-                Envía un aviso inmediato a todos los clientes que activaron las notificaciones en su teléfono o navegador.
+                Envía un aviso inmediato a todos los clientes que activaron las notificaciones en su teléfono o
+                navegador.
               </p>
-              <form id="adminPushCampaignForm" style="display: flex; flex-direction: column; gap: 12px; max-width: 560px;">
-                <input type="text" id="adminPushCampaignTitle" maxlength="100" placeholder="Título (ej: ¡Promo Relámpago hoy!)" required
+              <form id="adminPushCampaignForm"
+                style="display: flex; flex-direction: column; gap: 12px; max-width: 560px;">
+                <input type="text" id="adminPushCampaignTitle" maxlength="100"
+                  placeholder="Título (ej: ¡Promo Relámpago hoy!)" required
                   style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.14); color: #fff; padding: 10px 14px; border-radius: 10px; font-family: inherit; font-size: 14px;" />
-                <textarea id="adminPushCampaignBody" rows="3" maxlength="240" placeholder="Mensaje (ej: Canjea tus puntos con 20% de descuento en todas nuestras sedes)" required
+                <textarea id="adminPushCampaignBody" rows="3" maxlength="240"
+                  placeholder="Mensaje (ej: Canjea tus puntos con 20% de descuento en todas nuestras sedes)" required
                   style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.14); color: #fff; padding: 10px 14px; border-radius: 10px; font-family: inherit; font-size: 14px; resize: vertical;"></textarea>
                 <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-                  <button class="aBtn aBtn--primary" id="adminPushCampaignBtn" type="submit" style="padding: 10px 22px; font-weight: 700;">
+                  <button class="aBtn aBtn--primary" id="adminPushCampaignBtn" type="submit"
+                    style="padding: 10px 22px; font-weight: 700;">
                     Enviar Notificación
                   </button>
                   <div id="adminPushCampaignResult" class="aResult" aria-live="polite" style="font-size: 13px;"></div>
@@ -1795,29 +1837,52 @@
       <div class="cMobileNav__inner">
         <button class="cMobileNav__item is-active" id="cMobNavInicio" type="button" aria-label="Inicio">
           <div class="cMobileNav__icon-wrap">
-            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+              <polyline points="9 22 9 12 15 12 15 22"></polyline>
+            </svg>
           </div>
           <span>Inicio</span>
         </button>
         <button class="cMobileNav__item" id="cMobNavPromos" type="button" aria-label="Promociones">
-          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
+            <line x1="7" y1="7" x2="7.01" y2="7"></line>
+          </svg>
           <span>Promos</span>
         </button>
-      
-      <!-- Regular QR button in the nav -->
-      <button class="cMobileNav__item" id="cMobNavAction" type="button" aria-label="Código QR">
-        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="14" width="7" height="7" rx="1"></rect><rect x="3" y="14" width="7" height="7" rx="1"></rect></svg>
-        <span>QR</span>
-      </button>
 
-      <button class="cMobileNav__item" id="cMobNavTransfer" type="button" aria-label="Transferir">
-        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
-        <span>Transferir</span>
-      </button>
-      <button class="cMobileNav__item" id="cMobNavMore" type="button" aria-label="Más opciones" aria-haspopup="dialog" aria-controls="profileMenu">
-        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1.5"></circle><circle cx="12" cy="5" r="1.5"></circle><circle cx="12" cy="19" r="1.5"></circle></svg>
-        <span>Más</span>
-      </button>
+        <!-- Regular QR button in the nav -->
+        <button class="cMobileNav__item" id="cMobNavAction" type="button" aria-label="Código QR">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5"
+            stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="7" height="7" rx="1"></rect>
+            <rect x="14" y="3" width="7" height="7" rx="1"></rect>
+            <rect x="14" y="14" width="7" height="7" rx="1"></rect>
+            <rect x="3" y="14" width="7" height="7" rx="1"></rect>
+          </svg>
+          <span>QR</span>
+        </button>
+
+        <button class="cMobileNav__item" id="cMobNavTransfer" type="button" aria-label="Transferir">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
+          </svg>
+          <span>Transferir</span>
+        </button>
+        <button class="cMobileNav__item" id="cMobNavMore" type="button" aria-label="Más opciones" aria-haspopup="dialog"
+          aria-controls="profileMenu">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5"
+            stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="1.5"></circle>
+            <circle cx="12" cy="5" r="1.5"></circle>
+            <circle cx="12" cy="19" r="1.5"></circle>
+          </svg>
+          <span>Más</span>
+        </button>
       </div>
     </nav>
   </div>
@@ -1885,25 +1950,27 @@
           Comprar Puntos
         </button>
 
-        <button class="profileMenu__item" id="profileTransferBtn" type="button"
-          style="color: #6366f1;">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 10px;">
-            <path d="M17 8l4 4m0 0l-4 4m4-4H3" stroke-linecap="round" stroke-linejoin="round"/>
+        <button class="profileMenu__item" id="profileTransferBtn" type="button" style="color: #6366f1;">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"
+            style="margin-right: 10px;">
+            <path d="M17 8l4 4m0 0l-4 4m4-4H3" stroke-linecap="round" stroke-linejoin="round" />
           </svg>
           Transferir Puntos
         </button>
 
-        <button class="profileMenu__item" id="profileUpdatePhoneBtn" type="button"
-          style="color: #3b82f6;">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 10px;">
-            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+        <button class="profileMenu__item" id="profileUpdatePhoneBtn" type="button" style="color: #3b82f6;">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"
+            style="margin-right: 10px;">
+            <path
+              d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z">
+            </path>
           </svg>
           Actualizar Teléfono
         </button>
 
-        <button class="profileMenu__item" id="profilePushBtn" type="button"
-          style="color: #f59e0b;">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" style="margin-right: 10px;">
+        <button class="profileMenu__item" id="profilePushBtn" type="button" style="color: #f59e0b;">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9"
+            style="margin-right: 10px;">
             <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" stroke-linecap="round" stroke-linejoin="round"></path>
             <path d="M13.73 21a2 2 0 0 1-3.46 0" stroke-linecap="round" stroke-linejoin="round"></path>
           </svg>
@@ -2044,7 +2111,8 @@
           </label>
           <label class="bpv__term-label">
             <input type="checkbox" id="bpvTerm2" class="bpv__term-checkbox">
-            <span class="bpv__term-text" id="bpvTerm2Text">Comprendo que la adquisición de puntos para ofertas con inventario limitado no
+            <span class="bpv__term-text" id="bpvTerm2Text">Comprendo que la adquisición de puntos para ofertas con
+              inventario limitado no
               garantiza la reserva del producto, el cual estará sujeto a la disponibilidad existente al momento de
               cumplirse mi periodo de liberación de saldo (10 días continuos).</span>
           </label>
@@ -2162,13 +2230,15 @@
           </div>
           <h2 class="bpv__pane-title">Validación de Pago</h2>
           <p class="bpv__pane-subtitle">Ingresa la referencia de tu comprobante</p>
-          <p id="buyPointsStep3Amount" style="margin: 6px 0 0; font-size: 0.9rem; font-weight: 700; color: #10b981;"></p>
+          <p id="buyPointsStep3Amount" style="margin: 6px 0 0; font-size: 0.9rem; font-weight: 700; color: #10b981;">
+          </p>
         </div>
 
         <div class="bpv__form">
           <div class="bpv__field">
             <label class="bpv__label" for="buyPointsRef">Número o últimos 4 dígitos de referencia</label>
-            <input class="bpv__input" type="text" id="buyPointsRef" placeholder="Ej. 123456" inputmode="numeric" pattern="[0-9]*" />
+            <input class="bpv__input" type="text" id="buyPointsRef" placeholder="Ej. 123456" inputmode="numeric"
+              pattern="[0-9]*" />
           </div>
         </div>
 
@@ -2192,12 +2262,13 @@
         </div>
         <h2 class="bpv__success-title">¡Pago reportado!</h2>
         <p class="bpv__success-text">Un administrador verificará tu transferencia pronto.</p>
-        <p id="buyPointsSuccessAmount" style="margin: 0.25rem 0 0.5rem; font-size: 1rem; font-weight: 700; color: #10b981;"></p>
-        <div
-          id="buyPointsSuccessReleaseBox"
+        <p id="buyPointsSuccessAmount"
+          style="margin: 0.25rem 0 0.5rem; font-size: 1rem; font-weight: 700; color: #10b981;"></p>
+        <div id="buyPointsSuccessReleaseBox"
           style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.2); padding: 1rem; border-radius: 8px; margin: 0.5rem 0;">
           <p style="margin: 0; font-size: 0.875rem; color: #f59e0b; font-weight: 600;">Importante:</p>
-          <p id="buyPointsSuccessReleaseText" style="margin: 0.25rem 0 0; font-size: 0.8125rem; color: var(--muted); line-height: 1.4;">Los puntos serán
+          <p id="buyPointsSuccessReleaseText"
+            style="margin: 0.25rem 0 0; font-size: 0.8125rem; color: var(--muted); line-height: 1.4;">Los puntos serán
             utilizables <strong>10 días después</strong> de que la compra sea verificada y aceptada.</p>
         </div>
         <button class="bpv__cta" id="buyPointsBtnDone" type="button">Volver al inicio</button>
@@ -2307,23 +2378,31 @@
         <div style="margin-top: 10px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.08);"
           id="pdActionContainer">
           <div id="pdBranchSelectContainer" style="margin-bottom: 16px; display: none;">
-            <label for="pdBranchSelect" style="display: block; font-size: 13px; color: rgba(255,255,255,0.7); margin-bottom: 6px; font-weight: 600;">SELECCIONE SEDE DE RETIRO:</label>
-            <select id="pdBranchSelect" style="width: 100%; background: rgba(0,0,0,0.4); color: #fff; border: 1px solid rgba(255,255,255,0.2); padding: 14px 16px; border-radius: 12px; font-size: 14px; font-weight: 600; outline: none; cursor: pointer;">
+            <label for="pdBranchSelect"
+              style="display: block; font-size: 13px; color: rgba(255,255,255,0.7); margin-bottom: 6px; font-weight: 600;">SELECCIONE
+              SEDE DE RETIRO:</label>
+            <select id="pdBranchSelect"
+              style="width: 100%; background: rgba(0,0,0,0.4); color: #fff; border: 1px solid rgba(255,255,255,0.2); padding: 14px 16px; border-radius: 12px; font-size: 14px; font-weight: 600; outline: none; cursor: pointer;">
             </select>
           </div>
 
-          <div id="pdQuantityContainer" style="margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; background: rgba(0,0,0,0.4); padding: 12px 16px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
+          <div id="pdQuantityContainer"
+            style="margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; background: rgba(0,0,0,0.4); padding: 12px 16px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
             <div style="font-size: 14px; font-weight: 600; color: rgba(255,255,255,0.8);">Cantidad</div>
             <div style="display: flex; align-items: center; gap: 12px;">
-              <button id="pdQtyMinus" style="width: 32px; height: 32px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.05); color: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 18px; font-weight: bold;">-</button>
-              <span id="pdQtyValue" style="font-size: 16px; font-weight: 700; color: #fff; min-width: 24px; text-align: center;">1</span>
-              <button id="pdQtyPlus" style="width: 32px; height: 32px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.05); color: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 18px; font-weight: bold;">+</button>
+              <button id="pdQtyMinus"
+                style="width: 32px; height: 32px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.05); color: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 18px; font-weight: bold;">-</button>
+              <span id="pdQtyValue"
+                style="font-size: 16px; font-weight: 700; color: #fff; min-width: 24px; text-align: center;">1</span>
+              <button id="pdQtyPlus"
+                style="width: 32px; height: 32px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.05); color: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 18px; font-weight: bold;">+</button>
             </div>
           </div>
 
           <div id="pdTotalPointsContainer" style="margin-bottom: 16px; text-align: right; display: none;">
             <span style="font-size: 13px; color: rgba(255,255,255,0.6);">Total a descontar:</span>
-            <span id="pdTotalPoints" style="font-size: 18px; font-weight: 800; color: #06b6d4; margin-left: 8px;"></span>
+            <span id="pdTotalPoints"
+              style="font-size: 18px; font-weight: 800; color: #06b6d4; margin-left: 8px;"></span>
           </div>
 
           <button id="pdRequestBtn" class="bpv__cta"
@@ -2343,8 +2422,8 @@
               <p style="margin: 0; font-size: 13px; color: rgba(255,255,255,0.6);">Hemos enviado un código a tu correo.
               </p>
             </div>
-            <input id="pdOtpInput" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="123456" autocomplete="one-time-code"
-              maxlength="6"
+            <input id="pdOtpInput" type="text" inputmode="numeric" pattern="[0-9]*" placeholder="123456"
+              autocomplete="one-time-code" maxlength="6"
               style="width: 100%; height: 50px; background: #000; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; color: #fff; font-size: 20px; text-align: center; font-weight: bold; letter-spacing: 4px;" />
             <button id="pdConfirmOtpBtn" class="bpv__cta" style="margin: 0; height: 50px; font-size: 15px;">Confirmar
               Compra</button>
@@ -2354,19 +2433,24 @@
         </div>
 
         <!-- Sección de Comentarios y Feedback -->
-        <div class="pdComments" id="pdCommentsSection" style="margin-top: 10px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; flex-direction: column; gap: 16px;">
+        <div class="pdComments" id="pdCommentsSection"
+          style="margin-top: 10px; padding-top: 24px; border-top: 1px solid rgba(255,255,255,0.08); display: flex; flex-direction: column; gap: 16px;">
           <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
             <div style="display: flex; align-items: center; gap: 8px;">
               <h4 style="margin: 0; font-size: 18px; font-weight: 700; color: #fff;">Opiniones y Feedback</h4>
-              <span id="pdCommentsAvg" style="font-size: 13px; font-weight: 700; color: #fbbf24; background: rgba(251,191,36,0.15); padding: 3px 8px; border-radius: 8px;">★ 5.0</span>
+              <span id="pdCommentsAvg"
+                style="font-size: 13px; font-weight: 700; color: #fbbf24; background: rgba(251,191,36,0.15); padding: 3px 8px; border-radius: 8px;">★
+                5.0</span>
             </div>
             <span id="pdCommentsCount" style="font-size: 13px; color: rgba(255,255,255,0.5);">0 opiniones</span>
           </div>
 
           <!-- Formulario para dejar comentario -->
-          <div class="pdCommentForm" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 12px;">
+          <div class="pdCommentForm"
+            style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 12px;">
             <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
-              <span style="font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.8);">Califica esta promoción:</span>
+              <span style="font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.8);">Califica esta
+                promoción:</span>
               <div class="pdRatingStars" id="pdRatingStars" style="display: flex; gap: 4px; cursor: pointer;">
                 <span class="pdStar is-active" data-val="1">★</span>
                 <span class="pdStar is-active" data-val="2">★</span>
@@ -2379,8 +2463,9 @@
             <div style="display: flex; flex-direction: column; gap: 8px;">
               <input type="text" id="pdCommentUserName" placeholder="Tu nombre o apodo (opcional)" maxlength="50"
                 style="width: 100%; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; color: #fff; padding: 10px 12px; font-size: 16px; outline: none;" />
-              
-              <textarea id="pdCommentText" placeholder="Escribe tu opinión o feedback sobre esta promoción..." maxlength="500" rows="3"
+
+              <textarea id="pdCommentText" placeholder="Escribe tu opinión o feedback sobre esta promoción..."
+                maxlength="500" rows="3"
                 style="width: 100%; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; color: #fff; padding: 10px 12px; font-size: 16px; outline: none; resize: none; font-family: inherit;"></textarea>
             </div>
 
@@ -2459,11 +2544,14 @@
         Para usar VmasPuntos de forma segura, por favor ingresa tu número de teléfono celular (Ej: 04141234567).
       </p>
       <div style="margin: 16px 0;">
-        <input type="tel" id="phoneModalInput" placeholder="04141234567" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.5); color: #fff; font-size: 16px; text-align: center; font-family: monospace;" />
+        <input type="tel" id="phoneModalInput" placeholder="04141234567"
+          style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.5); color: #fff; font-size: 16px; text-align: center; font-family: monospace;" />
       </div>
       <div class="firstOpenModal__actions" style="flex-direction: column; gap: 8px;">
-        <button class="firstOpenModal__btn" id="phoneModalSaveBtn" type="button" style="width: 100%;">Guardar Teléfono</button>
-        <button class="firstOpenModal__btn" id="phoneModalCancelBtn" type="button" style="width: 100%; background: transparent; border: 1px solid rgba(255,255,255,0.2); display: none;">Cancelar</button>
+        <button class="firstOpenModal__btn" id="phoneModalSaveBtn" type="button" style="width: 100%;">Guardar
+          Teléfono</button>
+        <button class="firstOpenModal__btn" id="phoneModalCancelBtn" type="button"
+          style="width: 100%; background: transparent; border: 1px solid rgba(255,255,255,0.2); display: none;">Cancelar</button>
       </div>
     </div>
   </div>
@@ -2513,15 +2601,17 @@
       <header class="transferModal__header">
         <div class="transferModal__header-icon">
           <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M17 8l4 4m0 0l-4 4m4-4H3" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M17 8l4 4m0 0l-4 4m4-4H3" stroke-linecap="round" stroke-linejoin="round" />
           </svg>
         </div>
         <span class="transferModal__title">Transferir Puntos</span>
         <button class="transferModal__close" id="transferCloseBtn" type="button" aria-label="Cerrar">
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 6L6 18M6 6l12 12" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
         </button>
       </header>
-      
+
       <div class="transferModal__body">
         <!-- Paso 1: Email -->
         <div id="transferStep1" class="transferModal__step">
@@ -2529,8 +2619,14 @@
           <div class="transferModal__input-wrap">
             <label class="transferModal__label" for="transferEmailInput">Destinatario</label>
             <div class="transferModal__input-box">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" class="transferModal__input-icon"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" stroke-linecap="round" stroke-linejoin="round"/><path d="M22 6l-10 7L2 6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              <input class="transferModal__input" type="email" id="transferEmailInput" placeholder="correo@ejemplo.com" />
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"
+                class="transferModal__input-icon">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"
+                  stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M22 6l-10 7L2 6" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+              <input class="transferModal__input" type="email" id="transferEmailInput"
+                placeholder="correo@ejemplo.com" />
             </div>
           </div>
           <button class="transferModal__btn transferModal__btn--primary" id="transferVerifyEmailBtn">Continuar</button>
@@ -2545,38 +2641,50 @@
               <p class="transferModal__recipient-name" id="transferRecipientName">Nombre Destino</p>
             </div>
           </div>
-          
+
           <div class="transferModal__amount-wrap">
             <span class="transferModal__amount-currency">Pts</span>
-            <input class="transferModal__amount-input" type="text" inputmode="numeric" pattern="[0-9]*" id="transferAmountInput" placeholder="0" />
+            <input class="transferModal__amount-input" type="text" inputmode="numeric" pattern="[0-9]*"
+              id="transferAmountInput" placeholder="0" />
           </div>
-          
+
           <div class="transferModal__actions">
-            <button class="transferModal__btn transferModal__btn--primary" id="transferRequestBtn">Revisar Transferencia</button>
-            <button class="transferModal__btn transferModal__btn--ghost" id="transferBackTo1Btn">Cambiar Destinatario</button>
+            <button class="transferModal__btn transferModal__btn--primary" id="transferRequestBtn">Revisar
+              Transferencia</button>
+            <button class="transferModal__btn transferModal__btn--ghost" id="transferBackTo1Btn">Cambiar
+              Destinatario</button>
           </div>
         </div>
 
         <!-- Paso 3: OTP -->
         <div id="transferStep3" class="transferModal__step" style="display: none;">
           <div class="transferModal__icon-pulse">
-            <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M7 11V7a5 5 0 0 1 10 0v4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2" stroke-linecap="round" stroke-linejoin="round" />
+              <path d="M7 11V7a5 5 0 0 1 10 0v4" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
           </div>
           <h3 class="transferModal__step-title">Seguridad</h3>
-          <p class="transferModal__desc" style="text-align: center;">Hemos enviado un código de 6 dígitos a tu correo para autorizar el envío.</p>
+          <p class="transferModal__desc" style="text-align: center;">Hemos enviado un código de 6 dígitos a tu correo
+            para autorizar el envío.</p>
 
-          <div style="margin-bottom: 16px; padding: 12px 14px; background: rgba(255, 255, 255, 0.05); border-radius: 10px; border: 1px dashed rgba(255,255,255,0.12); text-align: center;">
-            <p style="margin: 0; font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">Monto a transferir</p>
-            <p id="transferConfirmAmount" style="margin: 4px 0 0 0; font-size: 22px; font-weight: 700; color: #10b981;">0 Pts</p>
+          <div
+            style="margin-bottom: 16px; padding: 12px 14px; background: rgba(255, 255, 255, 0.05); border-radius: 10px; border: 1px dashed rgba(255,255,255,0.12); text-align: center;">
+            <p style="margin: 0; font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">
+              Monto a transferir</p>
+            <p id="transferConfirmAmount" style="margin: 4px 0 0 0; font-size: 22px; font-weight: 700; color: #10b981;">
+              0 Pts</p>
             <p id="transferConfirmRecipient" style="margin: 4px 0 0 0; font-size: 12px; color: #cbd5e1;"></p>
           </div>
-          
+
           <div class="transferModal__otp-wrap">
-            <input class="transferModal__otp-input" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code" id="transferOtpInput" placeholder="------" maxlength="6" />
+            <input class="transferModal__otp-input" type="text" inputmode="numeric" pattern="[0-9]*"
+              autocomplete="one-time-code" id="transferOtpInput" placeholder="------" maxlength="6" />
           </div>
-          
+
           <div class="transferModal__actions">
-            <button class="transferModal__btn transferModal__btn--success" id="transferConfirmBtn">Confirmar Envío</button>
+            <button class="transferModal__btn transferModal__btn--success" id="transferConfirmBtn">Confirmar
+              Envío</button>
             <button class="transferModal__btn transferModal__btn--ghost" id="transferBackTo2Btn">Cancelar</button>
           </div>
         </div>
@@ -2584,21 +2692,29 @@
         <!-- Paso 4: Éxito -->
         <div id="transferStep4" class="transferModal__step" style="display: none; text-align: center;">
           <div class="transferModal__success-icon">
-            <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="2.5"
+              stroke-linecap="round" stroke-linejoin="round">
               <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
               <polyline points="22 4 12 14.01 9 11.01"></polyline>
             </svg>
           </div>
           <h3 class="transferModal__success-title">¡Transferencia Exitosa!</h3>
           <p class="transferModal__success-desc">Los puntos ya están en la cuenta de tu destinatario.</p>
-          <div style="margin-top: 16px; padding: 14px; background: rgba(255, 255, 255, 0.05); border-radius: 8px; border: 1px dashed rgba(255,255,255,0.1);">
-            <p style="margin: 0; font-size: 12px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">Monto transferido</p>
-            <p id="transferSuccessAmount" style="margin: 4px 0 12px 0; font-size: 24px; font-weight: 700; color: #10b981;">0 Pts</p>
+          <div
+            style="margin-top: 16px; padding: 14px; background: rgba(255, 255, 255, 0.05); border-radius: 8px; border: 1px dashed rgba(255,255,255,0.1);">
+            <p style="margin: 0; font-size: 12px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">
+              Monto transferido</p>
+            <p id="transferSuccessAmount"
+              style="margin: 4px 0 12px 0; font-size: 24px; font-weight: 700; color: #10b981;">0 Pts</p>
             <div style="height: 1px; background: rgba(255, 255, 255, 0.08); margin-bottom: 12px;"></div>
-            <p style="margin: 0; font-size: 12px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">Referencia</p>
-            <p id="transferReferenceNumber" style="margin: 4px 0 0 0; font-family: monospace; font-size: 18px; color: #fff; letter-spacing: 1px;">0000000</p>
+            <p style="margin: 0; font-size: 12px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px;">
+              Referencia</p>
+            <p id="transferReferenceNumber"
+              style="margin: 4px 0 0 0; font-family: monospace; font-size: 18px; color: #fff; letter-spacing: 1px;">
+              0000000</p>
           </div>
-          <button class="transferModal__btn transferModal__btn--primary" id="transferDoneBtn" style="margin-top: 24px;">Ir al Inicio</button>
+          <button class="transferModal__btn transferModal__btn--primary" id="transferDoneBtn"
+            style="margin-top: 24px;">Ir al Inicio</button>
         </div>
       </div>
     </div>
@@ -2627,7 +2743,7 @@
       }
 
       if (btnInicio) {
-        btnInicio.addEventListener('click', () => {
+        btnInicio.addEv entListener('click', () =>  {
           setActive(btnInicio);
           // Just goes to top or home
           window.scrollTo({top: 0, behavior: 'smooth'});
@@ -2659,7 +2775,7 @@
       if (btnMore) {
         btnMore.addEventListener('click', () => {
           setActive(btnMore);
-          const profileBtn = document.getElementById('profileButton');
+          const proleBcument.getElementById('profileButton');
           if (profileBtn) profileBtn.click();
         });
       }
