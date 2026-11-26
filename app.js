@@ -985,6 +985,7 @@ if (qrButton) {
 
     const mobNavClientes = document.getElementById("aMobNavClientes");
     const mobNavTx = document.getElementById("aMobNavTx");
+    const mobNavPendingPayments = document.getElementById("aMobNavPendingPayments");
     const mobNavStats = document.getElementById("aMobNavStats");
     const mobNavCajerosLocal = document.getElementById("aMobNavCajeros");
     const mobNavLogout = document.getElementById("aMobNavLogout");
@@ -996,6 +997,10 @@ if (qrButton) {
       switchPanel("transacciones");
       currentTxLimit = 10;
       loadAllTransactions("");
+    });
+    if (mobNavPendingPayments) mobNavPendingPayments.addEventListener("click", () => {
+      switchPanel("pendientes");
+      loadPendingPayments();
     });
     if (mobNavStats) mobNavStats.addEventListener("click", () => {
       switchPanel("metricas");
@@ -1705,6 +1710,114 @@ Esto eliminará también sus transacciones.`
     let purchaseFilterStatus = "all";
     let purchaseSearchQuery = "";
     let purchaseTabsBound = false;
+    let buyPointsConfigBound = false;
+
+    const formatPurchaseDuration = (val, unit) => {
+      const num = Number(val);
+      if (!Number.isFinite(num) || num <= 0) return "inmediata";
+      if (String(unit).toLowerCase() === "hours") {
+        return `${num} ${num === 1 ? "hora" : "horas"}`;
+      }
+      return `${num} ${num === 1 ? "día" : "días"}`;
+    };
+
+    const formatRemainingTime = (diffMs) => {
+      if (diffMs < 60 * 60 * 1000) {
+        const mins = Math.max(1, Math.ceil(diffMs / (60 * 1000)));
+        return `en ${mins} ${mins === 1 ? "minuto" : "minutos"}`;
+      }
+      if (diffMs < 24 * 60 * 60 * 1000) {
+        const hrs = Math.ceil(diffMs / (60 * 60 * 1000));
+        return `en ${hrs} ${hrs === 1 ? "hora" : "horas"}`;
+      }
+      const days = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+      return `en ${days} ${days === 1 ? "día" : "días"}`;
+    };
+
+    const syncReleaseValueInputBounds = () => {
+      const valInput = document.getElementById("adminBuyPointsReleaseValue");
+      const unitSelect = document.getElementById("adminBuyPointsReleaseUnit");
+      if (!valInput || !unitSelect) return;
+      valInput.max = unitSelect.value === "hours" ? "8760" : "365";
+    };
+
+    const loadBuyPointsReleaseConfig = async () => {
+      const valInput = document.getElementById("adminBuyPointsReleaseValue");
+      const unitSelect = document.getElementById("adminBuyPointsReleaseUnit");
+      const statusEl = document.getElementById("adminBuyPointsReleaseStatus");
+      if (!valInput || !unitSelect) return;
+
+      try {
+        const data = await apiGet("/api/admin/buy-points-config");
+        if (data && data.ok && data.settings) {
+          unitSelect.value = data.settings.releaseUnit === "hours" ? "hours" : "days";
+          valInput.value = String(data.settings.releaseValue ?? 10);
+          syncReleaseValueInputBounds();
+        }
+      } catch (err) {
+        if (statusEl) {
+          statusEl.style.color = "#f87171";
+          statusEl.textContent = "No se pudo cargar el plazo actual.";
+        }
+      }
+    };
+
+    const bindBuyPointsReleaseConfig = () => {
+      if (buyPointsConfigBound) return;
+      buyPointsConfigBound = true;
+
+      const form = document.getElementById("adminBuyPointsReleaseForm");
+      const valInput = document.getElementById("adminBuyPointsReleaseValue");
+      const unitSelect = document.getElementById("adminBuyPointsReleaseUnit");
+      const saveBtn = document.getElementById("adminBuyPointsReleaseSaveBtn");
+      const statusEl = document.getElementById("adminBuyPointsReleaseStatus");
+
+      if (unitSelect) {
+        unitSelect.addEventListener("change", syncReleaseValueInputBounds);
+      }
+
+      if (form && valInput && unitSelect) {
+        form.addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const releaseUnit = unitSelect.value === "hours" ? "hours" : "days";
+          const parsed = Number(valInput.value);
+          const maxVal = releaseUnit === "hours" ? 8760 : 365;
+
+          if (!Number.isFinite(parsed) || !Number.isInteger(parsed) || parsed < 0 || parsed > maxVal) {
+            if (statusEl) {
+              statusEl.style.color = "#f87171";
+              statusEl.textContent = `Ingresa un entero entre 0 y ${maxVal}.`;
+            }
+            return;
+          }
+
+          if (saveBtn) saveBtn.disabled = true;
+          if (statusEl) {
+            statusEl.style.color = "rgba(255,255,255,0.75)";
+            statusEl.textContent = "Guardando...";
+          }
+
+          try {
+            const resp = await apiPost("/api/admin/buy-points-config", {
+              releaseValue: parsed,
+              releaseUnit
+            });
+            if (!resp || !resp.ok) throw new Error(resp?.error || "Error al guardar");
+            if (statusEl) {
+              statusEl.style.color = "#34d399";
+              statusEl.textContent = resp.message || "Plazo guardado.";
+            }
+          } catch (err) {
+            if (statusEl) {
+              statusEl.style.color = "#f87171";
+              statusEl.textContent = String(err?.message || err);
+            }
+          } finally {
+            if (saveBtn) saveBtn.disabled = false;
+          }
+        });
+      }
+    };
 
     const filterAndRenderPurchases = () => {
       if (!pendingPaymentsList) return;
@@ -1755,33 +1868,48 @@ Esto eliminará también sus transacciones.`
 
         const isApprovedStatus = status === "approved" || status === "conciliado" || status === "completed" || p.isAutoReconciled === true || p.reference === "Auto-Conciliado";
 
-        // Calculate 10-day availability date
+        const hasSnapshot = p.releaseValue !== undefined && p.releaseValue !== null && Boolean(p.releaseUnit);
+        const pReleaseValue = hasSnapshot ? Number(p.releaseValue) : 10;
+        const pReleaseUnit = hasSnapshot ? String(p.releaseUnit).toLowerCase() : "days";
+        const pIsImmediate = pReleaseValue <= 0;
+        const pDurationLabel = formatPurchaseDuration(pReleaseValue, pReleaseUnit);
+
+        // Calculate availability date using snapshotted config (or legacy 10-day fallback)
         let availableDate = null;
         if (p.availableAt && !isNaN(new Date(p.availableAt).getTime())) {
           availableDate = new Date(p.availableAt);
-        } else if (createdDate && isApprovedStatus) {
-          availableDate = new Date(createdDate.getTime() + (10 * 24 * 60 * 60 * 1000));
+        } else if (createdDate && isApprovedStatus && !pIsImmediate) {
+          const unitMs = pReleaseUnit === "hours" ? 60 * 60 * 1000 : 24 * 60 * 60 * 1000;
+          availableDate = new Date(createdDate.getTime() + (pReleaseValue * unitMs));
         }
 
         const now = new Date();
         let availabilityHtml = "";
         let availabilityShortText = "";
 
-        if (isApprovedStatus && availableDate && !isNaN(availableDate.getTime())) {
+        if (isApprovedStatus && pIsImmediate) {
+          availabilityHtml = `<span style="color: #10b981; font-weight: 700;">✅ Ya acreditados y disponibles</span> <span style="font-size: 11.5px; opacity: 0.8;">(acreditación inmediata)</span>`;
+          availabilityShortText = `✅ Ya disponibles (inmediato)`;
+        } else if (isApprovedStatus && availableDate && !isNaN(availableDate.getTime())) {
           const availableDateStr = availableDate.toLocaleString("es-VE", { dateStyle: "medium", timeStyle: "short" });
           const diffMs = availableDate.getTime() - now.getTime();
-          const daysLeft = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
 
           if (diffMs <= 0) {
             availabilityHtml = `<span style="color: #10b981; font-weight: 700;">✅ Ya acreditados y disponibles</span> <span style="font-size: 11.5px; opacity: 0.8;">(desde el ${availableDateStr})</span>`;
             availabilityShortText = `✅ Ya disponibles (desde ${availableDateStr})`;
           } else {
-            availabilityHtml = `<span style="color: #a5b4fc; font-weight: 700;">⏳ Le caerán el ${availableDateStr}</span> <span style="background: rgba(99,102,241,0.25); color: #c7d2fe; padding: 2px 7px; border-radius: 6px; font-size: 11px; font-weight: 700; margin-left: 4px;">en ${daysLeft} ${daysLeft === 1 ? 'día' : 'días'}</span>`;
-            availabilityShortText = `⏳ Le caerán el ${availableDateStr} (en ${daysLeft}d)`;
+            const remainingLabel = formatRemainingTime(diffMs);
+            availabilityHtml = `<span style="color: #a5b4fc; font-weight: 700;">⏳ Le caerán el ${availableDateStr}</span> <span style="background: rgba(99,102,241,0.25); color: #c7d2fe; padding: 2px 7px; border-radius: 6px; font-size: 11px; font-weight: 700; margin-left: 4px;">${remainingLabel}</span>`;
+            availabilityShortText = `⏳ Le caerán el ${availableDateStr} (${remainingLabel})`;
           }
         } else if (status === "pending") {
-          availabilityHtml = `<span style="color: #fbbf24; font-weight: 700;">⏳ Le caerán 10 días después de ser aprobado</span>`;
-          availabilityShortText = `10 días tras aprobación`;
+          if (pIsImmediate) {
+            availabilityHtml = `<span style="color: #34d399; font-weight: 700;">⚡ Se acreditarán de inmediato al ser aprobado</span>`;
+            availabilityShortText = `Inmediato tras aprobación`;
+          } else {
+            availabilityHtml = `<span style="color: #fbbf24; font-weight: 700;">⏳ Le caerán ${pDurationLabel} después de ser aprobado</span>`;
+            availabilityShortText = `${pDurationLabel} tras aprobación`;
+          }
         } else if (status === "rejected") {
           availabilityHtml = `<span style="color: #f87171; font-weight: 700;">❌ No se acreditarán (pago rechazado)</span>`;
           availabilityShortText = `Rechazado`;
@@ -1968,6 +2096,8 @@ Esto eliminará también sus transacciones.`
       if (pendingPaymentsResult) pendingPaymentsResult.textContent = "";
 
       bindPurchaseControls();
+      bindBuyPointsReleaseConfig();
+      loadBuyPointsReleaseConfig();
 
       try {
         const data = await apiGet("/api/admin/pending-purchases?status=all");
@@ -5353,7 +5483,100 @@ document.addEventListener("DOMContentLoaded", () => {
   let currentBcvRate = null;
   let currentTotalBs = 0;
   let currentTotalPts = 0;
+  let currentReleaseConfig = { releaseValue: 10, releaseUnit: "days", loaded: false };
   const PTS_PER_USD = 100;
+
+  function formatClientReleaseLabel(cfg) {
+    const val = Number(cfg?.releaseValue ?? 10);
+    const unit = String(cfg?.releaseUnit || "days").toLowerCase();
+    if (!Number.isFinite(val) || val <= 0) return "inmediata";
+    if (unit === "hours") return `${val} ${val === 1 ? "hora" : "horas"}`;
+    return `${val} ${val === 1 ? "día" : "días"}`;
+  }
+
+  function applyReleaseConfigToTerms(cfg) {
+    const term2TextEl = document.getElementById("bpvTerm2Text");
+    if (!term2TextEl) return;
+
+    if (cfg && typeof cfg.termsText === "string" && cfg.termsText.trim()) {
+      term2TextEl.textContent = cfg.termsText;
+      return;
+    }
+
+    const val = Number(cfg?.releaseValue ?? 10);
+    const unit = String(cfg?.releaseUnit || "days").toLowerCase();
+    if (!Number.isFinite(val) || val <= 0) {
+      term2TextEl.textContent =
+        "Comprendo que la adquisición de puntos para ofertas con inventario limitado no garantiza la reserva del producto, el cual estará sujeto a la disponibilidad existente al momento de aprobarse y acreditarse mi saldo (acreditación inmediata).";
+      return;
+    }
+    const unitLabel = unit === "hours"
+      ? (val === 1 ? "hora continua" : "horas continuas")
+      : (val === 1 ? "día continuo" : "días continuos");
+    term2TextEl.textContent =
+      `Comprendo que la adquisición de puntos para ofertas con inventario limitado no garantiza la reserva del producto, el cual estará sujeto a la disponibilidad existente al momento de cumplirse mi periodo de liberación de saldo (${val} ${unitLabel}).`;
+  }
+
+  function updateBuyPointsSuccessNotice(status, cfg) {
+    const successTitle = stepSuccess.querySelector(".bpv__success-title");
+    const successText = stepSuccess.querySelector(".bpv__success-text");
+    const releaseTextEl = document.getElementById("buyPointsSuccessReleaseText");
+
+    const val = Number(cfg?.releaseValue ?? currentReleaseConfig.releaseValue ?? 10);
+    const unit = String(cfg?.releaseUnit || currentReleaseConfig.releaseUnit || "days").toLowerCase();
+    const isImmediate = !Number.isFinite(val) || val <= 0;
+    const durationLabel = formatClientReleaseLabel({ releaseValue: val, releaseUnit: unit });
+
+    if (status === "approved") {
+      if (successTitle) successTitle.textContent = "¡Pago Verificado!";
+      if (successText) {
+        successText.textContent = isImmediate
+          ? "Tu transferencia fue conciliada automáticamente. Tus puntos ya fueron acreditados a tu saldo."
+          : "Tu transferencia fue conciliada automáticamente. Tus puntos han sido programados.";
+      }
+      if (releaseTextEl) {
+        releaseTextEl.innerHTML = isImmediate
+          ? "Tus puntos ya están <strong>disponibles de inmediato</strong> para usar en la plataforma."
+          : `Tus puntos serán acreditados a tu saldo y utilizables <strong>en ${durationLabel}</strong> a partir de esta confirmación.`;
+      }
+    } else {
+      if (successTitle) successTitle.textContent = "¡Pago Reportado!";
+      if (successText) {
+        successText.textContent = "Estamos esperando confirmación del banco o revisión del administrador. Te notificaremos pronto.";
+      }
+      if (releaseTextEl) {
+        releaseTextEl.innerHTML = isImmediate
+          ? "Los puntos se acreditarán <strong>de forma inmediata</strong> una vez que la compra sea verificada y aceptada."
+          : `Los puntos serán utilizables <strong>${durationLabel} después</strong> de que la compra sea verificada y aceptada.`;
+      }
+    }
+  }
+
+  async function fetchBuyPointsConfig() {
+    const term2Checkbox = document.getElementById("bpvTerm2");
+    const term2TextEl = document.getElementById("bpvTerm2Text");
+    if (term2Checkbox) term2Checkbox.disabled = true;
+    if (term2TextEl) term2TextEl.textContent = "Cargando condiciones de liberación de saldo...";
+
+    try {
+      const response = await fetch("/api/buy-points-config", { cache: "no-store" });
+      const data = await response.json();
+      if (response.ok && data && data.ok) {
+        currentReleaseConfig = {
+          releaseValue: Number(data.releaseValue ?? 10),
+          releaseUnit: data.releaseUnit === "hours" ? "hours" : "days",
+          termsText: data.termsText || "",
+          loaded: true
+        };
+      }
+    } catch (err) {
+      console.error("Error fetching buy-points config:", err);
+    } finally {
+      applyReleaseConfigToTerms(currentReleaseConfig);
+      if (term2Checkbox) term2Checkbox.disabled = false;
+      validateBuyPointsStep1();
+    }
+  }
 
   function resetBuyPointsWizard() {
     step1.style.display = "flex";
@@ -5366,6 +5589,11 @@ document.addEventListener("DOMContentLoaded", () => {
     if (buyPointsInputBs) buyPointsInputBs.value = "";
 
     if (buyPointsRef) buyPointsRef.value = "";
+
+    const term1 = document.getElementById("bpvTerm1");
+    const term2 = document.getElementById("bpvTerm2");
+    if (term1) term1.checked = false;
+    if (term2) term2.checked = false;
 
     buyPointsBtnNext1.disabled = true;
     buyPointsSubmitBtn.disabled = true;
@@ -5383,6 +5611,7 @@ document.addEventListener("DOMContentLoaded", () => {
     buyPointsView.style.display = "flex";
     buyPointsView.setAttribute("aria-hidden", "false");
     fetchBcvRate();
+    fetchBuyPointsConfig();
   }
 
   function hideBuyPointsView() {
@@ -5542,13 +5771,11 @@ document.addEventListener("DOMContentLoaded", () => {
         if (res.ok && data.success && data.status === 'approved') {
           step2.style.display = "none";
 
-          const successTitle = stepSuccess.querySelector(".bpv__success-title");
-          const successText = stepSuccess.querySelector(".bpv__success-text");
+          updateBuyPointsSuccessNotice("approved", {
+            releaseValue: data.releaseValue,
+            releaseUnit: data.releaseUnit
+          });
           const successAmountEl = document.getElementById("buyPointsSuccessAmount");
-          if (successTitle && successText) {
-            successTitle.textContent = "¡Pago Verificado!";
-            successText.textContent = "Tu transferencia fue conciliada automáticamente. Los puntos han sido acreditados.";
-          }
           if (successAmountEl) {
             successAmountEl.textContent = `Monto: ${totalBsText} Bs · ${formatPts(currentTotalPts)} Pts`;
           }
@@ -5623,19 +5850,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
         step3.style.display = "none";
 
-        // Update success message based on status
-        const successTitle = stepSuccess.querySelector(".bpv__success-title");
-        const successText = stepSuccess.querySelector(".bpv__success-text");
-
-        if (successTitle && successText) {
-          if (data.status === 'approved') {
-            successTitle.textContent = "¡Pago Verificado!";
-            successText.textContent = "Tu transferencia fue conciliada automáticamente. Los puntos han sido acreditados.";
-          } else {
-            successTitle.textContent = "¡Pago Reportado!";
-            successText.textContent = "Estamos esperando confirmación del banco. Te notificaremos pronto.";
-          }
-        }
+        // Update success message based on status and active release configuration
+        updateBuyPointsSuccessNotice(data.status, {
+          releaseValue: data.releaseValue,
+          releaseUnit: data.releaseUnit
+        });
         const successAmountEl = document.getElementById("buyPointsSuccessAmount");
         if (successAmountEl) {
           successAmountEl.textContent = `Monto: ${totalBsText} Bs · ${formatPts(amount)} Pts`;

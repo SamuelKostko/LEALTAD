@@ -3,6 +3,12 @@ import { getFirestoreDb } from '../_lib/firestore.js';
 import { requireAdmin, verifySession } from '../_lib/adminAuth.js';
 import { readJsonBody, sendJson } from '../_lib/http.js';
 import { sendEmail } from '../_lib/mailer.js';
+import {
+  DEFAULT_BUY_POINTS_RELEASE,
+  computeAvailableAtDate,
+  formatReleaseDurationLabel,
+  normalizeReleaseConfig
+} from '../_lib/points.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -86,43 +92,83 @@ export default async function handler(req, res) {
     const clientData = clientDoc.data();
     const currentBalance = Number(clientData?.totalPoints || 0);
 
-    // Calculate availableAt (10 days from now)
-    const availableAtDate = new Date();
-    availableAtDate.setDate(availableAtDate.getDate() + 10);
-    const availableAtStr = availableAtDate.toISOString();
+    // Use the release config snapshotted when the purchase began (legacy purchases default to 10 days)
+    const hasSnapshottedConfig =
+      purchaseData.releaseValue !== undefined &&
+      purchaseData.releaseValue !== null &&
+      Boolean(purchaseData.releaseUnit);
+    const purchaseReleaseConfig = hasSnapshottedConfig
+      ? normalizeReleaseConfig(purchaseData)
+      : { ...DEFAULT_BUY_POINTS_RELEASE };
 
-    // Add to scheduledPoints instead of totalPoints
-    batch.update(clientRef, {
-      scheduledPoints: FieldValue.arrayUnion({
-        amount: points,
-        availableAt: availableAtStr,
-        source: 'purchase',
-        reference: purchaseData.reference || ''
-      }),
-      updatedAt: FieldValue.serverTimestamp()
-    });
+    const isImmediate = purchaseReleaseConfig.releaseValue <= 0;
+    const durationLabel = formatReleaseDurationLabel(purchaseReleaseConfig);
+    const now = new Date();
+    const availableAtDate = computeAvailableAtDate(purchaseReleaseConfig, now);
+    const availableAtStr = availableAtDate ? availableAtDate.toISOString() : now.toISOString();
+    const availableDisplayStr = availableAtDate
+      ? availableAtDate.toLocaleString('es-VE', {
+          dateStyle: 'short',
+          timeStyle: 'short',
+          timeZone: 'America/Caracas'
+        })
+      : '';
 
-    // Log transaction (pending status for now, since points aren't fully usable yet)
     const txRef = firestore.collection('transactions').doc();
-    batch.set(txRef, {
-      type: 'buy_points',
-      status: 'pending_schedule',
-      token: token,
-      points: points,
-      balanceBefore: currentBalance,
-      balanceAfter: currentBalance, // balance hasn't changed yet
-      description: `Compra de ${points} puntos (Disponibles el ${availableAtDate.toLocaleDateString()})`,
-      createdAt: FieldValue.serverTimestamp(),
-      processedAt: FieldValue.serverTimestamp(),
-      availableAt: availableAtStr
-    });
+
+    if (isImmediate) {
+      batch.update(clientRef, {
+        totalPoints: FieldValue.increment(points),
+        updatedAt: FieldValue.serverTimestamp()
+      });
+
+      batch.set(txRef, {
+        type: 'buy_points',
+        status: 'success',
+        token: token,
+        points: points,
+        balanceBefore: currentBalance,
+        balanceAfter: currentBalance + points,
+        description: `Compra de ${points} puntos (Acreditación inmediata)`,
+        createdAt: FieldValue.serverTimestamp(),
+        processedAt: FieldValue.serverTimestamp(),
+        availableAt: availableAtStr
+      });
+    } else {
+      // Add to scheduledPoints instead of totalPoints
+      batch.update(clientRef, {
+        scheduledPoints: FieldValue.arrayUnion({
+          amount: points,
+          availableAt: availableAtStr,
+          source: 'purchase',
+          reference: purchaseData.reference || ''
+        }),
+        updatedAt: FieldValue.serverTimestamp()
+      });
+
+      // Log transaction (pending status for now, since points aren't fully usable yet)
+      batch.set(txRef, {
+        type: 'buy_points',
+        status: 'pending_schedule',
+        token: token,
+        points: points,
+        balanceBefore: currentBalance,
+        balanceAfter: currentBalance, // balance hasn't changed yet
+        description: `Compra de ${points} puntos (Disponibles el ${availableDisplayStr || `en ${durationLabel}`})`,
+        createdAt: FieldValue.serverTimestamp(),
+        processedAt: FieldValue.serverTimestamp(),
+        availableAt: availableAtStr
+      });
+    }
 
     // Update purchase status
     batch.update(purchaseRef, {
       status: 'approved',
       resolvedAt: FieldValue.serverTimestamp(),
       resolvedBy: adminIdentifier,
-      availableAt: availableAtStr
+      availableAt: availableAtStr,
+      releaseValue: purchaseReleaseConfig.releaseValue,
+      releaseUnit: purchaseReleaseConfig.releaseUnit
     });
 
     await batch.commit();
@@ -130,17 +176,21 @@ export default async function handler(req, res) {
     // Send email notification to client via Amazon SES / fallback
     const email = String(clientData?.email || '').trim();
     if (email && email.includes('@')) {
+      const emailNoticeText = isImmediate
+        ? 'Tus puntos ya han sido acreditados a tu saldo y están <strong>disponibles para usar de inmediato</strong>.'
+        : `Tus puntos serán acreditados a tu saldo y serán <strong>utilizables en ${durationLabel}</strong> a partir de esta confirmación (aprox. el ${availableDisplayStr}).`;
+
       const htmlContent = `
         <div style="font-family: sans-serif; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #eaeaea; border-radius: 8px; padding: 20px;">
           <h2 style="color: #10b981; text-align: center;">¡Pago Aceptado!</h2>
-          <p style="font-size: 16px;">Hola <strong>${clientData.clientName || 'Cliente'}</strong>,</p>
+          <p style="font-size: 16px;">Hola <strong>${clientData.nombre || clientData.name || clientData.clientName || 'Cliente'}</strong>,</p>
           <p style="font-size: 16px;">Nos complace informarte que tu compra de <strong>${points} puntos</strong> ha sido verificada y aprobada exitosamente.</p>
           <div style="background: #f3f4f6; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #6366f1;">
             <p style="margin: 0; font-size: 15px; font-weight: bold; color: #4b5563;">
               Aviso importante:
             </p>
             <p style="margin: 5px 0 0; font-size: 15px; color: #4b5563;">
-              Tus puntos serán acreditados a tu saldo y serán <strong>utilizables en 10 días</strong> a partir de esta confirmación (aprox. el ${availableAtDate.toLocaleDateString()}).
+              ${emailNoticeText}
             </p>
           </div>
           <p style="font-size: 14px; color: #666; text-align: center; margin-top: 30px;">
@@ -157,7 +207,10 @@ export default async function handler(req, res) {
       }).catch(e => console.error("Error enviando correo de confirmación:", e));
     }
 
-    sendJson(res, 200, { ok: true, message: `Se han programado ${points} puntos exitosamente (disponibles en 10 días).` });
+    const successMsg = isImmediate
+      ? `Se han acreditado ${points} puntos de forma inmediata.`
+      : `Se han programado ${points} puntos exitosamente (disponibles en ${durationLabel}).`;
+    sendJson(res, 200, { ok: true, message: successMsg });
   } catch (err) {
     console.error('Error resolving purchase:', err);
     sendJson(res, 500, { ok: false, error: err?.message || String(err) });

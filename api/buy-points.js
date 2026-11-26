@@ -2,6 +2,11 @@ import { FieldValue } from 'firebase-admin/firestore';
 import { getFirestoreDb } from './_lib/firestore.js';
 import { sendJson, readJsonBody } from './_lib/http.js';
 import { sendEmail } from './_lib/mailer.js';
+import {
+  computeAvailableAtDate,
+  formatReleaseDurationLabel,
+  getBuyPointsReleaseConfig
+} from './_lib/points.js';
 
 function extractDigits(str) {
   return String(str || '').replace(/\D/g, '');
@@ -127,6 +132,11 @@ export default async function handler(req, res) {
       return sendJson(res, 200, { success: false, require_manual_data: true });
     }
 
+    // Snapshot the release config active when this purchase begins
+    const releaseConfig = await getBuyPointsReleaseConfig(db);
+    const isImmediate = releaseConfig.releaseValue <= 0;
+    const durationLabel = formatReleaseDurationLabel(releaseConfig);
+
     // Proceed to save the purchase (Approved or Pending)
     const purchaseRef = db.collection('pending_purchases').doc();
     const finalStatus = isApproved ? 'approved' : 'pending';
@@ -134,13 +144,21 @@ export default async function handler(req, res) {
     const clientEmail = clientDataSnapshot && clientDataSnapshot.exists ? String(clientDataSnapshot.data()?.email || '').trim() : '';
     const resolvedClientName = clientName ? String(clientName) : (clientDataSnapshot && clientDataSnapshot.exists ? String(clientDataSnapshot.data()?.nombre || clientDataSnapshot.data()?.name || 'Desconocido') : 'Desconocido');
 
+    const now = new Date();
     let availableAtDate = null;
     let availableAtStr = null;
     if (isApproved) {
-      availableAtDate = new Date();
-      availableAtDate.setDate(availableAtDate.getDate() + 10);
-      availableAtStr = availableAtDate.toISOString();
+      availableAtDate = computeAvailableAtDate(releaseConfig, now);
+      availableAtStr = availableAtDate ? availableAtDate.toISOString() : now.toISOString();
     }
+
+    const availableDisplayStr = availableAtDate
+      ? availableAtDate.toLocaleString('es-VE', {
+          dateStyle: 'short',
+          timeStyle: 'short',
+          timeZone: 'America/Caracas'
+        })
+      : '';
 
     const finalRef = matchedTx?.reference || (refClient || (autoMatchOnly ? 'Auto-Conciliado' : ''));
 
@@ -160,10 +178,12 @@ export default async function handler(req, res) {
       status: finalStatus,
       isAutoReconciled: isApproved && !!matchedTx,
       matchedTxId: matchedTx ? matchedTx.id : null,
-      resolvedAt: isApproved ? new Date().toISOString() : null,
+      releaseValue: releaseConfig.releaseValue,
+      releaseUnit: releaseConfig.releaseUnit,
+      resolvedAt: isApproved ? now.toISOString() : null,
       resolvedBy: isApproved ? (autoMatchOnly ? 'Sistema (Auto-Conciliado)' : 'Sistema (Conciliación Manual Banco)') : null,
       availableAt: availableAtStr,
-      createdAt: new Date().toISOString()
+      createdAt: now.toISOString()
     };
 
     const batch = db.batch();
@@ -178,29 +198,50 @@ export default async function handler(req, res) {
         const clientData = clientDataSnapshot.data();
         const currentBalance = Number(clientData?.totalPoints || 0);
 
-        batch.update(clientDocRef, {
-          scheduledPoints: FieldValue.arrayUnion({
-            amount: points,
-            availableAt: availableAtStr,
-            source: 'purchase',
-            reference: finalRef
-          }),
-          updatedAt: FieldValue.serverTimestamp()
-        });
+        if (isImmediate) {
+          batch.update(clientDocRef, {
+            totalPoints: FieldValue.increment(points),
+            updatedAt: FieldValue.serverTimestamp()
+          });
 
-        const pointsTxRef = db.collection('transactions').doc();
-        batch.set(pointsTxRef, {
-          type: 'buy_points',
-          status: 'pending_schedule',
-          token: token,
-          points: points,
-          balanceBefore: currentBalance,
-          balanceAfter: currentBalance,
-          description: `Compra de ${points} puntos (Disponibles el ${availableAtDate ? availableAtDate.toLocaleDateString() : 'en 10 días'})`,
-          createdAt: FieldValue.serverTimestamp(),
-          processedAt: FieldValue.serverTimestamp(),
-          availableAt: availableAtStr
-        });
+          const pointsTxRef = db.collection('transactions').doc();
+          batch.set(pointsTxRef, {
+            type: 'buy_points',
+            status: 'success',
+            token: token,
+            points: points,
+            balanceBefore: currentBalance,
+            balanceAfter: currentBalance + points,
+            description: `Compra de ${points} puntos (Acreditación inmediata)`,
+            createdAt: FieldValue.serverTimestamp(),
+            processedAt: FieldValue.serverTimestamp(),
+            availableAt: availableAtStr
+          });
+        } else {
+          batch.update(clientDocRef, {
+            scheduledPoints: FieldValue.arrayUnion({
+              amount: points,
+              availableAt: availableAtStr,
+              source: 'purchase',
+              reference: finalRef
+            }),
+            updatedAt: FieldValue.serverTimestamp()
+          });
+
+          const pointsTxRef = db.collection('transactions').doc();
+          batch.set(pointsTxRef, {
+            type: 'buy_points',
+            status: 'pending_schedule',
+            token: token,
+            points: points,
+            balanceBefore: currentBalance,
+            balanceAfter: currentBalance,
+            description: `Compra de ${points} puntos (Disponibles el ${availableDisplayStr || `en ${durationLabel}`})`,
+            createdAt: FieldValue.serverTimestamp(),
+            processedAt: FieldValue.serverTimestamp(),
+            availableAt: availableAtStr
+          });
+        }
       }
 
       await batch.commit();
@@ -208,7 +249,10 @@ export default async function handler(req, res) {
       // Send Success Email to Client via Amazon SES / fallback
       const email = clientDataSnapshot && clientDataSnapshot.exists ? String(clientDataSnapshot.data().email || '').trim() : '';
       if (email && email.includes('@')) {
-        const dateStr = availableAtDate ? availableAtDate.toLocaleDateString() : '10 días';
+        const emailBodyNotice = isImmediate
+          ? 'Tus puntos ya han sido acreditados a tu saldo y están disponibles para usar de inmediato.'
+          : `Tus puntos serán acreditados a tu saldo y utilizables en ${durationLabel} a partir de esta confirmación (aprox. el ${availableDisplayStr || durationLabel}).`;
+
         sendEmail({
           to: email,
           subject: "Confirmación de Compra de Puntos - V+ Puntos",
@@ -220,7 +264,7 @@ export default async function handler(req, res) {
               <div style="background: #f3f4f6; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #6366f1;">
                 <p style="margin: 0; font-size: 15px; font-weight: bold; color: #4b5563;">Aviso importante:</p>
                 <p style="margin: 5px 0 0; font-size: 15px; color: #4b5563;">
-                  Tus puntos serán acreditados a tu saldo y utilizables en 10 días a partir de esta confirmación (aprox. el ${dateStr}).
+                  ${emailBodyNotice}
                 </p>
               </div>
             </div>
@@ -258,7 +302,13 @@ export default async function handler(req, res) {
       }).catch(e => console.error("Error enviando correo al administrador:", e));
     }
 
-    return sendJson(res, 200, { success: true, id: purchaseRef?.id, status: finalStatus });
+    return sendJson(res, 200, {
+      success: true,
+      id: purchaseRef?.id,
+      status: finalStatus,
+      releaseValue: releaseConfig.releaseValue,
+      releaseUnit: releaseConfig.releaseUnit
+    });
 
   } catch (err) {
     console.error('Error in buy-points handler:', err);

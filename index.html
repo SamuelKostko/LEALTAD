@@ -825,6 +825,40 @@
               </button>
             </div>
 
+            <!-- Configuración de liberación de puntos -->
+            <div class="aReleaseConfigCard" id="adminBuyPointsReleaseCard">
+              <div class="aReleaseConfigCard__info">
+                <h3 class="aReleaseConfigCard__title">Tiempo de liberación de puntos</h3>
+                <p class="aReleaseConfigCard__sub">
+                  Define cuánto tiempo después de aprobarse una compra se acreditan los puntos (<strong>0 = inmediato</strong>).
+                  Solo aplica a compras que comiencen después de guardar este cambio.
+                </p>
+              </div>
+              <form class="aReleaseConfigCard__form" id="adminBuyPointsReleaseForm">
+                <div class="aReleaseConfigCard__fields">
+                  <input
+                    class="aReleaseConfigCard__input"
+                    type="number"
+                    id="adminBuyPointsReleaseValue"
+                    min="0"
+                    max="365"
+                    step="1"
+                    value="10"
+                    aria-label="Cantidad de tiempo de liberación"
+                    required
+                  />
+                  <select class="aReleaseConfigCard__select" id="adminBuyPointsReleaseUnit" aria-label="Unidad de tiempo de liberación">
+                    <option value="days">Días</option>
+                    <option value="hours">Horas</option>
+                  </select>
+                  <button class="aBtn aBtn--primary" id="adminBuyPointsReleaseSaveBtn" type="submit">
+                    Guardar plazo
+                  </button>
+                </div>
+                <div class="aReleaseConfigCard__status" id="adminBuyPointsReleaseStatus" aria-live="polite"></div>
+              </form>
+            </div>
+
             <!-- Filtros de Estado e Input de Búsqueda -->
             <div class="aPurchasesControls" style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
               <div class="aSearch" style="margin-bottom: 0;">
@@ -1972,7 +2006,7 @@
           </label>
           <label class="bpv__term-label">
             <input type="checkbox" id="bpvTerm2" class="bpv__term-checkbox">
-            <span class="bpv__term-text">Comprendo que la adquisición de puntos para ofertas con inventario limitado no
+            <span class="bpv__term-text" id="bpvTerm2Text">Comprendo que la adquisición de puntos para ofertas con inventario limitado no
               garantiza la reserva del producto, el cual estará sujeto a la disponibilidad existente al momento de
               cumplirse mi periodo de liberación de saldo (10 días continuos).</span>
           </label>
@@ -2122,9 +2156,10 @@
         <p class="bpv__success-text">Un administrador verificará tu transferencia pronto.</p>
         <p id="buyPointsSuccessAmount" style="margin: 0.25rem 0 0.5rem; font-size: 1rem; font-weight: 700; color: #10b981;"></p>
         <div
+          id="buyPointsSuccessReleaseBox"
           style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.2); padding: 1rem; border-radius: 8px; margin: 0.5rem 0;">
           <p style="margin: 0; font-size: 0.875rem; color: #f59e0b; font-weight: 600;">Importante:</p>
-          <p style="margin: 0.25rem 0 0; font-size: 0.8125rem; color: var(--muted); line-height: 1.4;">Los puntos serán
+          <p id="buyPointsSuccessReleaseText" style="margin: 0.25rem 0 0; font-size: 0.8125rem; color: var(--muted); line-height: 1.4;">Los puntos serán
             utilizables <strong>10 días después</strong> de que la compra sea verificada y aceptada.</p>
         </div>
         <button class="bpv__cta" id="buyPointsBtnDone" type="button">Volver al inicio</button>

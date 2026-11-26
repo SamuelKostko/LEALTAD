@@ -5658,6 +5658,88 @@ body:has(.aDash:not([hidden])) {
   margin-top: 4px;
 }
 
+.aReleaseConfigCard {
+  background: rgba(99, 102, 241, 0.08);
+  border: 1px solid rgba(99, 102, 241, 0.24);
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 14px;
+}
+
+.aReleaseConfigCard__info {
+  flex: 1 1 260px;
+}
+
+.aReleaseConfigCard__title {
+  margin: 0 0 4px;
+  font-size: 14.5px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.aReleaseConfigCard__sub {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.68);
+}
+
+.aReleaseConfigCard__form {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.aReleaseConfigCard__fields {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.aReleaseConfigCard__input,
+.aReleaseConfigCard__select {
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  outline: none;
+  transition: border-color 150ms ease;
+}
+
+.aReleaseConfigCard__input {
+  width: 84px;
+  text-align: center;
+}
+
+.aReleaseConfigCard__input:focus,
+.aReleaseConfigCard__select:focus {
+  border-color: #6366f1;
+}
+
+.aReleaseConfigCard__status {
+  font-size: 12px;
+  min-height: 16px;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+@media (max-width: 640px) {
+  .aReleaseConfigCard__form {
+    align-items: flex-start;
+    width: 100%;
+  }
+}
+
 /* =========================================================
    INICIO DE APP / STARTUP POPUP MODES & GALLERY STYLES
    ========================================================= */
